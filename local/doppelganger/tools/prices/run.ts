@@ -43,6 +43,12 @@ export const PRICES_DRY_RUN_ENV: EnvSpec = {
   why: "1 = print what the feed would write and what upstream would merge; write, commit and push nothing",
 };
 
+export const PRICES_FETCH_MINUTES_ENV: EnvSpec = {
+  key: "PRICES_FETCH_MINUTES",
+  default: "10",
+  why: "minutes between pulls of a published price list (a feed with [fetch], such as kenari); 0 = every run",
+};
+
 export const PRICES_ENV: readonly EnvSpec[] = [
   PRICES_STATIC_DIR_ENV,
   PRICES_IMAGE_ENV,
@@ -51,6 +57,7 @@ export const PRICES_ENV: readonly EnvSpec[] = [
   PRICES_GH_ENV,
   PRICES_PUSH_ENV,
   PRICES_DRY_RUN_ENV,
+  PRICES_FETCH_MINUTES_ENV,
 ];
 
 export type Task = "static" | "sync";
@@ -66,6 +73,7 @@ export interface PriceRun {
   readonly ghDir: string | null;
   readonly push: boolean;
   readonly dryRun: boolean;
+  readonly fetchMinutes: number;
 }
 
 /** In-container path of the gh login. Read-only: the job uses the token, never writes the login. */
@@ -79,11 +87,18 @@ export function dockerArgs(p: PriceRun): string[] {
     args.push("-e", `GIT_${k}_NAME=${p.gitName}`, "-e", `GIT_${k}_EMAIL=${p.gitEmail}`);
   }
   if (p.dryRun) args.push("-e", "PRICE_DRY_RUN=1");
+  args.push("-e", `PRICE_FETCH_MINUTES=${p.fetchMinutes}`);
   // A dry run never pushes, whatever PRICES_PUSH says.
   if (p.push && !p.dryRun) args.push("-e", "PRICE_PUSH=1");
   if (p.ghDir !== null) args.push("-v", `${p.ghDir}:${GH_IN_CONTAINER}:ro`, "-e", `GH_CONFIG_DIR=${GH_IN_CONTAINER}`);
   args.push(p.image, "bash", "local/script/job.sh", p.task);
   return args;
+}
+
+/** A whole number of minutes, 0 or more. Anything else is a typo, so it stops the job. */
+export function fetchMinutes(v: string): number {
+  if (!/^\d+$/.test(v.trim())) throw new Error(`PRICES_FETCH_MINUTES must be a whole number of minutes, got "${v}"`);
+  return Number(v.trim());
 }
 
 export function priceRun(ctx: JobContext, task: Task): PriceRun {
@@ -98,6 +113,7 @@ export function priceRun(ctx: JobContext, task: Task): PriceRun {
     ghDir: gh === "" ? null : ctx.path(".doppelganger", "creds", "gh", gh),
     push: ctx.env.str(PRICES_PUSH_ENV) === "1",
     dryRun: ctx.env.str(PRICES_DRY_RUN_ENV) === "1",
+    fetchMinutes: fetchMinutes(ctx.env.str(PRICES_FETCH_MINUTES_ENV)),
   };
 }
 
