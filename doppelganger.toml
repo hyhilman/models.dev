@@ -639,6 +639,12 @@ cmd = "/usr/bin/crontab"
 # host folder holding one <provider>.json static price feed per provider; mounted read-only
 static_dir = "/home/hyhilman/.price-router/static"
 
+# the .doppelganger/creds/gh/<name> login the price jobs push with
+gh = "hyhilman"
+
+# 1 = push the router branch to origin after a job moves it; the sync also fast-forwards origin dev
+push = 1
+
 # --- families whose table you choose ---
 
 # redirect one integration's database to a throwaway file for a safe run
