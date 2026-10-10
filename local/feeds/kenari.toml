@@ -1,0 +1,14 @@
+# Kenari publishes its price list: local/script/fetch-feeds.ts pulls it from [fetch] url, at most
+# once an hour, and converts the IDR prices to USD.
+# Upstream owns providers/kenari/ (all costs 0, "IDR prepaid wallet" policy). Kenari is in
+# `patch` in local/static.toml, so the feed rewrites only the [cost] table of upstream's files,
+# for the models whose file name is the list's id. name, env, api and doc below go unused.
+name = "Kenari"
+env = ["KENARI_API_KEY"]
+api = "https://kenari.id/v1"
+doc = "https://kenari.id/docs/models"
+source = "Kenari GET /v1/models (public price list)"
+
+[fetch]
+url = "https://kenari.id/v1/models"
+format = "kenari"
