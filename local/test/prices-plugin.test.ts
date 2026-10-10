@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { dockerArgs, eventLines, GH_IN_CONTAINER, type PriceRun } from "../doppelganger/tools/prices/run.ts";
+import { dockerArgs, eventLines, fetchMinutes, GH_IN_CONTAINER, type PriceRun } from "../doppelganger/tools/prices/run.ts";
 
 const base: PriceRun = {
   task: "static",
@@ -11,6 +11,7 @@ const base: PriceRun = {
   ghDir: null,
   push: false,
   dryRun: false,
+  fetchMinutes: 10,
 };
 
 const envOf = (args: string[]): string[] => args.flatMap((a, i) => (args[i - 1] === "-e" ? [a] : []));
@@ -32,6 +33,12 @@ test("push carries the flag; the gh login mounts read-only", () => {
   const args = dockerArgs({ ...base, push: true, ghDir: "/p/.doppelganger/creds/gh/me" });
   expect(envOf(args)).toContain("PRICE_PUSH=1");
   expect(args).toContain(`/p/.doppelganger/creds/gh/me:${GH_IN_CONTAINER}:ro`);
+});
+
+test("the fetch interval reaches the script, and a typo stops the job", () => {
+  expect(envOf(dockerArgs(base))).toContain("PRICE_FETCH_MINUTES=10");
+  expect(fetchMinutes(" 0 ")).toBe(0);
+  expect(() => fetchMinutes("10m")).toThrow();
 });
 
 test("only the scripts' event lines are kept", () => {
