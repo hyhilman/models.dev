@@ -1,0 +1,4 @@
+# The published site, built from packages/web/dist by local/script/publish-site.sh.
+.site/
+.site.new/
+.site.old/

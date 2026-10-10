@@ -25,7 +25,10 @@ This fork tracks `anomalyco/models.dev` (remote `upstream`, branch `dev`). Our w
 | `local/script/apply-static.ts` | Applies `$PRICE_STATIC_DIR/<p>.json` to `providers/<p>/`, validates, commits |
 | `local/script/sync-upstream.sh` | Merges `upstream/dev` into `router`, checks, goes back on failure |
 | `local/script/run.sh` | Runs a command in the Bun image (the host has no Bun) |
-| `local/docker/Dockerfile` | The Bun image: pinned Bun and git |
+| `local/docker/Dockerfile` | The tools image: pinned Bun, git, gh, flock |
+| `local/docker/compose.yml` | The local site on `0.0.0.0:7311` |
+| `local/script/serve.ts` | Runs upstream's own `worker.ts` over `local/.site` |
+| `local/script/publish-site.sh` | Builds `packages/web/dist` and swaps it into `local/.site` |
 | `local/doppelganger/` | doppelganger, installed from a release tarball (`vendor/`), and its `dg` wrapper |
 | `local/doppelganger/tools/prices/` | The `prices` plugin: the `ops-price-static` and `ops-price-sync` jobs |
 | `doppelganger.config.ts`, `doppelganger.toml` | Attach the plugin; the shared settings (no secrets) |
@@ -78,6 +81,26 @@ How a row becomes `providers/<provider>/models/<model_name>.toml`:
 Drop a new export of the price list at `$PRICE_STATIC_DIR/<provider>.json`. The scheduled job
 applies it within a minute. To do it by hand, run the
 apply command above.
+
+## The local site
+
+The same site and API as models.dev, with our prices, on `http://<this machine>:7311`:
+`/api.json`, `/models.json`, `/catalog.json`, `/model-schema.json` and the HTML pages.
+
+- `local/script/serve.ts` runs upstream's own Cloudflare Worker, so every route behaves like the
+  real site. It strips the user agent first: the worker would otherwise post analytics to
+  upstream's PostHog for opencode and bun clients.
+- After each price job, `job.sh` rebuilds the site when HEAD moved since the last build
+  (`local/.site/.built-from`). The build deletes `dist/` first, so the server reads `local/.site`,
+  a copy swapped in only after a build succeeds. No restart is needed.
+
+```bash
+DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock docker compose -f local/docker/compose.yml up -d
+DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock docker compose -f local/docker/compose.yml logs -f
+```
+
+It restarts on its own (`unless-stopped`) and comes back after a reboot, because the rootless
+daemon starts at boot (linger is on).
 
 ## doppelganger
 
