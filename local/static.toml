@@ -1,0 +1,4 @@
+# Providers the static price feed may write. The feed reads <provider>.json from
+# PRICE_STATIC_DIR and writes only providers/<provider>/. It never touches a provider
+# missing from this list. Add one only when the owner says so.
+providers = ["sumopod"]
