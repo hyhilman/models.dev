@@ -2,3 +2,5 @@
 .site/
 .site.new/
 .site.old/
+# A fetched price list (local/script/fetch-feeds.ts). The provider files carry the history.
+.feeds/

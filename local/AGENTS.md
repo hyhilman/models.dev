@@ -9,6 +9,8 @@ This fork tracks `anomalyco/models.dev` (remote `upstream`, branch `dev`). Our w
    `providers/<p>/` for each `<p>` in `local/static.toml`, and the root files `CLAUDE.md`,
    `doppelganger.toml` and `doppelganger.config.ts`. `.gitignore` may only gain lines.
    `local/test/add-only.test.ts` enforces this. It keeps every upstream merge free of conflicts.
+   One exception: a `patch` provider in `local/static.toml` is upstream's folder, and the feed
+   changes only the `[cost]` table and its own `# Price feed:` comments there (also tested).
 2. Never commit a secret. Files name the env var that holds a key, never the key.
 3. Every price carries a source and the date it was checked.
 4. The static feed writes only the providers in `local/static.toml`. Add a provider there only
@@ -18,11 +20,12 @@ This fork tracks `anomalyco/models.dev` (remote `upstream`, branch `dev`). Our w
 
 | Path | What |
 |---|---|
-| `local/static.toml` | Providers the static price feed may write (now: `sumopod`) |
+| `local/static.toml` | Providers the price feed may write (now: `sumopod`, `kenari`), and which are `patch` |
 | `local/aliases.toml` | Lab model for a host entry that has no `base_model` |
 | `local/feeds/<p>.toml` | Provider details the price list does not carry, and its name map |
 | `local/example/<p>.json` | A cut of a real price list, the format reference |
-| `local/script/apply-static.ts` | Applies `$PRICE_STATIC_DIR/<p>.json` to `providers/<p>/`, validates, commits |
+| `local/script/fetch-feeds.ts` | Pulls a published price list (a feed with `[fetch]`) into `local/.feeds/<p>.json`, in USD |
+| `local/script/apply-static.ts` | Applies a price list to `providers/<p>/`, validates, commits |
 | `local/script/sync-upstream.sh` | Merges `upstream/dev` into `router`, checks, goes back on failure |
 | `local/script/run.sh` | Runs a command in the Bun image (the host has no Bun) |
 | `local/docker/Dockerfile` | The tools image: pinned Bun, git, gh, flock |
@@ -76,10 +79,30 @@ How a row becomes `providers/<provider>/models/<model_name>.toml`:
 - When `bun validate` fails after a write, the script puts the folder back and exits non-zero,
   so the last good prices stay.
 
+## Fetched feeds and patch providers (Kenari)
+
+Kenari publishes its prices at `https://kenari.id/v1/models`, so nobody exports a file:
+
+- `local/feeds/kenari.toml` has a `[fetch]` table. Each minute the static job runs
+  `fetch-feeds.ts` first. It pulls a list at most once per `PRICE_FETCH_MINUTES` (default 60),
+  counted from the last try, and keeps the last list when a pull fails.
+- Kenari prices are micro-rupiah per 1M tokens. USD = micro_idr / 1,000,000 / rate. The rate is
+  the ECB reference rate of the first day of the month (`api.frankfurter.dev`), one rate per
+  month, so a daily rate move does not rewrite every file every day. A `:free` model costs 0.
+  Only chat models: image, video and speech prices are not per token.
+- Upstream already owns `providers/kenari/` (all costs 0, by their policy). So kenari is in
+  `patch`: the feed rewrites only `[cost]` of upstream's files whose name is a Kenari id, and
+  adds three `# Price feed:` lines (source, date, rate). It never adds or deletes a file. Priced
+  models upstream does not list are logged as `static.unlisted`.
+- An upstream merge that conflicts inside a patch folder takes upstream's file
+  (`sync.took_upstream`). The next static run writes the price again. A conflict anywhere else
+  still aborts the merge.
+
 ## How to change a price
 
 Drop a new export of the price list at `$PRICE_STATIC_DIR/<provider>.json`. The scheduled job
-applies it within a minute. To do it by hand, run the
+applies it within a minute. A fetched feed needs nothing: a change at the provider lands within
+the hour. To do it by hand, run the
 apply command above.
 
 ## The local site
