@@ -32,6 +32,19 @@ const ModelName = z
 
 const Price = z.number().nonnegative();
 
+/** A price in the catalog's own names. A tier starts at `size` input tokens of context. */
+const Cost = z.object({
+  input: Price,
+  output: Price,
+  cache_read: Price.optional(),
+  cache_write: Price.optional(),
+  reasoning: Price.optional(),
+});
+const Clock = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
+/** A daily window in local time at `utc_offset` hours. It may wrap midnight (22:00 to 08:00). */
+const Hours = z.object({ from: Clock, to: Clock, utc_offset: z.number().min(-12).max(14) }).strict();
+export type Hours = z.infer<typeof Hours>;
+
 /** One row of the provider's price list. Extra fields the provider adds later are ignored. */
 const PriceRow = z.object({
   model_name: ModelName,
@@ -41,9 +54,17 @@ const PriceRow = z.object({
   output_cost_per_1m_tokens: Price,
   cache_read_cost_per_1m_tokens: Price.nullable().optional(),
   cache_write_cost_per_1m_tokens: Price.nullable().optional(),
+  // Output price while the model thinks, when it differs from the plain output price.
+  reasoning_cost_per_1m_tokens: Price.nullable().optional(),
+  // Higher prices for long prompts, written as [[cost.tiers]].
+  tiers: z.array(Cost.extend({ size: z.number().int().positive() })).optional(),
+  // A cheaper price at night. The job writes it during `hours` and the normal price the rest of
+  // the day, so the catalog shows the price that applies now.
+  offpeak: Cost.extend({ hours: Hours }).optional(),
   // 0 means the provider does not say.
   context_length: z.number().int().nonnegative().optional(),
 });
+export type PriceRow = z.infer<typeof PriceRow>;
 export const PriceList = z.array(PriceRow).min(1).superRefine((rows, ctx) => {
   const seen = new Set<string>();
   for (const r of rows) {
@@ -65,7 +86,17 @@ export const Feed = z
     // model_name -> "<lab>/<model>", for names that do not match a lab file name.
     map: z.record(z.string(), z.string().regex(/^[a-z0-9-]+\/[A-Za-z0-9._-]+$/)).default({}),
     // The provider publishes its list: fetch-feeds.ts pulls it with the named adapter.
-    fetch: z.object({ url: z.string().url(), format: z.enum(["kenari"]) }).strict().optional(),
+    fetch: z
+      .object({
+        url: z.string().url(),
+        format: z.enum(["kenari", "dashscope"]),
+        // The env var that holds the list's API key, for a list that needs one.
+        key_env: z.string().regex(/^[A-Z][A-Z0-9_]*$/).optional(),
+        // A list that would delete more than this share of a patch folder is refused as broken.
+        max_retire: z.number().gt(0).max(1).default(0.5),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 export type Feed = z.infer<typeof Feed>;
@@ -100,26 +131,70 @@ export type Allow = z.infer<typeof Allow>;
 export const PATCH_MARK = "# Price feed:";
 
 /**
- * An upstream file with its [cost] table replaced and our header on top. Everything else stays
- * upstream's, byte for byte. null when the file has cost tiers or cost subtables: rewriting
- * [cost] alone would leave them wrong.
+ * An upstream file with its cost tables ([cost], [cost.*] and [[cost.*]]) replaced and our header
+ * on top. Everything else stays upstream's, byte for byte.
  */
-export function patchCost(text: string, cost: Record<string, number>, header: readonly string[]): string | null {
+export function patchCost(text: string, cost: Record<string, unknown>, header: readonly string[]): string {
   const lines = text.split("\n").filter((l) => !l.startsWith(PATCH_MARK));
-  if (lines.some((l) => /^\[\[?cost\./.test(l.trim()))) return null;
-  while (lines.at(-1) === "") lines.pop();
-  const block = formatToml({ cost } as Parameters<typeof formatToml>[0]).trim().split("\n");
-  const start = lines.findIndex((l) => l.trim() === "[cost]");
-  let out: string[];
-  if (start === -1) {
-    out = [...lines, "", ...block];
-  } else {
-    let end = start + 1;
-    while (end < lines.length && !lines[end]!.trim().startsWith("[")) end++;
-    const tail = lines.slice(end);
-    out = [...lines.slice(0, start), ...block, ...(tail.length > 0 ? ["", ...tail] : [])];
+  const isCost = (l: string) => /^\[\[?cost[\].]/.test(l.trim());
+  const kept: string[] = [];
+  let at = -1;
+  for (let i = 0; i < lines.length; ) {
+    if (!isCost(lines[i]!)) {
+      kept.push(lines[i++]!);
+      continue;
+    }
+    if (at === -1) at = kept.length;
+    i++;
+    while (i < lines.length && !lines[i]!.trim().startsWith("[")) i++;
   }
+  // A cost table that ended a file left blank lines behind it; one blank line between tables.
+  const trim = (ls: string[]) => {
+    while (ls.at(-1) === "") ls.pop();
+    return ls;
+  };
+  const block = formatToml({ cost } as Parameters<typeof formatToml>[0]).trim().split("\n");
+  const head = trim(kept.slice(0, at === -1 ? kept.length : at));
+  const tail = at === -1 ? [] : trim(kept.slice(at));
+  const out = [...head, ...(head.length > 0 ? [""] : []), ...block, ...(tail.length > 0 ? ["", ...tail] : [])];
   return [...header.map((h) => `${PATCH_MARK} ${h}`), ...out].join("\n") + "\n";
+}
+
+const hm = (s: string) => Number(s.slice(0, 2)) * 60 + Number(s.slice(3));
+
+/** Whether `now` falls in the daily window. */
+export function inHours(now: Date, h: Hours): boolean {
+  const mins = (((now.getUTCHours() * 60 + now.getUTCMinutes() + h.utc_offset * 60) % 1440) + 1440) % 1440;
+  const from = hm(h.from), to = hm(h.to);
+  return from <= to ? mins >= from && mins < to : mins >= from || mins < to;
+}
+
+/**
+ * The [cost] table for a row at `now`, and comment lines that explain it. A row with an off-peak
+ * price gets that price inside its hours and the normal (peak) price outside them.
+ */
+export function rowCost(row: PriceRow, now: Date): { cost: Record<string, unknown>; notes: string[] } {
+  const clean = (c: Partial<z.infer<typeof Cost>>) =>
+    Object.fromEntries(Object.entries(c).filter(([, v]) => v != null).map(([k, v]) => [k, tidy(v as number)]));
+  const peak: Record<string, unknown> = clean({
+    input: row.input_cost_per_1m_tokens,
+    output: row.output_cost_per_1m_tokens,
+    cache_read: row.cache_read_cost_per_1m_tokens ?? undefined,
+    cache_write: row.cache_write_cost_per_1m_tokens ?? undefined,
+    reasoning: row.reasoning_cost_per_1m_tokens ?? undefined,
+  });
+  if (row.tiers?.length) {
+    peak.tiers = row.tiers.map(({ size, ...c }) => ({ tier: { type: "context", size }, ...clean(c) }));
+  }
+  if (!row.offpeak) return { cost: peak, notes: [] };
+  const { hours, ...o } = row.offpeak;
+  const off = clean(o);
+  const sign = hours.utc_offset < 0 ? "-" : "+";
+  const span = `${hours.from}-${hours.to} UTC${sign}${Math.abs(hours.utc_offset)}`;
+  const say = (c: Record<string, unknown>) => `input ${c.input}, output ${c.output}`;
+  return inHours(now, hours)
+    ? { cost: off, notes: [`off-peak price now (${span}); the peak price is ${say(peak)}.`] }
+    : { cost: peak, notes: [`peak price now; off-peak (${span}) is ${say(off)}.`] };
 }
 
 /** The patched files for an upstream-owned provider: one per upstream file the list prices. */
@@ -130,6 +205,7 @@ export function renderPatch(
   checked: string,
   note: string,
   have: ReadonlyMap<string, string>,
+  now = new Date(),
 ): Rendered & { unlisted: string[] } {
   const header = [
     `${feed.source}, checked ${checked}.`,
@@ -146,15 +222,8 @@ export function renderPatch(
     const row = rows.get(id);
     if (!row) continue;
     rows.delete(id);
-    const cost: Record<string, number> = {
-      input: tidy(row.input_cost_per_1m_tokens),
-      output: tidy(row.output_cost_per_1m_tokens),
-    };
-    if (row.cache_read_cost_per_1m_tokens != null) cost.cache_read = tidy(row.cache_read_cost_per_1m_tokens);
-    if (row.cache_write_cost_per_1m_tokens != null) cost.cache_write = tidy(row.cache_write_cost_per_1m_tokens);
-    const patched = patchCost(text, cost, header);
-    if (patched === null) skipped.push({ model: id, reason: "upstream's file has cost tiers; not patched" });
-    else files.set(p, patched);
+    const { cost, notes } = rowCost(row, now);
+    files.set(p, patchCost(text, cost, [...header, ...notes]));
   }
   // Priced models upstream does not list. Adding their files would collide with upstream later.
   return { files, skipped, unlisted: [...rows.keys()].sort() };
@@ -248,7 +317,14 @@ export interface Rendered {
 }
 
 /** The files the feed wants under providers/<provider>/. */
-export function render(provider: string, feed: Feed, list: PriceList, checked: string, note = ""): Rendered {
+export function render(
+  provider: string,
+  feed: Feed,
+  list: PriceList,
+  checked: string,
+  note = "",
+  now = new Date(),
+): Rendered {
   const files = new Map<string, string>();
   const skipped: { model: string; reason: string }[] = [];
   const dir = `providers/${provider}`;
@@ -295,12 +371,8 @@ export function render(provider: string, feed: Feed, list: PriceList, checked: s
       notes.push(`# reasoning_options copied from ${peer.from}`);
     }
 
-    const cost: Record<string, number> = {
-      input: tidy(row.input_cost_per_1m_tokens),
-      output: tidy(row.output_cost_per_1m_tokens),
-    };
-    if (row.cache_read_cost_per_1m_tokens != null) cost.cache_read = tidy(row.cache_read_cost_per_1m_tokens);
-    if (row.cache_write_cost_per_1m_tokens != null) cost.cache_write = tidy(row.cache_write_cost_per_1m_tokens);
+    const { cost, notes: priceNotes } = rowCost(row, now);
+    notes.push(...priceNotes.map((n) => `# ${n}`));
 
     // Override the context only when the provider states one and it differs from the lab's.
     const labLimit = (lab.limit ?? {}) as { context?: number; output?: number };
@@ -328,15 +400,21 @@ function git(args: string[]): { ok: boolean; out: string } {
 
 /**
  * Upstream's model files for models the provider no longer lists. A list that would retire more
- * than half the folder is more likely broken than true, so then nothing is deleted.
+ * than `max` of the folder (half, unless the feed says) is more likely broken than true, so then
+ * nothing is deleted.
  */
-export function retired(provider: string, have: ReadonlyMap<string, string>, listed: readonly string[] | undefined): string[] {
+export function retired(
+  provider: string,
+  have: ReadonlyMap<string, string>,
+  listed: readonly string[] | undefined,
+  max = 0.5,
+): string[] {
   if (!listed) return [];
   const prefix = `providers/${provider}/models/`;
   const files = [...have.keys()].filter((p) => p.startsWith(prefix));
   const ids = new Set(listed);
   const gone = files.filter((p) => !ids.has(p.slice(prefix.length).replace(/\.toml$/, ""))).sort();
-  if (gone.length * 2 > files.length) {
+  if (gone.length > files.length * max) {
     log("static.retire_refused", { provider, would_delete: gone.length, of: files.length });
     return [];
   }
@@ -380,7 +458,7 @@ function apply(provider: string, patch: boolean): "unchanged" | "changed" | "ski
   const body = (text: string | undefined) => text?.split("\n").slice(1).join("\n");
   const writes = [...want].filter(([p, text]) => body(have.get(p)) !== body(text));
   // A patch deletes only upstream files for models the provider's live list no longer has.
-  const deletes = patch ? retired(provider, have, listed) : [...have.keys()].filter((p) => !want.has(p));
+  const deletes = patch ? retired(provider, have, listed, feed.fetch?.max_retire) : [...have.keys()].filter((p) => !want.has(p));
   const needLogo = !patch && !existsSync(path.join(dir, "logo.svg"));
   if (writes.length === 0 && deletes.length === 0 && !needLogo) {
     log("static.unchanged", { provider, models: patch ? want.size : want.size - 1, skipped: skipped.length });

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { dockerArgs, eventLines, fetchMinutes, GH_IN_CONTAINER, type PriceRun } from "../doppelganger/tools/prices/run.ts";
+import { dockerArgs, eventLines, fetchMinutes, GH_IN_CONTAINER, keys, type PriceRun } from "../doppelganger/tools/prices/run.ts";
 
 const base: PriceRun = {
   task: "static",
@@ -12,6 +12,7 @@ const base: PriceRun = {
   push: false,
   dryRun: false,
   fetchMinutes: 10,
+  keys: {},
 };
 
 const envOf = (args: string[]): string[] => args.flatMap((a, i) => (args[i - 1] === "-e" ? [a] : []));
@@ -39,6 +40,13 @@ test("the fetch interval reaches the script, and a typo stops the job", () => {
   expect(envOf(dockerArgs(base))).toContain("PRICE_FETCH_MINUTES=10");
   expect(fetchMinutes(" 0 ")).toBe(0);
   expect(() => fetchMinutes("10m")).toThrow();
+});
+
+test("an API key reaches the container by name only, never by value", () => {
+  const args = dockerArgs({ ...base, keys: keys({ DASHSCOPE_API_KEY: "sk-secret", OTHER: "" }) });
+  expect(envOf(args)).toContain("DASHSCOPE_API_KEY");
+  expect(envOf(args)).not.toContain("OTHER");
+  expect(args.join(" ")).not.toContain("sk-secret");
 });
 
 test("only the scripts' event lines are kept", () => {
