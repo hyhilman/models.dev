@@ -1,3 +1,6 @@
+# Price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-10-10.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices of the international (Singapore) region.
 name = "Qwen3.6 35B-A3B"
 description = "Open multimodal Qwen MoE for local agents that need vision, audio, and code"
 family = "qwen"
@@ -17,8 +20,8 @@ type = "toggle"
 type = "budget_tokens"
 
 [cost]
-input = 0.248
-output = 1.485
+input = 0.375
+output = 2.25
 
 [limit]
 context = 262_144

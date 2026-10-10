@@ -1,3 +1,6 @@
+# Price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-10-10.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices of the international (Singapore) region.
 name = "Qwen Flash"
 description = "Efficient Qwen model for fast chat, extraction, and high-volume workloads"
 family = "qwen"
@@ -19,6 +22,15 @@ type = "budget_tokens"
 [cost]
 input = 0.05
 output = 0.4
+cache_read = 0.005
+cache_write = 0.063
+
+[[cost.tiers]]
+tier = { type = "context", size = 256_000 }
+input = 0.25
+output = 2
+cache_read = 0.025
+cache_write = 0.313
 
 [limit]
 context = 1_000_000

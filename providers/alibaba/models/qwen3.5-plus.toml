@@ -1,3 +1,6 @@
+# Price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-10-10.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices of the international (Singapore) region.
 name = "Qwen3.5 Plus"
 description = "Qwen vision-language model for visual reasoning, documents, and agent tasks"
 family = "qwen"
@@ -19,8 +22,15 @@ type = "budget_tokens"
 [cost]
 input = 0.4
 output = 2.4
-reasoning = 2.4
+cache_read = 0.04
+cache_write = 0.5
 
+[[cost.tiers]]
+tier = { type = "context", size = 256_000 }
+input = 0.5
+output = 3
+cache_read = 0.05
+cache_write = 0.625
 
 [limit]
 context = 1_000_000

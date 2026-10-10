@@ -1,3 +1,6 @@
+# Price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-10-10.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices of the international (Singapore) region.
 name = "Qwen-MT Plus"
 description = "Translation model for multilingual conversion, localization, and cross-language workflows"
 family = "qwen"
