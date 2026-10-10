@@ -5,7 +5,8 @@
 # A lock in .git keeps the two jobs from writing the repo at once: the feed runs every minute
 # and the sync every hour, in separate containers on the same files.
 #
-# Env: PRICE_PUSH=1     push `router` to origin when it is ahead
+# Env: PRICE_PUSH=1     push `router` to origin when it moved; after a sync, fast-forward origin's
+#                       `dev` to upstream's
 #      GH_CONFIG_DIR    a gh login, mounted read-only; pushes go over https with its token
 set -euo pipefail
 cd "$(dirname "$0")/../.."
@@ -38,7 +39,6 @@ if [ "${PRICE_DRY_RUN:-0}" != "1" ] && [ "$(cat local/.site/.built-from 2>/dev/n
 fi
 
 [ "${PRICE_PUSH:-0}" = "1" ] || exit 0
-if [ "$(git rev-parse HEAD)" = "$(git rev-parse -q --verify origin/router || true)" ]; then exit 0; fi
 
 net=()
 if [ -n "${GH_CONFIG_DIR:-}" ]; then
@@ -47,5 +47,16 @@ if [ -n "${GH_CONFIG_DIR:-}" ]; then
        -c credential.helper=
        -c "credential.https://github.com.helper=!gh auth git-credential")
 fi
-git "${net[@]}" push -q origin router
-log job.pushed "head=$(git rev-parse --short=9 HEAD)"
+# The hourly sync refreshes what origin has. The minute job trusts the last known state, so it
+# does not call GitHub every minute.
+[ "${1:-}" = "sync" ] && git "${net[@]}" fetch -q origin
+if [ "$(git rev-parse HEAD)" != "$(git rev-parse -q --verify origin/router || true)" ]; then
+  git "${net[@]}" push -q origin router
+  log job.pushed "branch=router head=$(git rev-parse --short=9 HEAD)"
+fi
+# The sync also keeps the fork's dev equal to upstream's. dev holds none of our commits, so this
+# is a fast-forward; a dev that moved on its own is refused (no force) and the job fails.
+if [ "${1:-}" = "sync" ] && [ "$(git rev-parse upstream/dev)" != "$(git rev-parse -q --verify origin/dev || true)" ]; then
+  git "${net[@]}" push -q origin upstream/dev:refs/heads/dev
+  log job.pushed "branch=dev head=$(git rev-parse --short=9 upstream/dev)"
+fi

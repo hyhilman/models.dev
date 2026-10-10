@@ -145,6 +145,20 @@ To upgrade: download the new tarball into `local/doppelganger/vendor/`, then in 
 `npm install -D ./vendor/doppelganger-<version>.tgz`, delete the old `.tgz`, and set `version` in
 `doppelganger.toml`.
 
+## Pushing to GitHub
+
+With `[prices] push = 1`, a job pushes `router` to `origin` when it moved, and the hourly sync
+also fast-forwards `origin`'s `dev` to `upstream/dev`, so the fork never shows as behind. `dev`
+holds none of our commits: a push that is not a fast-forward is refused and the job fails.
+
+The image has no ssh key, so pushes use a gh login kept for the jobs (gitignored):
+
+```bash
+GH_CONFIG_DIR=.doppelganger/creds/gh/<name> gh auth login   # once, by hand
+```
+
+Then set `gh = "<name>"` and `push = 1` under `[prices]` in `doppelganger.toml`.
+
 ## Scheduling
 
 An attached plugin cannot schedule jobs yet, so this machine's crontab runs them. Cron has no
