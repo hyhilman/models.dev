@@ -4,6 +4,7 @@
 import { expect, test } from "bun:test";
 import path from "node:path";
 import { readFileSync } from "node:fs";
+import { PATCH_MARK } from "../script/apply-static.ts";
 
 const REPO = path.resolve(import.meta.dir, "../..");
 
@@ -12,10 +13,24 @@ const git = (...args: string[]) => {
   return { ok: r.exitCode === 0, out: r.stdout.toString().trim() };
 };
 
-/** Providers we own: the ones the static feed writes. */
+const staticToml = () =>
+  Bun.TOML.parse(readFileSync(path.join(REPO, "local/static.toml"), "utf8")) as { providers: string[]; patch?: string[] };
+
+/** Providers the static feed writes. A `patch` one is upstream's, checked line by line below. */
 function ownedProviders(): string[] {
-  const t = Bun.TOML.parse(readFileSync(path.join(REPO, "local/static.toml"), "utf8")) as { providers: string[] };
-  return t.providers;
+  return staticToml().providers;
+}
+
+/** A file without our part: the price feed's comments and the [cost] table. */
+export function withoutCost(text: string): string {
+  const out: string[] = [];
+  let inCost = false;
+  for (const line of text.split("\n")) {
+    if (line.startsWith(PATCH_MARK)) continue;
+    if (line.trim().startsWith("[")) inCost = line.trim() === "[cost]";
+    if (!inCost) out.push(line);
+  }
+  return out.join("\n").trim();
 }
 
 /** Root files upstream does not have. `.gitignore` is upstream's, so it is checked apart: append only. */
@@ -44,6 +59,28 @@ test.skipIf(!base.ok)("every change since the fork point is add-only", () => {
   const changed = git("diff", "--name-only", base.out, "HEAD").out.split("\n").filter(Boolean);
   const bad = changed.filter((p) => p !== ".gitignore" && !allowed(p, owned));
   expect(bad).toEqual([]);
+});
+
+// In a patch provider the feed may change only [cost] and its own comments, never add or delete a
+// file: everything else is upstream's, and that keeps an upstream merge simple.
+test.skipIf(!base.ok)("a patch provider differs from upstream only in [cost]", () => {
+  const bad: string[] = [];
+  for (const p of staticToml().patch ?? []) {
+    const changed = git("diff", "--name-status", base.out, "HEAD", "--", `providers/${p}`).out.split("\n").filter(Boolean);
+    for (const row of changed) {
+      const [status, file] = row.split("\t") as [string, string];
+      if (status !== "M") { bad.push(`${status} ${file}`); continue; }
+      if (withoutCost(git("show", `${base.out}:${file}`).out) !== withoutCost(git("show", `HEAD:${file}`).out)) bad.push(file);
+    }
+  }
+  expect(bad).toEqual([]);
+});
+
+test("withoutCost drops the feed's comments and [cost], and keeps the rest", () => {
+  const a = 'base_model = "x/y"\n\n[cost]\ninput = 0\noutput = 0\n\n[limit]\ncontext = 1\n';
+  const b = `${PATCH_MARK} hi\nbase_model = "x/y"\n\n[cost]\ninput = 2\noutput = 3\ncache_read = 1\n\n[limit]\ncontext = 1\n`;
+  expect(withoutCost(a)).toBe(withoutCost(b));
+  expect(withoutCost(a)).not.toBe(withoutCost(b.replace("context = 1", "context = 2")));
 });
 
 // doppelganger init appends its ignore lines. Lines added at the end merge cleanly; an edited or
