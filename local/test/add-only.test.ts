@@ -18,8 +18,11 @@ function ownedProviders(): string[] {
   return t.providers;
 }
 
+/** Root files upstream does not have. `.gitignore` is upstream's, so it is checked apart: append only. */
+const OUR_ROOT_FILES = ["CLAUDE.md", "doppelganger.toml", "doppelganger.config.ts"];
+
 export function allowed(p: string, owned: readonly string[]): boolean {
-  if (p === "CLAUDE.md" || p.startsWith("local/")) return true;
+  if (OUR_ROOT_FILES.includes(p) || p.startsWith("local/")) return true;
   return owned.some((o) => p.startsWith(`providers/${o}/`));
 }
 
@@ -29,6 +32,8 @@ test("allowed paths", () => {
   expect(allowed("providers/sumopod/models/a.toml", ["sumopod"])).toBe(true);
   expect(allowed("providers/opencode-go/models/a.toml", ["sumopod"])).toBe(false);
   expect(allowed("AGENTS.md", ["sumopod"])).toBe(false);
+  expect(allowed("doppelganger.toml", ["sumopod"])).toBe(true);
+  expect(allowed("package.json", ["sumopod"])).toBe(false);
 });
 
 // Skips where there is no upstream remote (a fresh clone of the private repo).
@@ -37,6 +42,14 @@ const base = git("merge-base", "HEAD", "upstream/dev");
 test.skipIf(!base.ok)("every change since the fork point is add-only", () => {
   const owned = ownedProviders();
   const changed = git("diff", "--name-only", base.out, "HEAD").out.split("\n").filter(Boolean);
-  const bad = changed.filter((p) => !allowed(p, owned));
+  const bad = changed.filter((p) => p !== ".gitignore" && !allowed(p, owned));
   expect(bad).toEqual([]);
+});
+
+// doppelganger init appends its ignore lines. Lines added at the end merge cleanly; an edited or
+// removed upstream line would not.
+test.skipIf(!base.ok)(".gitignore only gains lines", () => {
+  const diff = git("diff", "--unified=0", base.out, "HEAD", "--", ".gitignore").out;
+  const removed = diff.split("\n").filter((l) => l.startsWith("-") && !l.startsWith("---"));
+  expect(removed).toEqual([]);
 });
