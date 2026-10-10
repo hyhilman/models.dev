@@ -70,6 +70,19 @@ export function kenariRows(json: unknown, idrPerUsd: number): PriceList {
   return PriceList.parse(rows);
 }
 
+/**
+ * Kenari lists embedding, rerank, moderation and System One models only under ?modality=. A
+ * model in none of the lists is one Kenari no longer serves.
+ */
+export const KENARI_MODALITIES = ["embedding", "rerank", "moderation", "systemone"] as const;
+
+/** Every id in Kenari's lists, any kind of model. */
+export function kenariIds(lists: readonly unknown[]): string[] {
+  const ids = new Set<string>();
+  for (const l of lists) for (const m of z.object({ data: z.array(z.object({ id: z.string() })) }).parse(l).data) ids.add(m.id);
+  return [...ids].sort();
+}
+
 /** The first day of this month, UTC: the date whose rate the whole month uses. */
 export const rateDate = (now: Date): string => `${now.toISOString().slice(0, 7)}-01`;
 
@@ -100,16 +113,20 @@ async function fetchFeed(provider: string, feed: Feed): Promise<void> {
   const now = new Date();
   const date = rateDate(now);
   const rate = await idrPerUsd(date, last);
-  const rows = kenariRows(await getJson(feed.fetch!.url), rate);
+  const main = await getJson(feed.fetch!.url);
+  const rows = kenariRows(main, rate);
+  // Any list that fails fails the fetch: a short list would delete the models it left out.
+  const others = await Promise.all(KENARI_MODALITIES.map((m) => getJson(`${feed.fetch!.url}?modality=${m}`)));
   const snap: Snapshot = {
     checked: now.toISOString().slice(0, 10),
     note: `Converted from IDR at ${rate} IDR per USD (ECB rate of ${date}, via frankfurter.dev).`,
     rows,
+    listed: kenariIds([main, ...others]),
   };
   // Write then rename, so apply-static never reads half a file.
   writeFileSync(`${out}.new`, JSON.stringify(snap, null, 1) + "\n");
   renameSync(`${out}.new`, out);
-  log("fetch.done", { provider, rows: rows.length, rate });
+  log("fetch.done", { provider, rows: rows.length, listed: snap.listed!.length, rate });
 }
 
 if (import.meta.main) {

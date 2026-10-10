@@ -72,7 +72,14 @@ export type Feed = z.infer<typeof Feed>;
 
 /** What fetch-feeds.ts writes: the rows in USD, the day it fetched them, and how it converted. */
 export const Snapshot = z
-  .object({ checked: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), note: z.string(), rows: PriceList })
+  .object({
+    checked: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    note: z.string(),
+    rows: PriceList,
+    // Every model the provider serves, priced or not. A patch deletes upstream's files for the
+    // rest: the provider's live list wins over upstream's catalog.
+    listed: z.array(z.string()).min(1).optional(),
+  })
   .strict();
 export type Snapshot = z.infer<typeof Snapshot>;
 
@@ -319,6 +326,24 @@ function git(args: string[]): { ok: boolean; out: string } {
   return { ok: r.exitCode === 0, out: r.stdout.toString() + r.stderr.toString() };
 }
 
+/**
+ * Upstream's model files for models the provider no longer lists. A list that would retire more
+ * than half the folder is more likely broken than true, so then nothing is deleted.
+ */
+export function retired(provider: string, have: ReadonlyMap<string, string>, listed: readonly string[] | undefined): string[] {
+  if (!listed) return [];
+  const prefix = `providers/${provider}/models/`;
+  const files = [...have.keys()].filter((p) => p.startsWith(prefix));
+  const ids = new Set(listed);
+  const gone = files.filter((p) => !ids.has(p.slice(prefix.length).replace(/\.toml$/, ""))).sort();
+  if (gone.length * 2 > files.length) {
+    log("static.retire_refused", { provider, would_delete: gone.length, of: files.length });
+    return [];
+  }
+  if (gone.length > 0) log("static.retired", { provider, models: gone.map((p) => p.slice(prefix.length)).join(",") });
+  return gone;
+}
+
 function apply(provider: string, patch: boolean): "unchanged" | "changed" | "skipped" {
   const feed = Feed.parse(readToml(path.join(REPO, "local/feeds", `${provider}.toml`)));
   const src = feed.fetch ? snapshotPath(provider) : path.join(STATIC_DIR, `${provider}.json`);
@@ -326,9 +351,9 @@ function apply(provider: string, patch: boolean): "unchanged" | "changed" | "ski
     log("static.skip", { provider, reason: feed.fetch ? "not fetched yet" : "no feed file", path: src });
     return "skipped";
   }
-  let list: PriceList, checked: string, note: string;
+  let list: PriceList, checked: string, note: string, listed: string[] | undefined;
   if (feed.fetch) {
-    ({ rows: list, checked, note } = Snapshot.parse(JSON.parse(readFileSync(src, "utf8"))));
+    ({ rows: list, checked, note, listed } = Snapshot.parse(JSON.parse(readFileSync(src, "utf8"))));
   } else {
     list = PriceList.parse(JSON.parse(readFileSync(src, "utf8")));
     checked = statSync(src).mtime.toISOString().slice(0, 10);
@@ -354,8 +379,8 @@ function apply(provider: string, patch: boolean): "unchanged" | "changed" | "ski
   // The header carries the feed's date. A file touched but not changed must not count as a change.
   const body = (text: string | undefined) => text?.split("\n").slice(1).join("\n");
   const writes = [...want].filter(([p, text]) => body(have.get(p)) !== body(text));
-  // A patch never deletes: upstream owns the model list.
-  const deletes = patch ? [] : [...have.keys()].filter((p) => !want.has(p));
+  // A patch deletes only upstream files for models the provider's live list no longer has.
+  const deletes = patch ? retired(provider, have, listed) : [...have.keys()].filter((p) => !want.has(p));
   const needLogo = !patch && !existsSync(path.join(dir, "logo.svg"));
   if (writes.length === 0 && deletes.length === 0 && !needLogo) {
     log("static.unchanged", { provider, models: patch ? want.size : want.size - 1, skipped: skipped.length });

@@ -61,14 +61,15 @@ test.skipIf(!base.ok)("every change since the fork point is add-only", () => {
   expect(bad).toEqual([]);
 });
 
-// In a patch provider the feed may change only [cost] and its own comments, never add or delete a
-// file: everything else is upstream's, and that keeps an upstream merge simple.
-test.skipIf(!base.ok)("a patch provider differs from upstream only in [cost]", () => {
+// In a patch provider the feed may change only [cost] and its own comments, and delete a model the
+// provider no longer lists. It never adds a file: everything else is upstream's.
+test.skipIf(!base.ok)("a patch provider differs from upstream only in [cost] and retired models", () => {
   const bad: string[] = [];
   for (const p of staticToml().patch ?? []) {
     const changed = git("diff", "--name-status", base.out, "HEAD", "--", `providers/${p}`).out.split("\n").filter(Boolean);
     for (const row of changed) {
       const [status, file] = row.split("\t") as [string, string];
+      if (status === "D") continue;
       if (status !== "M") { bad.push(`${status} ${file}`); continue; }
       if (withoutCost(git("show", `${base.out}:${file}`).out) !== withoutCost(git("show", `HEAD:${file}`).out)) bad.push(file);
     }
