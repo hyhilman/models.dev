@@ -85,7 +85,7 @@ How a row becomes `providers/<provider>/models/<model_name>.toml`:
 Kenari publishes its prices at `https://kenari.id/v1/models`, so nobody exports a file:
 
 - `local/feeds/kenari.toml` has a `[fetch]` table. Each minute the static job runs
-  `fetch-feeds.ts` first. It pulls a list at most once per `PRICE_FETCH_MINUTES` (default 60),
+  `fetch-feeds.ts` first. It pulls a list at most once per `[prices] fetch_minutes` (default 10),
   counted from the last try, and keeps the last list when a pull fails.
 - Kenari prices are micro-rupiah per 1M tokens. USD = micro_idr / 1,000,000 / rate. The rate is
   the ECB reference rate of the first day of the month (`api.frankfurter.dev`), one rate per
@@ -107,7 +107,7 @@ Kenari publishes its prices at `https://kenari.id/v1/models`, so nobody exports 
 
 Drop a new export of the price list at `$PRICE_STATIC_DIR/<provider>.json`. The scheduled job
 applies it within a minute. A fetched feed needs nothing: a change at the provider lands within
-the hour. To do it by hand, run the
+`fetch_minutes` (10) plus a minute. To do it by hand, run the
 apply command above.
 
 ## The local site

@@ -9,14 +9,15 @@
 // One rate per month keeps a daily rate move from rewriting every price file every day.
 //
 // Run: bun local/script/fetch-feeds.ts
-// Env: PRICE_FETCH_MINUTES  minutes between tries per feed (default 60; 0 = always)
+// Env: PRICE_FETCH_MINUTES  minutes between tries per feed (default 10; 0 = always). The job sets
+//                           it from [prices] fetch_minutes.
 import path from "node:path";
 import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { z } from "../lib/deps.ts";
 import { Feed, PriceList, Snapshot, snapshotPath } from "./apply-static.ts";
 
 const REPO = path.resolve(import.meta.dir, "../..");
-const EVERY_MIN = Number(process.env.PRICE_FETCH_MINUTES ?? "60");
+const EVERY_MIN = Number(process.env.PRICE_FETCH_MINUTES ?? "10");
 const FX_URL = "https://api.frankfurter.dev/v1";
 
 const log = (event: string, fields: Record<string, string | number> = {}) =>
