@@ -1,3 +1,6 @@
+# Price feed: Kenari GET /v1/models (public price list), checked 2026-10-10.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
 base_model = "google/gemini-3.6-flash"
 
 [[reasoning_options]]
@@ -5,5 +8,7 @@ type = "effort"
 values = ["minimal", "low", "medium", "high"]
 
 [cost]
-input = 0
-output = 0
+input = 0.334336
+output = 1.67168
+cache_read = 0.0334336
+cache_write = 0.0167168
