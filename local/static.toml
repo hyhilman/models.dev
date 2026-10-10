@@ -3,9 +3,9 @@
 #
 # A feed reads <provider>.json from PRICE_STATIC_DIR, or, when local/feeds/<provider>.toml has a
 # [fetch] table, the list local/script/fetch-feeds.ts pulled from the provider.
-providers = ["sumopod", "kenari"]
+providers = ["sumopod", "kenari", "alibaba"]
 
-# Upstream owns these folders. The feed rewrites only the [cost] table of upstream's files, deletes
+# Upstream owns these folders. The feed rewrites only the cost tables of upstream's files, deletes
 # a file whose model the provider's live list no longer has, and never adds one. An upstream merge
 # conflict there takes upstream's file (the next run writes the price again).
-patch = ["kenari"]
+patch = ["kenari", "alibaba"]
