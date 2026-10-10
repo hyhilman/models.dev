@@ -6,7 +6,8 @@ This fork tracks `anomalyco/models.dev` (remote `upstream`, branch `dev`). Our w
 ## Hard rules
 
 1. **Add only.** Never edit a file upstream owns. Our changes live only in `local/`,
-   `providers/<p>/` for each `<p>` in `local/static.toml`, and the root `CLAUDE.md`.
+   `providers/<p>/` for each `<p>` in `local/static.toml`, and the root files `CLAUDE.md`,
+   `doppelganger.toml` and `doppelganger.config.ts`. `.gitignore` may only gain lines.
    `local/test/add-only.test.ts` enforces this. It keeps every upstream merge free of conflicts.
 2. Never commit a secret. Files name the env var that holds a key, never the key.
 3. Every price carries a source and the date it was checked.
@@ -24,6 +25,9 @@ This fork tracks `anomalyco/models.dev` (remote `upstream`, branch `dev`). Our w
 | `local/script/sync-upstream.sh` | Merges `upstream/dev` into `router`, checks, goes back on failure |
 | `local/script/run.sh` | Runs a command in the Bun image (the host has no Bun) |
 | `local/docker/Dockerfile` | The Bun image: pinned Bun and git |
+| `local/doppelganger/` | doppelganger, installed from a release tarball (`vendor/`), and its `dg` wrapper |
+| `local/doppelganger/tools/prices/` | The `prices` plugin: the `ops-price-static` and `ops-price-sync` jobs |
+| `doppelganger.config.ts`, `doppelganger.toml` | Attach the plugin; the shared settings (no secrets) |
 | `local/test/` | Our tests |
 
 ## Commands
@@ -61,7 +65,32 @@ One JSON file per provider, `$PRICE_STATIC_DIR/<provider>.json` (default
 Edit the feed JSON. The scheduled job applies it within a minute. To do it by hand, run the
 apply command above.
 
+## doppelganger
+
+doppelganger is installed in `local/doppelganger/`, not at the root: the root is a Bun workspace,
+and npm cannot install into it (`workspace:*` versions). Run every doppelganger command through the
+wrapper, which points it at the repo root:
+
+```bash
+local/doppelganger/dg config check
+local/doppelganger/dg --list
+local/doppelganger/dg job ops-price-static
+```
+
+The `prices` plugin's jobs are plain code: each runs `local/script/job.sh` in the tools image.
+Settings live under `[prices]` in `doppelganger.toml`. Secrets go in `doppelganger.secret.toml`
+(gitignored).
+
+To upgrade: download the new tarball into `local/doppelganger/vendor/`, then in that folder run
+`npm install -D ./vendor/doppelganger-<version>.tgz`, delete the old `.tgz`, and set `version` in
+`doppelganger.toml`.
+
 ## Scheduling
 
-doppelganger runs both scripts (the `ops-price-*` jobs): the feed every minute, the upstream
-sync every hour.
+An attached plugin cannot schedule jobs yet, so this machine's crontab runs them. Docker must be
+the rootless daemon:
+
+```
+* * * * *  DOCKER_HOST=unix:///run/user/1000/docker.sock /home/hyhilman/projects/me/models.dev/local/doppelganger/dg job ops-price-static >> /home/hyhilman/projects/me/models.dev/.doppelganger/logs/ops-price-static.log 2>&1
+27 * * * * DOCKER_HOST=unix:///run/user/1000/docker.sock /home/hyhilman/projects/me/models.dev/local/doppelganger/dg job ops-price-sync >> /home/hyhilman/projects/me/models.dev/.doppelganger/logs/ops-price-sync.log 2>&1
+```
