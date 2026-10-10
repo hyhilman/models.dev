@@ -15,6 +15,10 @@ log() { echo "event=$1${2:+ $2}" >&2; }
 exec 9>.git/price-router.lock
 if ! flock -w 300 9; then log job.locked 'reason="the other price job held the lock for 5 minutes"'; exit 1; fi
 
+# The jobs commit, so they work only on router. A person who switched branches is left alone.
+branch="$(git rev-parse --abbrev-ref HEAD)"
+if [ "$branch" != "router" ]; then log job.skip "reason=\"on branch $branch, not router\""; exit 0; fi
+
 [ -d node_modules ] || bun install --frozen-lockfile >/dev/null
 
 case "${1:-}" in
@@ -24,7 +28,7 @@ case "${1:-}" in
 esac
 
 [ "${PRICE_PUSH:-0}" = "1" ] || exit 0
-[ "$(git rev-parse --abbrev-ref HEAD)" = "router" ] || exit 0
+
 if [ "$(git rev-parse HEAD)" = "$(git rev-parse -q --verify origin/router || true)" ]; then exit 0; fi
 
 net=()
