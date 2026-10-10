@@ -29,5 +29,9 @@ export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME" GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EM
 for v in PRICE_DRY_RUN PRICE_NO_COMMIT PRICE_FETCH_MINUTES GIT_AUTHOR_NAME GIT_AUTHOR_EMAIL GIT_COMMITTER_NAME GIT_COMMITTER_EMAIL; do
   [ -n "${!v:-}" ] && args+=(-e "$v=${!v}")
 done
+# API keys go by name only, so the value never shows in `ps`.
+for v in DASHSCOPE_API_KEY; do
+  [ -n "${!v:-}" ] && args+=(-e "$v")
+done
 
 exec docker "${args[@]}" "$IMAGE" "$@"

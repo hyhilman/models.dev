@@ -10,7 +10,7 @@ This fork tracks `anomalyco/models.dev` (remote `upstream`, branch `dev`). Our w
    `doppelganger.toml` and `doppelganger.config.ts`. `.gitignore` may only gain lines.
    `local/test/add-only.test.ts` enforces this. It keeps every upstream merge free of conflicts.
    One exception: a `patch` provider in `local/static.toml` is upstream's folder, and the feed
-   changes only the `[cost]` table and its own `# Price feed:` comments there, and deletes models
+   changes only the cost tables and its own `# Price feed:` comments there, and deletes models
    the provider no longer lists (also tested).
 2. Never commit a secret. Files name the env var that holds a key, never the key.
 3. Every price carries a source and the date it was checked.
@@ -21,7 +21,7 @@ This fork tracks `anomalyco/models.dev` (remote `upstream`, branch `dev`). Our w
 
 | Path | What |
 |---|---|
-| `local/static.toml` | Providers the price feed may write (now: `sumopod`, `kenari`), and which are `patch` |
+| `local/static.toml` | Providers the price feed may write (now: `sumopod`, `kenari`, `alibaba`), and which are `patch` |
 | `local/aliases.toml` | Lab model for a host entry that has no `base_model` |
 | `local/feeds/<p>.toml` | Provider details the price list does not carry, and its name map |
 | `local/example/<p>.json` | A cut of a real price list, the format reference |
@@ -102,6 +102,25 @@ Kenari publishes its prices at `https://kenari.id/v1/models`, so nobody exports 
 - An upstream merge that conflicts inside a patch folder takes upstream's file
   (`sync.took_upstream`). The next static run writes the price again. A conflict anywhere else
   still aborts the merge.
+
+## Alibaba (DashScope, international)
+
+`local/feeds/alibaba.toml` pulls `https://dashscope-intl.aliyuncs.com/api/v1/models` (every page)
+with an API key, so it works like Kenari with three differences:
+
+- The key lives in `doppelganger.secret.toml` as `[prices] dashscope_api_key`. The plugin passes it
+  to the container as `DASHSCOPE_API_KEY`, by name only, so it never shows in `ps`. A missing key
+  fails the fetch (`fetch.error`) and the last prices stay.
+- Prices are USD already. A model needs `input_token` and `output_token` prices per 1M tokens;
+  other models (image, video, speech) are not priced. The explicit cache price wins over the
+  implicit one; a thinking output price that differs becomes `reasoning`; each later price range
+  (`256k<Input<=1m`) becomes a `[[cost.tiers]]` entry.
+- Off-peak: a few models (DeepSeek) are half price from 22:00 to 08:00 UTC+8. The list marks the
+  prices but not the hours, so the hours sit in `fetch-feeds.ts` (`DASHSCOPE_OFFPEAK`, from
+  Alibaba's pricing page). The minute job writes the off-peak price inside those hours and the peak
+  price outside them, so the catalog shows the price that applies now; each switch is a commit.
+- The key is a workspace key, and about half of upstream's folder is missing from its list. The
+  owner chose the list, so `max_retire = 0.75` lets the feed delete up to 75% of the folder.
 
 ## How to change a price
 
