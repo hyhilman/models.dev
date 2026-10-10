@@ -7,3 +7,8 @@ dist
 node_modules
 .opencode/package-lock.json
 packages/sdk/src/snapshot.js
+
+# doppelganger: this machine's settings, credentials and state
+doppelganger.secret.toml
+.doppelganger/
+.worktrees/
