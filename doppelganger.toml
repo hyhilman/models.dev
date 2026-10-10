@@ -1,0 +1,645 @@
+# Written by `doppelganger init` for /home/hyhilman/projects/me/models.dev. Init never rewrites this file.
+# The lines without a leading # are the ones init set. Go live by setting dry_run = false under [exec].
+# Commit this file. It holds no secret: tokens go in doppelganger.secret.toml.
+
+# doppelganger settings: every setting that is not a secret, one row each.
+#
+# Copy this file to `doppelganger.toml` in the project root and edit the copy. Commit the copy: it
+# holds the settings your team shares, so it never holds a secret. Tokens go in a second file,
+# `doppelganger.secret.toml`, which is gitignored (doppelganger.secret.example.toml lists them).
+# A secret in this file stops the supervisor and `npm run job` at start.
+#
+#   cp doppelganger.example.toml doppelganger.toml
+#
+# These two files are the only place settings live. Nothing reads a `.env` file any more.
+#
+# HOW TO READ A ROW. The comment above each key is the row's own `why`. The code holds the one
+# copy of each `why`, and this file repeats it word for word.
+# A key that is commented out shows its default. Remove the `#` only to change it.
+# A key that is not commented out is required, and its value here is only an example.
+# A line like `[<name>] db` is a family: write the real name in the brackets, then the key.
+#
+# A value is a TOML string, number, true or false, or a list. A flag is 1 or 0 in the code:
+# write true or false, or 1 or 0. A list is a TOML array, or one string with commas.
+#
+# A row shown with a `[[name]]` header is an array of tables: write one `[[name]]` header for each
+# entry, with the entry's keys under it. Put the entries after the plain keys of the same table. A
+# process variable cannot set one, and `doppelganger.secret.toml` cannot hold one.
+#
+# WHICH VALUE WINS. An environment variable named like the old key beats both files, for example
+# `EXEC_DRY_RUN=1 npm run job todo-loop`. A schedule entry's `env:` does the same. Then comes
+# `doppelganger.secret.toml`, then this file. A non-secret key may sit in either file, so a value
+# that differs per machine can go in the secret file. Each key that the environment and a file both
+# set is logged at start as the event `settings-override`, without its value.
+#
+# A key in either file that no row explains stops the supervisor and `npm run job` at start, so a
+# typo never passes in silence.
+#
+# These come only from the environment and are never in either file:
+#   ENGINE_ROOT          the project to work on (the folder you run from, if unset)
+#   DOPPELGANGER_CONFIG  the path of this file, or none for no file; the secret file is the one
+#                        beside it
+#   RELEASE_DRY_RUN      the release tool, which is not in the package
+#
+# test/knobs.test.ts holds this file to the code.
+
+# names this checkout; discriminates every host-global write
+instance = "models-dev"
+
+# the engine release this repo runs: an exact version like 0.1.0-dev.3, or the channel dev, which follows the newest dev build; image mode picks the image by it, and a built engine whose own version is not the exact pin refuses to start
+version = "0.1.0-dev.4"
+
+# the plugins this checkout runs, built-in and attached, as comma-separated names; unset runs every plugin, the project's own included, except those that only fit the engine's own source when ROOT is another folder; an unknown name, or such a plugin named there, refuses at boot
+plugins = ["todo", "ops", "prices"]
+
+[engine]
+
+# where every integration's database lives, resolved inside the checkout
+# state_dir = ".doppelganger/state"
+
+[run]
+
+# wall-clock bound on one agent run; only used for jobs that are not taskClass: impl
+# timeout_ms = 1500000
+
+# pi and codex passes: kill a pass only after this long with no output (a heartbeat, not a deadline)
+# idle_ms = 600000
+
+# the ceiling for a taskClass: impl run, which builds and verifies
+# timeout_impl_ms = 2400000
+
+[agent]
+
+# the most agent runs (any job, any runner) alive at once on this instance
+# max_concurrent = 3
+
+[sqlite]
+
+# how long a statement waits on a held write lock; deliberately unchanged while the cause is unknown
+# busy_timeout_ms = 5000
+
+[lock]
+
+# consecutive lock-held skips before a job counts as starved at the gate
+# starve_n = 6
+
+# raise the starve threshold for one job whose cadence makes 6 skips normal
+# [lock] starve_n_<job>
+
+# seconds one program may keep entering a resource past a queued waiter — EXEC_REFILL_MIN plus three todo-loop ticks at their defaults, so the first tick after a round's refill window still joins it; 0 = the queue always wins
+# reenter_max_s = 4500
+
+[log]
+
+# below this level a line is dropped by both emitters
+# level = "info"
+
+# rotate a log above this; ~4x normal traffic, so it fires on a runaway job
+# max_bytes = 8388608
+
+# cap on what one tick reads from one file, so a runaway cannot pull itself into memory before rotation bounds it
+# max_read_bytes = 4194304
+
+# minutes before the same job/event fault is posted again; a new fault is never delayed
+# report_cooldown_m = 30
+
+# fault keys shown in one report; the rest become one '…and N more' line
+# report_max_keys = 8
+
+# 1 = print the report to stdout; post nothing, stamp nothing, move no log cursor
+# report_dry_run = 0
+
+[exec]
+
+# wall-clock bound on ONE gh/git call; an unbounded stalled gh blocks the event loop so lease heartbeats stop
+# timeout_ms = 180000
+
+# the <owner>/<name> repo whose issues and PRs the executor loop works. No default: an unset row stops the loop, since a guessed repo would put two engines on one label lane, which means two owners for one claim
+tracker = "hyhilman/models.dev"
+
+# the branch the executor loop branches an issue from and merges its PR into, unless the issue header names another `Base:`
+base = "dev"
+
+# the one-line shell command that runs the target repo's whole test suite (for example `npm test`, `pytest` or `go test ./...`); the agents run it before they commit. No default: unset, an agent finds the command in the repo's AGENTS.md, CLAUDE.md, README or build files
+# test_cmd = ""
+
+# 1 = read the tracker and log the step a tick would take; run no agent and write nothing (no label, comment, push or merge). Default ON; set 0 to go live
+dry_run = true
+
+# 1 = drop planning IDs (a short family prefix, a dash and a number) from the PR title the loop writes and the subject it gives git, for a repo whose AGENTS.md bans them; off by default, since another repo's issue keys look the same
+# strip_ids = 0
+
+# do every step but the merge; a passed PR stays open and the tick logs that the merge was skipped
+# no_merge = 0
+
+# do every step but post comments. Later ticks read reviews and counts from comments, so a PR can only merge in the very tick that reviewed it
+# no_comment = 0
+
+# 1 = the loop sends no ntfy message (done, needs you, queue empty, loop error); dry run sends none either. A failed or unset NTFY_URL never fails a step
+# no_notify = 0
+
+# steps one tick may take on ONE issue (one step is one agent pass or one merge); 0 = free smoke test of selection that runs nothing and writes nothing
+# max = 1
+
+# the most issues the loop advances at once; agent runs are still capped by AGENT_MAX_CONCURRENT for the whole instance
+# slots = 3
+
+# minutes a tick keeps filling free slots; after that it only waits for its running workers, so the tick ends and the next one reads new code and doppelganger.toml
+# refill_min = 60
+
+# milliseconds an issue whose step said `waiting` waits before the same round looks at it again, instead of waiting for the next round; 0 = look again as soon as a slot frees, which reads the tracker over and over
+# recheck_ms = 120000
+
+# review-to-fix cycles per PR, counted from the markers; one more `changes` goes to needs-smart instead of agent-fix
+# max_rounds = 3
+
+# smart passes per issue, counted from the markers; at the cap the item goes to needs-human instead of another pass
+# max_escalations = 3
+
+# the most issues one agent pass may file from its out-of-scope findings; the rest are listed in the comment as not filed
+# max_findings = 3
+
+# 1 = file no issue from an agent's out-of-scope findings; the findings stay in the comment only
+# no_findings = 0
+
+# 1 = a failed CI check parks the PR on needs-human; the loop neither updates the branch from its base nor sends the PR to the fixer or the smart model
+# no_heal = 0
+
+# 1 = the merge gate refuses when the reviewer comment's login is the PR author's; turn it on once the reviewer has its own GitHub identity (until then both are one login)
+# distinct_reviewer = 0
+
+# comma-separated GitHub logins whose comment releases a needs-human item; empty means nobody does. Never put a bot or an agent identity here
+# humans = ""
+
+# an optional GitHub identity under .doppelganger/creds/gh/, used with every runner: todo-loop and watch-human-reply use it for their own `gh` calls and `git fetch`/`push` (https with that token), and each pi or codex pass gets it mounted read-only so the agent can read the issue and PR; empty = the ambient login for the loop and no gh login in a pi or codex container
+# gh = ""
+
+# an array of tables, one [[exec.executor]] per provider, for todo-exec and todo-fix. An entry holds `runner` (claude, pi or codex, required), `model` (pi: <provider>/<model>, required; codex: an OpenAI model id, or the id a local server gives its model, required; claude: optional, the job's own model when left out), `creds` (pi or codex: one name or a list under .doppelganger/creds/pi/ or .doppelganger/creds/codex/, required, but optional for a codex entry with an endpoint; claude: none) and `endpoint` (codex only: the http:// or https:// base URL of an OpenAI-compatible server). The first entry runs first. A pass that fails goes on to a later credential or entry, again and again, until a pass works or none is left: a quota/auth/rate-limit refusal goes to the next credential, then the next entry; a `blocked` result or a provider error goes to the next entry. An idle, a timeout or an unknown failure does not go on. None = one claude entry on the job's own model. A process variable cannot set it
+# [[exec.executor]]
+# runner = "pi"
+# model = "opencode-go/deepseek-v4.1-flash"
+# creds = "my-opencode-go"
+#
+# [[exec.executor]]
+# runner = "pi"
+# model = "opencode-go/deepseek-v4-pro"
+# creds = ["account-a", "account-b"]
+#
+# [[exec.executor]]
+# runner = "claude"
+# model = "claude-opus-5"
+
+# an array of tables, one [[exec.reviewer]] per provider, for todo-review; pick a different family from the executor's, so the reviewer does not share its blind spots. An entry holds `runner` (claude, pi or codex, required), `model` (pi: <provider>/<model>, required; codex: an OpenAI model id, or the id a local server gives its model, required; claude: optional, the job's own model when left out), `creds` (pi or codex: one name or a list under .doppelganger/creds/pi/ or .doppelganger/creds/codex/, required, but optional for a codex entry with an endpoint; claude: none) and `endpoint` (codex only: the http:// or https:// base URL of an OpenAI-compatible server). Tried in order: a quota/auth/rate-limit refusal goes to the next credential, then the next entry, again and again, until a pass works or none is left. None = one claude entry on the job's own model. A process variable cannot set it
+# [[exec.reviewer]]
+# runner = "pi"
+# model = "opencode-go/mimo-v2.6-pro"
+# creds = "my-opencode-go"
+#
+# [[exec.reviewer]]
+# runner = "codex"
+# model = "gpt-5-codex"
+# creds = "my-openai"
+#
+# [[exec.reviewer]]
+# runner = "codex"
+# model = "qwen3-coder:30b"
+# endpoint = "http://127.0.0.1:11434/v1"
+
+# an array of tables, one [[exec.smart]] per provider, for todo-escalate, and the only place a `needs-smart` goes. An entry holds `runner` (claude, pi or codex, required), `model` (pi: <provider>/<model>, required; codex: an OpenAI model id, or the id a local server gives its model, required; claude: optional, the job's own model when left out), `creds` (pi or codex: one name or a list under .doppelganger/creds/pi/ or .doppelganger/creds/codex/, required, but optional for a codex entry with an endpoint; claude: none) and `endpoint` (codex only: the http:// or https:// base URL of an OpenAI-compatible server). Tried in order: a quota/auth/rate-limit refusal goes to the next credential, then the next entry, again and again, until a pass works or none is left. None = one claude entry on the job's own model. A process variable cannot set it
+# [[exec.smart]]
+# runner = "claude"
+
+# an array of tables, one [[exec.cheap]] per provider, for the cheap role, which only fixes the `nit` findings of a passed review (one pass per PR, then a fresh review). An entry holds `runner` (claude, pi or codex, required), `model` (pi: <provider>/<model>, required; codex: an OpenAI model id, or the id a local server gives its model, required; claude: optional, the job's own model when left out), `creds` (pi or codex: one name or a list under .doppelganger/creds/pi/ or .doppelganger/creds/codex/, required, but optional for a codex entry with an endpoint; claude: none) and `endpoint` (codex only: the http:// or https:// base URL of an OpenAI-compatible server). None = the role is off and nits stay in the review comment. A process variable cannot set it
+# [[exec.cheap]]
+# runner = "pi"
+# model = "opencode-go/gpt-6-luna"
+# creds = "my-opencode-go"
+
+[runner.pi]
+
+# the pinned pi image one pass runs in, a tag and never `latest`; unset, an installed release uses the pi image published for its own version, and an engine checkout uses this default (build it with `bin/runner.sh build pi`)
+# image = "doppelganger-pi:1.0.2"
+
+[runner.codex]
+
+# the pinned codex image one codex pass runs in, a tag and never `latest`; no release publishes it, so build it with `bin/runner.sh build codex`
+# image = "doppelganger-codex:0.162.1"
+
+[quota]
+
+# the host/factory account scope every standalone job shares — one switch, so whichever job discovers the limit parks the rest
+# scope = "claude"
+
+# the base re-probe window; every class scales it by a multiple, read per call
+# pause_ms = 1800000
+
+# pin one class's window in ms directly, when its cadence should not move with the others
+# [quota] pause_ms_<class>
+
+# how long after a window expires a fresh park still belongs to the SAME outage — the floor is the class's own window
+# dark_gap_ms = 7200000
+
+# how long after a spend wall opens a chore/watch job still sheds load for it, read per call like every other quota knob
+# shed_window_ms = 86400000
+
+[step]
+
+# how many times the switch may try to classify one row before it is dead-lettered
+# cap_route = 5
+
+# how many times a watcher may take one row, per route and stage, before it is dead-lettered
+# cap_watch = 3
+
+# how many mornings a brief may offer one row before it is dead-lettered
+# cap_brief = 7
+
+# the cap for a step kind nobody registered — finite, because an uncapped step is a silent loop
+# cap_default = 10
+
+[clone]
+
+# how many asks sharing one fingerprint count as a clone family worth surfacing
+# detect_min_family = 3
+
+[gate]
+
+# longest a gate writer may block — a job whose own tick is rarer than this waits the cap, not its interval
+# wait_cap_s = 1800
+
+[supervisor]
+
+# the runtime bound for one entry's child; 1.5x the longest legitimate pass
+# max_run_min = 180
+
+# SIGTERM -> this -> SIGKILL; the window to flush a stack trace, not to finish
+# kill_grace_ms = 10000
+
+# spacing between child starts, so two children do not race on ~/.gitconfig
+# spawn_stagger_ms = 2000
+
+# how long a child gets to exit on shutdown before it is killed; a process manager's own stop timeout must exceed it
+# drain_ms = 30000
+
+[watchdog]
+
+# how many missed 60s supervisor heartbeats count as a dead scheduler; read by host/watchdog.sh, never by TypeScript
+# supervisor_stale_m = 5
+
+# the watchdog logs and prints its faults, writes no breach file and exits 0
+# dry_run = 0
+
+# kill switch: faults are still logged and still written to the breach file, only the POST is skipped — for someone working on the alarm path who must not page themselves
+# no_notify = 0
+
+[ntfy]
+
+# base URL of the ntfy server the watchdog POSTs a breach to and the log report POSTs its report to; unset in both the environment and the settings files means no send at all, because a default would be a guess about someone else's host
+# url = ""
+
+# the ntfy topic a watchdog breach and a log report land on; defaults to INSTANCE (the checkout's own directory name), so two checkouts on one host never share an alarm channel
+# topic = ""
+
+[crontab]
+
+# the crontab binary this tool calls; must be an absolute path, since a bare name is a PATH lookup. NO default on purpose: a real default is a real crontab binary, so a caller who forgets to set this must throw, not silently read the developer's own crontab
+cmd = "/usr/bin/crontab"
+
+# sync prints the crontab it would install and calls nothing; it still reads, since the read is what makes the printed diff true
+# dry_run = 0
+
+[skills]
+
+# sync prints the plan it would execute and writes nothing; still reads, since the read is what makes the printed plan true
+# dry_run = 0
+
+[lease]
+
+# prints what it would delete and deletes nothing
+# clear_dry_run = 0
+
+[dlq]
+
+# prints what a revive would do and changes nothing
+# dry_run = 0
+
+[init]
+
+# init prints every file it would write and every label it would create, and writes and creates nothing; it still reads the repo, the host and the tracker
+# dry_run = 0
+
+[config]
+
+# migrate prints the keys it would write and their TOML paths, and writes nothing; it still reads .env
+# dry_run = 0
+
+[nightly]
+
+# kill switch: the pass logs killed and returns before reading anything
+# no_sandcastle = 0
+
+# the branch a pass lands on; a checkout on any other branch refuses (not-on-base)
+# sandcastle_base = "main"
+
+# run the agent and the gate for real, write nothing — no commit, no merge, no state. This dry run COSTS one agent pass; *_MAX=0 is the free one
+# sandcastle_dry_run = 0
+
+# shadow mode: commit inside the worktree, never move the base branch
+# sandcastle_no_merge = 0
+
+# passes per tick. 0 is the free smoke test — everything but the agent — and it is free
+# sandcastle_max = 1
+
+# force one goal key instead of the rotation, for debugging one brief end to end
+# sandcastle_only = ""
+
+# override the model tier one pass spends on without a code change; the value is checked against PINNED at the one place RunRequest.model is built
+# sandcastle_model = ""
+
+# kill switch: the polish pass logs killed and returns before reading anything
+# no_polish = 0
+
+# the branch a polish pass lands on; a checkout on any other branch skips (not-on-base)
+# polish_base = "main"
+
+# run the agent and the doc gate for real, write nothing — no commit, no merge, no state, no issue. Costs one agent pass; *_MAX=0 is the free one
+# polish_dry_run = 0
+
+# shadow mode: commit inside the worktree, never move the base branch
+# polish_no_merge = 0
+
+# 1 runs one real pass per tick. 0 is the free smoke test — everything but the agent
+# polish_max = 1
+
+# force one goal key instead of the rotation, to debug one brief end to end
+# polish_only = ""
+
+# override the model one polish pass spends on without a code change; runJob checks it is pinned
+# polish_model = ""
+
+# owner/repo that gets one issue per pass, created and closed in the same pass. Unset (the default) means no issue and no gh call
+# polish_tracker = ""
+
+[reset]
+
+# project-relative repo directories the git jobs sweep, space- or comma-separated; explicit, never globbed, empty means do nothing
+# repos = ""
+
+# long-lived branches reset-branches syncs to origin, tried in every repo; a name the remote lacks is skipped
+# branches = "main staging development dev"
+
+# 1 lets reset-branches reset a dirty checked-out tree (the changes are lost) and switch a dirty parked checkout
+# force_dirty = 0
+
+# 1 lets reset-branches discard YOUR commits that are not on origin; they are lost
+# force_ahead = 0
+
+# 1 moves a clean primary checkout parked on a feature branch back to main; 0 only warns
+# checkout_main = 1
+
+# 1 still fetches but writes no ref, resets no tree and switches no checkout
+# dry_run = 0
+
+# 1 runs ensure-env-worktrees quietly before the sync, so every env branch has a tree to reset
+# ensure_worktrees = 1
+
+[env]
+
+# branches that get their own read-only worktree; a subset of RESET_BRANCHES, never main or master
+# worktree_branches = "staging development dev"
+
+# 1 prints what ensure-env-worktrees would create and writes nothing, not even the worktree directory
+# worktree_dry_run = 0
+
+# 1 drops the banner, the already-there lines and an empty done line, so a clean run prints nothing
+# worktree_quiet = 0
+
+[recut]
+
+# repos whose env branches reset-env-to-main force back to main on origin; a subset of RESET_REPOS, empty means do nothing
+# repos = ""
+
+# env branches reset-env-to-main re-cuts from main; a subset of RESET_BRANCHES, never main or master
+# branches = "staging development"
+
+# 1 still fetches and prints each backup and re-cut it would push, and pushes nothing
+# dry_run = 0
+
+# 1 re-cuts even when today's backup exists at another commit, saving the new head as a second backup beside it
+# force = 0
+
+# YYYY-MM-DD stamp in the backup branch name; empty means today in UTC
+# date = ""
+
+[git]
+
+# project-relative directory for the env and PR-head worktrees; its own folder beside the nightly pass trees, gitignored so a tree there never dirties the checkout
+# worktree_dir = ".doppelganger/worktrees/git"
+
+# kill switch: 1 stops reset-env-to-main before it fetches or pushes anything; the weekly re-cut of env branches is skipped
+# no_recut = 0
+
+[self]
+
+# this checkout's base branch; ops-self-sync fast-forwards nothing when the checked-out branch is not it
+# sync_base = "dev"
+
+# 1 fetches and prints the fast-forward ops-self-sync would make, and moves nothing
+# sync_dry_run = 0
+
+# kill switch: 1 makes ops-self-sync fetch nothing and move nothing, so local work in this checkout is safe while a person is in it
+# sync_no_pull = 0
+
+[retention]
+
+# done/failed leases older than this are deleted; long, since deleting a done lease frees its key again
+# lease_days = 60
+
+# 1 = count every row the sweep would delete; delete nothing and skip the WAL checkpoint
+# dry_run = 0
+
+[pipeline]
+
+# kill switch: the tick logs killed and returns before reading anything
+# no_switch = 0
+
+[switch]
+
+# batch cap; one call classifies the whole batch, so this bounds the prompt, not the spend
+# max_batch = 60
+
+# 1 = print the route/model split and write nothing — no route, no step attempt, no model call
+# dry_run = 0
+
+[intent]
+
+# override the model one switch tick spends on without a code change; runJob checks it is pinned
+# model = ""
+
+[probe]
+
+# how many newest routed rows one probe reads; bounds a hand run's prompt and time
+# limit = 40
+
+# 1 = probe the untriaged queue instead of the newest routed rows; nothing to compare against
+# untriaged = 0
+
+[jira]
+
+# the Atlassian site the Jira reads and links use, e.g. https://yourorg.atlassian.net; every browse URL derives from it
+# site_url = ""
+
+# the account the API token belongs to
+# email = ""
+
+# per-search page cap; a full page marks the sweep truncated and walks the cursor only to the last change read
+# fetch_limit = 50
+
+# the first-run window, in days back from now, used only until a cursor exists
+# cold_start_days = 7
+
+# the name Jira renders your @mention as; unset, every comment row falls back to the newest comment
+# mention_name = ""
+
+# parse and print the items without writing the cursor, so a sweep can be reheated for free
+# dry_run = 0
+
+# comma-separated substrings that must never appear in a comment posted to Jira, such as the name of your private tracker; a hit stops the post and fails the ticket
+# watch_banned = ""
+
+# kill switch: the tick logs killed and returns before reading anything
+# no_watch = 0
+
+# statuses stage 1 drafts a plan for; drafting for a ticket in QA would read as a reviewer asking for a rewrite
+# watch_statuses = "To Do"
+
+# issue types stage 1 never plans; a plan on an epic duplicates its children's plans
+# watch_exclude_types = "Epic"
+
+# terminal columns, matched by case-insensitive prefix so a column with a suffix still reads as finished
+# watch_done_statuses = "Done,Closed,Cancelled,Won't Do"
+
+# silence before a plan is drafted
+# watch_idle_h = 1
+
+# the human's move to this column starts stage 2
+# watch_impl_status = "In Progress"
+
+# grace window before a row the watcher cannot serve is handed to a human route
+# watch_foreign_h = 6
+
+# the route a foreign row is handed to; a route a brief pulls, so a human sees it
+# watch_foreign_route = "human-action"
+
+# report without rerouting or settling, and redirect LEASE_DB — the one dry run that is NOT free, because the host takes the job-run lease outside the guard
+# watch_dry_run = 0
+
+# how many idle tickets one tick may draft a plan for; the per-ticket cap is the lease
+# watch_max = 3
+
+# how many times one ticket may fail before its lease refuses it, bounding a crash loop
+# watch_max_attempts = 2
+
+# optional pinned model for the plan agent; a missing row uses the job's own model
+# watch_model = ""
+
+# directory the plan agent reads code in; a missing row uses this checkout
+# watch_workspace = ""
+
+[github]
+
+# notifications per page
+# per_page = 100
+
+# pages per sweep; a full last page marks the sweep truncated and holds the cursor
+# max_pages = 5
+
+# the first-run window in days, used only until a cursor exists; the feed reaches back months, so an unbounded first sweep would flood one classify batch
+# cold_start_days = 2
+
+# actor lookups per sweep, one extra request each
+# actor_max = 25
+
+# hours a review request on a bot-opened pull request waits before it reaches the switch
+# review_hold_h = 2
+
+# pull-request-author lookups per sweep for review requests
+# review_bot_max = 25
+
+# 1: fetch and print, write nothing — no cursor, no hold, no release
+# dry_run = 0
+
+[notion]
+
+# the Notion data source to watch, as collection://<id>; empty, every sweep fails closed because there is no board to query
+# data_source = ""
+
+# the label every item carries as its container: what this board is, in the words the classifier reads
+# container = "Release Documents"
+
+# the newest N rows by Code one sweep reads; the archive does not change, so a wider window only floods one classify batch
+# fetch_limit = 25
+
+# minutes to wait between real sweeps; a tick inside the window is skipped, so a frequent sweep cannot hammer the hub
+# min_interval_min = 15
+
+# how many `Created by` id to name pairs the cache keeps; it bounds round trips, never correctness
+# author_cache_max = 80
+
+# 1 = query and print the items this sweep would emit, write nothing, and ignore the interval
+# dry_run = 0
+
+[tracker]
+
+# the tracker repository, `<owner>/<name>`; the read fails closed when empty — point it at the same repository the issue executor uses (`EXEC_TRACKER`)
+# repo = ""
+
+# open issues read per sweep; a read that reaches the limit may be truncated, and the sweep then reports degraded
+# fetch_limit = 300
+
+# 1: list and print what the sweep would queue, write nothing, cursor held
+# dry_run = 0
+
+[slack]
+
+# the hub tool namespace; every tool this plugin calls is named <ns>.<tool>
+# ns = "slack"
+
+# my Slack user id; empty fails the fetch closed with status config instead of sweeping for nobody
+# me = ""
+
+# the permalink host used to rebuild thread links, for example example.slack.com; empty fails closed
+# host = ""
+
+# messages asked for per search page; Slack clamps a higher value to 20
+# fetch_limit = 20
+
+# search pages read per tick
+# fetch_max_pages = 5
+
+# threads read per tick
+# fetch_max_threads = 8
+
+# newest replies kept per thread
+# fetch_thread_replies = 5
+
+# first-run window in minutes, used only until a cursor exists
+# fetch_cold_start_min = 60
+
+# failed sweeps in a row before the fault is logged at error; 0 and 1 both alert on every failure
+# fetch_fail_streak = 2
+
+# replay window in hours: mentions fetched within it are offered again each tick, and the backlog insert ignores duplicates
+# fetch_project_hours = 24
+
+# 1: fetch and print without writing rows, the cursor or the backlog
+# fetch_dry_run = 0
+
+[prices]
+
+# host folder holding one <provider>.json static price feed per provider; mounted read-only
+static_dir = "/home/hyhilman/.price-router/static"
+
+# --- families whose table you choose ---
+
+# redirect one integration's database to a throwaway file for a safe run
+# [<name>] db
