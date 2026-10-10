@@ -1,17 +1,25 @@
-# Static price feed: Kenari GET /v1/models (public price list), checked 2026-10-10.
-# Written by local/script/apply-static.ts from https://kenari.id/v1/models. Edit the feed, not this file.
-# Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
-# reasoning_options copied from providers/amazon-bedrock/models/openai.gpt-oss-20b.toml
-base_model = "openai/gpt-oss-20b"
+name = "GPT OSS 20B"
+description = "Open-weight GPT reasoning model for self-hosted agents and controllable deployments"
+family = "gpt-oss"
+attachment = false
+reasoning = true
+tool_call = true
+release_date = "2025-08-05"
+last_updated = "2025-08-05"
+open_weights = true
 
 [[reasoning_options]]
 type = "effort"
 values = ["low", "medium", "high"]
 
 [cost]
-input = 0.0351053
-output = 0.150451
-cache_read = 0.00362198
+input = 0
+output = 0
 
 [limit]
-context = 128_000
+context = 131_072
+output = 32_768
+
+[modalities]
+input = ["text"]
+output = ["text"]

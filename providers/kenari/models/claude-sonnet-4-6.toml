@@ -1,22 +1,9 @@
-# Static price feed: Kenari GET /v1/models (public price list), checked 2026-10-10.
-# Written by local/script/apply-static.ts from https://kenari.id/v1/models. Edit the feed, not this file.
-# Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
-# reasoning_options copied from providers/amazon-bedrock/models/global.anthropic.claude-sonnet-4-6.toml
 base_model = "anthropic/claude-sonnet-4-6"
-
-[[reasoning_options]]
-type = "toggle"
 
 [[reasoning_options]]
 type = "effort"
 values = ["low", "medium", "high", "max"]
 
-[[reasoning_options]]
-type = "budget_tokens"
-min = 1_024
-
 [cost]
-input = 3.51053
-output = 17.274
-cache_read = 0.351053
-cache_write = 4.34637
+input = 0
+output = 0

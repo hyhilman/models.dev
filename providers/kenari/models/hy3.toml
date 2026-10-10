@@ -1,7 +1,3 @@
-# Static price feed: Kenari GET /v1/models (public price list), checked 2026-10-10.
-# Written by local/script/apply-static.ts from https://kenari.id/v1/models. Edit the feed, not this file.
-# Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
-# reasoning_options copied from providers/opencode-go/models/hy3.toml
 base_model = "tencent/hy3"
 
 [[reasoning_options]]
@@ -9,9 +5,5 @@ type = "effort"
 values = ["none", "low", "high"]
 
 [cost]
-input = 0.150451
-output = 0.61295
-cache_read = 0.0150451
-
-[limit]
-context = 262_144
+input = 0
+output = 0

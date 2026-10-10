@@ -1,7 +1,3 @@
-# Static price feed: Kenari GET /v1/models (public price list), checked 2026-10-10.
-# Written by local/script/apply-static.ts from https://kenari.id/v1/models. Edit the feed, not this file.
-# Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
-# reasoning_options copied from providers/302ai/models/claude-fable-5.toml
 base_model = "anthropic/claude-fable-5"
 
 [[reasoning_options]]
@@ -9,7 +5,5 @@ type = "effort"
 values = ["low", "medium", "high", "xhigh", "max"]
 
 [cost]
-input = 11.7018
-output = 55.7227
-cache_read = 1.17018
-cache_write = 14.4879
+input = 0
+output = 0

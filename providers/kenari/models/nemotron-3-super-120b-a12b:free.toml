@@ -1,11 +1,9 @@
-# Static price feed: Kenari GET /v1/models (public price list), checked 2026-10-10.
-# Written by local/script/apply-static.ts from https://kenari.id/v1/models. Edit the feed, not this file.
-# Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
-# reasoning_options copied from providers/baseten/models/nvidia/Nemotron-120B-A12B.toml
 base_model = "nvidia/nemotron-3-super-120b-a12b"
+name = "Nemotron 3 Super 120B A12B (Free)"
 
 [[reasoning_options]]
-type = "toggle"
+type = "effort"
+values = ["low", "medium"]
 
 [cost]
 input = 0

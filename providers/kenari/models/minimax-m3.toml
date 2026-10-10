@@ -1,13 +1,6 @@
-# Static price feed: Kenari GET /v1/models (public price list), checked 2026-10-10.
-# Written by local/script/apply-static.ts from https://kenari.id/v1/models. Edit the feed, not this file.
-# Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
-# reasoning_options copied from providers/302ai/models/MiniMax-M3.toml
 base_model = "minimax/MiniMax-M3"
-
-[[reasoning_options]]
-type = "toggle"
+reasoning_options = []
 
 [cost]
-input = 0.351053
-output = 1.39307
-cache_read = 0.0668673
+input = 0
+output = 0

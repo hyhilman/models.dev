@@ -1,8 +1,5 @@
-# Static price feed: Kenari GET /v1/models (public price list), checked 2026-10-10.
-# Written by local/script/apply-static.ts from https://kenari.id/v1/models. Edit the feed, not this file.
-# Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
 name = "Kenari"
-env = ["KENARI_API_KEY"]
 npm = "@ai-sdk/openai-compatible"
+env = ["KENARI_API_KEY"]
 api = "https://kenari.id/v1"
-doc = "https://kenari.id/docs/models"
+doc = "https://kenari.id/docs"
