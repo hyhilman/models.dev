@@ -49,6 +49,13 @@ export const PRICES_FETCH_MINUTES_ENV: EnvSpec = {
   why: "minutes between pulls of a published price list (a feed with [fetch], such as kenari); 0 = every run",
 };
 
+export const PRICES_DASHSCOPE_API_KEY_ENV: EnvSpec = {
+  key: "PRICES_DASHSCOPE_API_KEY",
+  default: "",
+  secret: true,
+  why: "Alibaba Model Studio API key for the alibaba price list; set it in doppelganger.secret.toml",
+};
+
 export const PRICES_ENV: readonly EnvSpec[] = [
   PRICES_STATIC_DIR_ENV,
   PRICES_IMAGE_ENV,
@@ -58,6 +65,7 @@ export const PRICES_ENV: readonly EnvSpec[] = [
   PRICES_PUSH_ENV,
   PRICES_DRY_RUN_ENV,
   PRICES_FETCH_MINUTES_ENV,
+  PRICES_DASHSCOPE_API_KEY_ENV,
 ];
 
 export type Task = "static" | "sync";
@@ -74,6 +82,8 @@ export interface PriceRun {
   readonly push: boolean;
   readonly dryRun: boolean;
   readonly fetchMinutes: number;
+  /** API keys for the price lists, by the env var the feed names. */
+  readonly keys: Readonly<Record<string, string>>;
 }
 
 /** In-container path of the gh login. Read-only: the job uses the token, never writes the login. */
@@ -88,6 +98,8 @@ export function dockerArgs(p: PriceRun): string[] {
   }
   if (p.dryRun) args.push("-e", "PRICE_DRY_RUN=1");
   args.push("-e", `PRICE_FETCH_MINUTES=${p.fetchMinutes}`);
+  // By name only: docker reads the value from its own env, so a key never shows in `ps`.
+  for (const k of Object.keys(p.keys).sort()) args.push("-e", k);
   // A dry run never pushes, whatever PRICES_PUSH says.
   if (p.push && !p.dryRun) args.push("-e", "PRICE_PUSH=1");
   if (p.ghDir !== null) args.push("-v", `${p.ghDir}:${GH_IN_CONTAINER}:ro`, "-e", `GH_CONFIG_DIR=${GH_IN_CONTAINER}`);
@@ -100,6 +112,10 @@ export function fetchMinutes(v: string): number {
   if (!/^\d+$/.test(v.trim())) throw new Error(`PRICES_FETCH_MINUTES must be a whole number of minutes, got "${v}"`);
   return Number(v.trim());
 }
+
+/** The keys that are set. An empty one is left out, so the feed says plainly that it has none. */
+export const keys = (all: Record<string, string>): Record<string, string> =>
+  Object.fromEntries(Object.entries(all).filter(([, v]) => v !== ""));
 
 export function priceRun(ctx: JobContext, task: Task): PriceRun {
   const gh = ctx.env.str(PRICES_GH_ENV).trim();
@@ -114,6 +130,7 @@ export function priceRun(ctx: JobContext, task: Task): PriceRun {
     push: ctx.env.str(PRICES_PUSH_ENV) === "1",
     dryRun: ctx.env.str(PRICES_DRY_RUN_ENV) === "1",
     fetchMinutes: fetchMinutes(ctx.env.str(PRICES_FETCH_MINUTES_ENV)),
+    keys: keys({ DASHSCOPE_API_KEY: ctx.env.str(PRICES_DASHSCOPE_API_KEY_ENV).trim() }),
   };
 }
 
@@ -123,7 +140,7 @@ export const eventLines = (out: string): string[] => out.split("\n").filter((l) 
 export function runPriceTask(ctx: JobContext, task: Task): void {
   const run = priceRun(ctx, task);
   ctx.log.info("start", { task, dryRun: run.dryRun });
-  const r = ctx.runIn(ctx.root, "docker", dockerArgs(run));
+  const r = ctx.runIn(ctx.root, "docker", dockerArgs(run), { ...run.keys });
   const events = eventLines(r.out);
   for (const line of events) ctx.log.raw(line);
   if (!r.ok) {

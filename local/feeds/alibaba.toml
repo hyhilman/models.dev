@@ -1,0 +1,23 @@
+# Alibaba Model Studio (DashScope, international) publishes its price list behind an API key:
+# local/script/fetch-feeds.ts pulls every page of [fetch] url, at most once per [prices]
+# fetch_minutes (10). Prices are already USD.
+# The key: [prices] dashscope_api_key in doppelganger.secret.toml (gitignored), which the job
+# passes as DASHSCOPE_API_KEY. Never put it in this file.
+# Upstream owns providers/alibaba/. Alibaba is in `patch` in local/static.toml, so the feed rewrites
+# only the cost tables of upstream's files, and deletes a file whose model the list no longer has.
+# The key is a workspace key, so the list holds the models of that workspace; about half of
+# upstream's folder is missing from it, hence max_retire = 0.75 (the owner chose the list over
+# upstream's catalog). name, env, api and doc below go unused in patch mode.
+# Off-peak: the list marks `peak` and `offpeak` prices. The job writes the off-peak price from
+# 22:00 to 08:00 UTC+8 and the peak price the rest of the day (fetch-feeds.ts DASHSCOPE_OFFPEAK).
+name = "Alibaba"
+env = ["DASHSCOPE_API_KEY"]
+api = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+doc = "https://www.alibabacloud.com/help/en/model-studio/model-pricing"
+source = "Alibaba Model Studio GET /api/v1/models (international)"
+
+[fetch]
+url = "https://dashscope-intl.aliyuncs.com/api/v1/models"
+format = "dashscope"
+key_env = "DASHSCOPE_API_KEY"
+max_retire = 0.75
