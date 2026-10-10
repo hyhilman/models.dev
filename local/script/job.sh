@@ -22,7 +22,11 @@ if [ "$branch" != "router" ]; then log job.skip "reason=\"on branch $branch, not
 [ -d node_modules ] || bun install --frozen-lockfile >/dev/null
 
 case "${1:-}" in
-  static) bun local/script/apply-static.ts ;;
+  # A failed fetch keeps the last fetched list, so the apply still runs. The job still fails, so the
+  # log reports it.
+  static) fetched=0; bun local/script/fetch-feeds.ts || fetched=$?
+          bun local/script/apply-static.ts
+          [ "$fetched" = 0 ] || exit "$fetched" ;;
   sync) bash local/script/sync-upstream.sh ;;
   *) log job.usage "got=\"${1:-}\""; exit 64 ;;
 esac
