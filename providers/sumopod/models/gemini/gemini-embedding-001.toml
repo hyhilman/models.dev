@@ -1,0 +1,7 @@
+# Static price feed: Sumopod console price list, exported by the owner, checked 2026-10-10.
+# Written by local/script/apply-static.ts from sumopod.json. Edit the feed, not this file.
+base_model = "google/gemini-embedding-001"
+
+[cost]
+input = 0.15
+output = 0

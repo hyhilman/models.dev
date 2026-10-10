@@ -1,0 +1,15 @@
+# Static price feed: Sumopod console price list, exported by the owner, checked 2026-10-10.
+# Written by local/script/apply-static.ts from sumopod.json. Edit the feed, not this file.
+# reasoning_options copied from providers/302ai/models/qwen3.6-plus.toml
+base_model = "alibaba/qwen3.6-plus"
+
+[[reasoning_options]]
+type = "toggle"
+
+[[reasoning_options]]
+type = "budget_tokens"
+
+[cost]
+input = 0.5
+output = 3
+cache_read = 0.05

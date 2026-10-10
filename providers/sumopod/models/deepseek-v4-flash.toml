@@ -1,0 +1,16 @@
+# Static price feed: Sumopod console price list, exported by the owner, checked 2026-10-10.
+# Written by local/script/apply-static.ts from sumopod.json. Edit the feed, not this file.
+# reasoning_options copied from providers/agentrouter/models/deepseek-v4-flash.toml
+base_model = "deepseek/deepseek-v4-flash"
+
+[[reasoning_options]]
+type = "toggle"
+
+[[reasoning_options]]
+type = "effort"
+values = ["low", "high", "max"]
+
+[cost]
+input = 0.121
+output = 0.363
+cache_read = 0.00385

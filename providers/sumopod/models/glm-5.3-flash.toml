@@ -1,0 +1,13 @@
+# Static price feed: Sumopod console price list, exported by the owner, checked 2026-10-10.
+# Written by local/script/apply-static.ts from sumopod.json. Edit the feed, not this file.
+# reasoning_options copied from providers/opencode-go/models/glm-5.3-flash.toml
+base_model = "zhipuai/glm-5.3-flash"
+
+[[reasoning_options]]
+type = "effort"
+values = ["low", "high", "max"]
+
+[cost]
+input = 0.015
+output = 0.25
+cache_read = 0.015

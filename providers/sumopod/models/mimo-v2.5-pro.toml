@@ -1,0 +1,15 @@
+# Static price feed: Sumopod console price list, exported by the owner, checked 2026-10-10.
+# Written by local/script/apply-static.ts from sumopod.json. Edit the feed, not this file.
+# reasoning_options copied from providers/aihubmix/models/coding-xiaomi-mimo-v2.5-pro.toml
+base_model = "xiaomi/mimo-v2.5-pro"
+
+[[reasoning_options]]
+type = "toggle"
+
+[cost]
+input = 0.435
+output = 0.87
+cache_read = 0.0036
+
+[limit]
+context = 1_100_000

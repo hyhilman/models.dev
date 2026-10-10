@@ -1,0 +1,15 @@
+# Static price feed: Sumopod console price list, exported by the owner, checked 2026-10-10.
+# Written by local/script/apply-static.ts from sumopod.json. Edit the feed, not this file.
+# reasoning_options copied from providers/above/models/mimo-v2.6-pro-ultraspeed.toml
+base_model = "xiaomi/mimo-v2.6-pro-ultraspeed"
+
+[[reasoning_options]]
+type = "toggle"
+
+[cost]
+input = 4.35
+output = 8.7
+cache_read = 0.036
+
+[limit]
+context = 1_100_000

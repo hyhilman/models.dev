@@ -1,0 +1,17 @@
+# Static price feed: Sumopod console price list, exported by the owner, checked 2026-10-10.
+# Written by local/script/apply-static.ts from sumopod.json. Edit the feed, not this file.
+# reasoning_options copied from providers/kilo/models/z-ai/glm-5v-turbo.toml
+base_model = "zhipuai/glm-5v-turbo"
+
+[[reasoning_options]]
+type = "effort"
+values = ["none", "high"]
+
+[cost]
+input = 1.2
+output = 4
+cache_read = 0.26
+
+[limit]
+context = 128_000
+output = 128_000

@@ -1,0 +1,15 @@
+# Static price feed: Sumopod console price list, exported by the owner, checked 2026-10-10.
+# Written by local/script/apply-static.ts from sumopod.json. Edit the feed, not this file.
+# reasoning_options copied from providers/302ai/models/glm-5.1.toml
+base_model = "zhipuai/glm-5.1"
+
+[[reasoning_options]]
+type = "toggle"
+
+[cost]
+input = 1.4
+output = 4.4
+cache_read = 0.26
+
+[limit]
+context = 1_000_000
