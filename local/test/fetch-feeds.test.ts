@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { kenariRows, rateDate } from "../script/fetch-feeds.ts";
-import { patchCost, PATCH_MARK } from "../script/apply-static.ts";
+import { kenariIds, kenariRows, rateDate } from "../script/fetch-feeds.ts";
+import { patchCost, PATCH_MARK, retired } from "../script/apply-static.ts";
 
 const pricing = (p: Record<string, unknown>) => ({ currency: "IDR", unit: "micro_idr_per_1m_tokens", ...p });
 const list = {
@@ -41,4 +41,16 @@ test("patchCost replaces only [cost], and a second patch replaces the first", ()
   expect(once).toBe(`${PATCH_MARK} src, checked 2026-10-10.\nbase_model = "a/b"\n\n[cost]\ninput = 1\noutput = 2\n\n[limit]\ncontext = 5\n`);
   expect(patchCost(once, { input: 1, output: 2 }, ["src, checked 2026-10-10."])).toBe(once);
   expect(patchCost(up + "\n[[cost.tiers]]\ninput = 1\n", { input: 1, output: 2 }, [])).toBeNull();
+});
+
+test("every list's ids count as listed", () => {
+  expect(kenariIds([list, { data: [{ id: "bge-m3" }] }])).toEqual(["bge-m3", "claude-fable-5", "hy3:free", "nano-banana"]);
+});
+
+test("a model the provider no longer lists is retired; a list that would empty the folder is refused", () => {
+  const f = (ids: string[]) => new Map(ids.map((i) => [`providers/k/models/${i}.toml`, ""]));
+  const have = new Map([["providers/k/provider.toml", ""], ...f(["a", "b", "c"])]);
+  expect(retired("k", have, ["a", "b"])).toEqual(["providers/k/models/c.toml"]);
+  expect(retired("k", have, ["a"])).toEqual([]);
+  expect(retired("k", have, undefined)).toEqual([]);
 });

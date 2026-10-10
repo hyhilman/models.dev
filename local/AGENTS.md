@@ -10,7 +10,8 @@ This fork tracks `anomalyco/models.dev` (remote `upstream`, branch `dev`). Our w
    `doppelganger.toml` and `doppelganger.config.ts`. `.gitignore` may only gain lines.
    `local/test/add-only.test.ts` enforces this. It keeps every upstream merge free of conflicts.
    One exception: a `patch` provider in `local/static.toml` is upstream's folder, and the feed
-   changes only the `[cost]` table and its own `# Price feed:` comments there (also tested).
+   changes only the `[cost]` table and its own `# Price feed:` comments there, and deletes models
+   the provider no longer lists (also tested).
 2. Never commit a secret. Files name the env var that holds a key, never the key.
 3. Every price carries a source and the date it was checked.
 4. The static feed writes only the providers in `local/static.toml`. Add a provider there only
@@ -92,8 +93,12 @@ Kenari publishes its prices at `https://kenari.id/v1/models`, so nobody exports 
   Only chat models: image, video and speech prices are not per token.
 - Upstream already owns `providers/kenari/` (all costs 0, by their policy). So kenari is in
   `patch`: the feed rewrites only `[cost]` of upstream's files whose name is a Kenari id, and
-  adds three `# Price feed:` lines (source, date, rate). It never adds or deletes a file. Priced
-  models upstream does not list are logged as `static.unlisted`.
+  adds three `# Price feed:` lines (source, date, rate). Priced models upstream does not list are
+  logged as `static.unlisted`; no file is added.
+- Kenari's live list wins over upstream's catalog: an upstream file whose id is in none of
+  Kenari's lists (the main one and each `?modality=`) is deleted (`static.retired`). A fetch where
+  any list fails changes nothing, and a list that would delete more than half the folder is
+  refused (`static.retire_refused`).
 - An upstream merge that conflicts inside a patch folder takes upstream's file
   (`sync.took_upstream`). The next static run writes the price again. A conflict anywhere else
   still aborts the merge.
