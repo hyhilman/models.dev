@@ -1,3 +1,8 @@
+# Static price feed: Kenari GET /v1/models (public price list), checked 2026-10-10.
+# Written by local/script/apply-static.ts from https://kenari.id/v1/models. Edit the feed, not this file.
+# Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
+# reasoning_options from kenari's own model list
+# Effort: reasoning_effort = high|xhigh
 base_model = "zhipuai/glm-5.2"
 
 [[reasoning_options]]
@@ -5,6 +10,9 @@ type = "effort"
 values = ["high", "xhigh"]
 
 [cost]
-input = 0
-output = 0
+input = 0.278614
+output = 3.34336
+cache_read = 0.278614
 
+[limit]
+context = 1_048_576

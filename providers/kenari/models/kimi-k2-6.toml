@@ -1,6 +1,13 @@
+# Static price feed: Kenari GET /v1/models (public price list), checked 2026-10-10.
+# Written by local/script/apply-static.ts from https://kenari.id/v1/models. Edit the feed, not this file.
+# Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
+# reasoning_options copied from providers/302ai/models/kimi-k2.6.toml
 base_model = "moonshotai/kimi-k2.6"
-reasoning_options = []
+
+[[reasoning_options]]
+type = "toggle"
 
 [cost]
-input = 0
-output = 0
+input = 0.557227
+output = 2.78614
+cache_read = 0.278614

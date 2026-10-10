@@ -1,9 +1,22 @@
+# Static price feed: Kenari GET /v1/models (public price list), checked 2026-10-10.
+# Written by local/script/apply-static.ts from https://kenari.id/v1/models. Edit the feed, not this file.
+# Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
+# reasoning_options copied from providers/opencode-go/models/qwen3.8-max.toml
 base_model = "alibaba/qwen3.8-max"
 
 [[reasoning_options]]
+type = "toggle"
+
+[[reasoning_options]]
 type = "effort"
-values = ["minimal", "low", "medium", "high", "xhigh"]
+values = ["low", "medium", "xhigh"]
+
+[[reasoning_options]]
+type = "budget_tokens"
+max = 262_144
 
 [cost]
-input = 0
-output = 0
+input = 2.34035
+output = 6.68673
+cache_read = 0.289758
+cache_write = 2.89758
