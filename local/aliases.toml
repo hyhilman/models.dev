@@ -1,0 +1,4 @@
+# "<provider>/<model>" = "<lab>/<model>" for host entries that have no base_model upstream.
+# The feed uses this to find a peer's reasoning_options; the price service uses it to match
+# a host entry to its lab model.
+"opencode-go/deepseek-v4-pro" = "deepseek/deepseek-v4-pro"
