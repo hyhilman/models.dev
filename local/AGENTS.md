@@ -20,7 +20,8 @@ This fork tracks `anomalyco/models.dev` (remote `upstream`, branch `dev`). Our w
 |---|---|
 | `local/static.toml` | Providers the static price feed may write (now: `sumopod`) |
 | `local/aliases.toml` | Lab model for a host entry that has no `base_model` |
-| `local/example/<p>.json` | An example feed file, the format reference |
+| `local/feeds/<p>.toml` | Provider details the price list does not carry, and its name map |
+| `local/example/<p>.json` | A cut of a real price list, the format reference |
 | `local/script/apply-static.ts` | Applies `$PRICE_STATIC_DIR/<p>.json` to `providers/<p>/`, validates, commits |
 | `local/script/sync-upstream.sh` | Merges `upstream/dev` into `router`, checks, goes back on failure |
 | `local/script/run.sh` | Runs a command in the Bun image (the host has no Bun) |
@@ -48,21 +49,34 @@ Upstream's full `bun test` already has failures we do not own. Gate on `bun vali
 
 ## The static feed
 
-One JSON file per provider, `$PRICE_STATIC_DIR/<provider>.json` (default
-`~/.price-router/static/`). See `local/example/sumopod.json`. Unknown fields fail.
+Two inputs per provider:
 
-- `models[].id` is the exact id the provider accepts. It becomes the file name.
-- `models[].base_model` must exist under `models/`.
-- `cost` is the **list price**, USD per 1M tokens.
-- `reasoning_options` is optional. When the base model reasons and the feed leaves it out, the
-  script copies it from a peer host (OpenCode Go first) and says so in a file comment.
-- The provider folder mirrors the feed exactly: a model removed from the feed is deleted.
+- `$PRICE_STATIC_DIR/<provider>.json` (default `~/.price-router/static/`): the provider's own price
+  list, exported as is. A list of rows with `model_name`, `provider` (the route behind the host),
+  `input_cost_per_1m_tokens`, `output_cost_per_1m_tokens`, `cache_read_cost_per_1m_tokens` and
+  `context_length`. See `local/example/sumopod.json`. Sumopod's prices already include its
+  discounts, so no discount is stored.
+- `local/feeds/<provider>.toml`: what the list does not say. The API URL, the env var, the source,
+  and `[map]` for a model name that does not match a lab file name.
+
+How a row becomes `providers/<provider>/models/<model_name>.toml`:
+
+- `base_model` is the one lab file named like the model, ignoring a route prefix (`gemini/`) and a
+  host suffix (`:netra`), unless `[map]` names it. No match, or two, and the row is skipped and
+  logged as `static.unmatched` on every run.
+- `cost` comes from the row, rounded to 6 significant digits. A `null` cache price is left out.
+- `limit.context` is written only when the row states one (not 0) and it differs from the lab's.
+- When the base model reasons, `reasoning_options` is copied from a peer host (OpenCode Go
+  first), and a file comment names the peer. No peer, and the row is skipped.
+- The checked date is the date of the feed file.
+- The provider folder mirrors the list exactly: a model removed from the list is deleted.
 - When `bun validate` fails after a write, the script puts the folder back and exits non-zero,
   so the last good prices stay.
 
 ## How to change a price
 
-Edit the feed JSON. The scheduled job applies it within a minute. To do it by hand, run the
+Drop a new export of the price list at `$PRICE_STATIC_DIR/<provider>.json`. The scheduled job
+applies it within a minute. To do it by hand, run the
 apply command above.
 
 ## doppelganger

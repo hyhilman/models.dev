@@ -1,16 +1,42 @@
-{
-  "provider": "sumopod",
-  "name": "SumoPod",
-  "api": "https://ai.sumopod.com/v1",
-  "env": ["SUMOPOD_API_KEY"],
-  "doc": "https://ai.sumopod.com",
-  "source": "owner, hard-coded",
-  "checked": "2026-10-10",
-  "models": [
-    { "id": "mimo-v2.6-pro", "base_model": "xiaomi/mimo-v2.6-pro", "cost": { "input": 0.435, "output": 0.87, "cache_read": 0.004 } },
-    { "id": "deepseek-v4.1-flash", "base_model": "deepseek/deepseek-v4.1-flash", "cost": { "input": 0.10, "output": 0.25, "cache_read": 0.005 } },
-    { "id": "deepseek-v4-pro", "base_model": "deepseek/deepseek-v4-pro", "cost": { "input": 0.66, "output": 1.98, "cache_read": 0.022 } },
-    { "id": "qwen3.8-max", "base_model": "alibaba/qwen3.8-max", "cost": { "input": 1.00, "output": 3.00, "cache_read": 0.125 } },
-    { "id": "kimi-k3", "base_model": "moonshotai/kimi-k3", "cost": { "input": 3.00, "output": 15.00, "cache_read": 0.30 } }
-  ]
-}
+[
+  {
+    "model_name": "deepseek-v4.1-flash:netra",
+    "provider": "netra-runtime",
+    "input_cost_per_1m_tokens": 0.1,
+    "cache_read_cost_per_1m_tokens": 0.005,
+    "output_cost_per_1m_tokens": 0.25,
+    "context_length": 1000000
+  },
+  {
+    "model_name": "gemini/gemini-3-flash-preview",
+    "provider": "gemini",
+    "input_cost_per_1m_tokens": 0.5,
+    "cache_read_cost_per_1m_tokens": 0.049999999999999996,
+    "output_cost_per_1m_tokens": 3,
+    "context_length": 1048576
+  },
+  {
+    "model_name": "gpt-4.1-mini",
+    "provider": "openai",
+    "input_cost_per_1m_tokens": 0.39999999999999997,
+    "cache_read_cost_per_1m_tokens": 0.09999999999999999,
+    "output_cost_per_1m_tokens": 1.5999999999999999,
+    "context_length": 1047576
+  },
+  {
+    "model_name": "kimi-k3",
+    "provider": "sumopod",
+    "input_cost_per_1m_tokens": 3,
+    "cache_read_cost_per_1m_tokens": 0.3,
+    "output_cost_per_1m_tokens": 15,
+    "context_length": 0
+  },
+  {
+    "model_name": "seed-2-0-mini",
+    "provider": "byteplus",
+    "input_cost_per_1m_tokens": 0.1,
+    "cache_read_cost_per_1m_tokens": 0.02,
+    "output_cost_per_1m_tokens": 0.4,
+    "context_length": 224000
+  }
+]
