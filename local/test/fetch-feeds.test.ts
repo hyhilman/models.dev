@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { kenariIds, kenariRows, rateDate } from "../script/fetch-feeds.ts";
-import { patchCost, PATCH_MARK, retired } from "../script/apply-static.ts";
+import { DASHSCOPE_OFFPEAK, dashscopeRows, kenariIds, kenariRows, rateDate, tierStart } from "../script/fetch-feeds.ts";
+import { inHours, patchCost, PATCH_MARK, retired, rowCost } from "../script/apply-static.ts";
 
 const pricing = (p: Record<string, unknown>) => ({ currency: "IDR", unit: "micro_idr_per_1m_tokens", ...p });
 const list = {
@@ -40,7 +40,16 @@ test("patchCost replaces only [cost], and a second patch replaces the first", ()
   const once = patchCost(up, { input: 1, output: 2 }, ["src, checked 2026-10-10."])!;
   expect(once).toBe(`${PATCH_MARK} src, checked 2026-10-10.\nbase_model = "a/b"\n\n[cost]\ninput = 1\noutput = 2\n\n[limit]\ncontext = 5\n`);
   expect(patchCost(once, { input: 1, output: 2 }, ["src, checked 2026-10-10."])).toBe(once);
-  expect(patchCost(up + "\n[[cost.tiers]]\ninput = 1\n", { input: 1, output: 2 }, [])).toBeNull();
+});
+
+test("patchCost replaces every cost table, tiers too, and keeps the rest", () => {
+  const up = '[cost]\ninput = 0\noutput = 0\n\n[[cost.tiers]]\ntier = { size = 1 }\ninput = 9\noutput = 9\n\n[limit]\ncontext = 5\n';
+  const out = patchCost(up, { input: 1, output: 2, tiers: [{ tier: { type: "context", size: 256_000 }, input: 3, output: 4 }] }, []);
+  expect(Bun.TOML.parse(out)).toEqual({
+    cost: { input: 1, output: 2, tiers: [{ tier: { type: "context", size: 256_000 }, input: 3, output: 4 }] },
+    limit: { context: 5 },
+  });
+  expect(patchCost(out, { input: 1, output: 2 }, [])).toBe("[cost]\ninput = 1\noutput = 2\n\n[limit]\ncontext = 5\n");
 });
 
 test("every list's ids count as listed", () => {
@@ -53,4 +62,56 @@ test("a model the provider no longer lists is retired; a list that would empty t
   expect(retired("k", have, ["a", "b"])).toEqual(["providers/k/models/c.toml"]);
   expect(retired("k", have, ["a"])).toEqual([]);
   expect(retired("k", have, undefined)).toEqual([]);
+  expect(retired("k", have, ["a"], 0.75)).toEqual(["providers/k/models/b.toml", "providers/k/models/c.toml"]);
+});
+
+const ds = (prices: object[], ranges = ["Default"]) => ({
+  model: "m",
+  provider: "deepseek",
+  prices: ranges.map((range_name) => ({ range_name, prices })),
+});
+const p = (type: string, price: string, time_band = "standard") => ({ type, price, price_unit: "Per 1M tokens", time_band });
+
+test("dashscope: base price, cache, thinking price and long-prompt tiers", () => {
+  const [row] = dashscopeRows([
+    ds(
+      [p("input_token", "0.4"), p("output_token", "1.2"), p("thinking_output_token", "4"), p("input_token_cache", "0.08"),
+        p("input_token_cache_read", "0.04"), p("input_token_cache_creation_5m", "0.5"), p("input_token_batch", "0.2")],
+      ["Input<=256k", "256k<Input<=1m"],
+    ),
+  ]);
+  expect(row).toMatchObject({
+    input_cost_per_1m_tokens: 0.4, output_cost_per_1m_tokens: 1.2, reasoning_cost_per_1m_tokens: 4,
+    cache_read_cost_per_1m_tokens: 0.04, cache_write_cost_per_1m_tokens: 0.5,
+  });
+  expect(row!.tiers).toEqual([{ size: 256_000, input: 0.4, output: 1.2, cache_read: 0.04, cache_write: 0.5, reasoning: 4 }]);
+  expect(tierStart("32k<Input<=128k")).toBe(32_000);
+  expect(tierStart("Default")).toBeNull();
+});
+
+test("dashscope: a model without token prices is left out", () => {
+  const image = { ...ds([{ type: "image_number", price: "0.04", price_unit: "Per image", time_band: null }]), model: "img" };
+  const rows = dashscopeRows([image, ds([p("input_token", "1"), p("output_token", "2")])]);
+  expect(rows.map((r) => r.model_name)).toEqual(["m"]);
+});
+
+test("dashscope: the off-peak price is written at night (UTC+8) and the peak price by day", () => {
+  const [row] = dashscopeRows([
+    ds([p("input_token", "0.15", "offpeak"), p("input_token", "0.3", "peak"), p("output_token", "0.6", "offpeak"), p("output_token", "1.2", "peak")]),
+  ]);
+  expect(row!.offpeak).toEqual({ input: 0.15, output: 0.6, hours: DASHSCOPE_OFFPEAK });
+  const day = rowCost(row!, new Date("2026-10-10T05:00:00Z")); // 13:00 UTC+8
+  expect(day.cost).toEqual({ input: 0.3, output: 1.2 });
+  expect(day.notes[0]).toContain("peak price now");
+  const night = rowCost(row!, new Date("2026-10-10T15:00:00Z")); // 23:00 UTC+8
+  expect(night.cost).toEqual({ input: 0.15, output: 0.6 });
+  expect(rowCost(row!, new Date("2026-10-10T23:59:00Z")).cost.input).toBe(0.15); // 07:59 UTC+8
+  expect(rowCost(row!, new Date("2026-10-11T00:00:00Z")).cost.input).toBe(0.3); // 08:00 UTC+8
+});
+
+test("inHours handles windows that do and do not wrap midnight", () => {
+  const at = (h: number) => new Date(Date.UTC(2026, 9, 10, h));
+  expect(inHours(at(10), { from: "09:00", to: "17:00", utc_offset: 0 })).toBe(true);
+  expect(inHours(at(17), { from: "09:00", to: "17:00", utc_offset: 0 })).toBe(false);
+  expect(inHours(at(2), { from: "22:00", to: "08:00", utc_offset: 0 })).toBe(true);
 });
