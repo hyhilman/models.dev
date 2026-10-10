@@ -1,0 +1,24 @@
+# The local models.dev site: local/script/serve.ts over local/.site, on 0.0.0.0:7311.
+# The price jobs rebuild local/.site after a change; the server reads each file on request, so it
+# needs no restart.
+#
+# Start it on the rootless daemon, where the tools image lives:
+#   DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock docker compose -f local/docker/compose.yml up -d
+name: models-dev-site
+
+services:
+  site:
+    image: models-dev-router-tools:bun1.3.0
+    # `unless-stopped`, not `always`: a site you stopped on purpose stays stopped.
+    restart: unless-stopped
+    # Read-only: the server only reads. The repo path inside is fixed, so nothing here names a host path.
+    volumes:
+      - ../..:/repo:ro
+    working_dir: /repo
+    environment:
+      HOME: /tmp
+      SITE_DIR: /repo/local/.site
+      SITE_PORT: "7311"
+    ports:
+      - "0.0.0.0:${SITE_PORT:-7311}:7311"
+    command: ["bun", "local/script/serve.ts"]
