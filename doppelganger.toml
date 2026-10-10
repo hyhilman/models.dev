@@ -294,10 +294,10 @@ dry_run = true
 [ntfy]
 
 # base URL of the ntfy server the watchdog POSTs a breach to and the log report POSTs its report to; unset in both the environment and the settings files means no send at all, because a default would be a guess about someone else's host
-# url = ""
+url = "https://ntfy.hilman.dev/"
 
 # the ntfy topic a watchdog breach and a log report land on; defaults to INSTANCE (the checkout's own directory name), so two checkouts on one host never share an alarm channel
-# topic = ""
+topic = "model-dev"
 
 [crontab]
 
