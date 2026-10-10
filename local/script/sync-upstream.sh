@@ -21,6 +21,11 @@ if git merge-base --is-ancestor upstream/dev HEAD; then
   exit 0
 fi
 
+if [ "${PRICE_DRY_RUN:-0}" = "1" ]; then
+  log sync.dry_run "would_merge=$(git rev-list --count HEAD..upstream/dev) upstream=$(git rev-parse --short=9 upstream/dev)"
+  exit 0
+fi
+
 if ! git merge -q --no-edit upstream/dev; then
   files="$(git diff --name-only --diff-filter=U | tr '\n' ',')"
   git merge --abort
