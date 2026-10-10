@@ -1,0 +1,16 @@
+{
+  "provider": "sumopod",
+  "name": "SumoPod",
+  "api": "https://ai.sumopod.com/v1",
+  "env": ["SUMOPOD_API_KEY"],
+  "doc": "https://ai.sumopod.com",
+  "source": "owner, hard-coded",
+  "checked": "2026-10-10",
+  "models": [
+    { "id": "mimo-v2.6-pro", "base_model": "xiaomi/mimo-v2.6-pro", "cost": { "input": 0.435, "output": 0.87, "cache_read": 0.004 } },
+    { "id": "deepseek-v4.1-flash", "base_model": "deepseek/deepseek-v4.1-flash", "cost": { "input": 0.10, "output": 0.25, "cache_read": 0.005 } },
+    { "id": "deepseek-v4-pro", "base_model": "deepseek/deepseek-v4-pro", "cost": { "input": 0.66, "output": 1.98, "cache_read": 0.022 } },
+    { "id": "qwen3.8-max", "base_model": "alibaba/qwen3.8-max", "cost": { "input": 1.00, "output": 3.00, "cache_read": 0.125 } },
+    { "id": "kimi-k3", "base_model": "moonshotai/kimi-k3", "cost": { "input": 3.00, "output": 15.00, "cache_read": 0.30 } }
+  ]
+}
