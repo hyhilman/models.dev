@@ -7,6 +7,8 @@
 //   $PRICE_STATIC_DIR/<provider>.json  the price list as the provider shows it (prices.json shape)
 //   local/feeds/<provider>.toml        what the list does not say: the API, the env var, the source,
 //                                      and a name map for models whose lab file name differs
+// A feed with a [fetch] table has no file in $PRICE_STATIC_DIR: local/script/fetch-feeds.ts pulls
+// its list from the provider and writes local/.feeds/<provider>.json, already in USD.
 //
 // Run: bun local/script/apply-static.ts
 // Env: PRICE_STATIC_DIR  folder that holds <provider>.json (default ~/.price-router/static)
@@ -38,6 +40,7 @@ const PriceRow = z.object({
   input_cost_per_1m_tokens: Price,
   output_cost_per_1m_tokens: Price,
   cache_read_cost_per_1m_tokens: Price.nullable().optional(),
+  cache_write_cost_per_1m_tokens: Price.nullable().optional(),
   // 0 means the provider does not say.
   context_length: z.number().int().nonnegative().optional(),
 });
@@ -61,11 +64,94 @@ export const Feed = z
     source: z.string().min(1),
     // model_name -> "<lab>/<model>", for names that do not match a lab file name.
     map: z.record(z.string(), z.string().regex(/^[a-z0-9-]+\/[A-Za-z0-9._-]+$/)).default({}),
+    // The provider publishes its list: fetch-feeds.ts pulls it with the named adapter.
+    fetch: z.object({ url: z.string().url(), format: z.enum(["kenari"]) }).strict().optional(),
   })
   .strict();
 export type Feed = z.infer<typeof Feed>;
 
-const Allow = z.object({ providers: z.array(z.string().regex(/^[a-z0-9-]+$/)) }).strict();
+/** What fetch-feeds.ts writes: the rows in USD, the day it fetched them, and how it converted. */
+export const Snapshot = z
+  .object({ checked: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), note: z.string(), rows: PriceList })
+  .strict();
+export type Snapshot = z.infer<typeof Snapshot>;
+
+/** Where fetch-feeds.ts keeps a fetched list. Gitignored: the provider files carry the history. */
+export const snapshotPath = (provider: string) => path.join(REPO, "local/.feeds", `${provider}.json`);
+
+const Allow = z
+  .object({
+    providers: z.array(z.string().regex(/^[a-z0-9-]+$/)),
+    // Upstream owns these folders. The feed rewrites only the [cost] table of their files.
+    patch: z.array(z.string()).default([]),
+  })
+  .strict()
+  .refine((a) => a.patch.every((p) => a.providers.includes(p)), "every patch provider must be in providers");
+export type Allow = z.infer<typeof Allow>;
+
+/** Every comment line the patch writes starts with this, so the next patch can find and replace it. */
+export const PATCH_MARK = "# Price feed:";
+
+/**
+ * An upstream file with its [cost] table replaced and our header on top. Everything else stays
+ * upstream's, byte for byte. null when the file has cost tiers or cost subtables: rewriting
+ * [cost] alone would leave them wrong.
+ */
+export function patchCost(text: string, cost: Record<string, number>, header: readonly string[]): string | null {
+  const lines = text.split("\n").filter((l) => !l.startsWith(PATCH_MARK));
+  if (lines.some((l) => /^\[\[?cost\./.test(l.trim()))) return null;
+  while (lines.at(-1) === "") lines.pop();
+  const block = formatToml({ cost } as Parameters<typeof formatToml>[0]).trim().split("\n");
+  const start = lines.findIndex((l) => l.trim() === "[cost]");
+  let out: string[];
+  if (start === -1) {
+    out = [...lines, "", ...block];
+  } else {
+    let end = start + 1;
+    while (end < lines.length && !lines[end]!.trim().startsWith("[")) end++;
+    const tail = lines.slice(end);
+    out = [...lines.slice(0, start), ...block, ...(tail.length > 0 ? ["", ...tail] : [])];
+  }
+  return [...header.map((h) => `${PATCH_MARK} ${h}`), ...out].join("\n") + "\n";
+}
+
+/** The patched files for an upstream-owned provider: one per upstream file the list prices. */
+export function renderPatch(
+  provider: string,
+  feed: Feed,
+  list: PriceList,
+  checked: string,
+  note: string,
+  have: ReadonlyMap<string, string>,
+): Rendered & { unlisted: string[] } {
+  const header = [
+    `${feed.source}, checked ${checked}.`,
+    `only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.`,
+    ...(note ? [note] : []),
+  ];
+  const rows = new Map(list.map((r) => [r.model_name, r]));
+  const files = new Map<string, string>();
+  const skipped: { model: string; reason: string }[] = [];
+  const prefix = `providers/${provider}/models/`;
+  for (const [p, text] of have) {
+    if (!p.startsWith(prefix)) continue;
+    const id = p.slice(prefix.length).replace(/\.toml$/, "");
+    const row = rows.get(id);
+    if (!row) continue;
+    rows.delete(id);
+    const cost: Record<string, number> = {
+      input: tidy(row.input_cost_per_1m_tokens),
+      output: tidy(row.output_cost_per_1m_tokens),
+    };
+    if (row.cache_read_cost_per_1m_tokens != null) cost.cache_read = tidy(row.cache_read_cost_per_1m_tokens);
+    if (row.cache_write_cost_per_1m_tokens != null) cost.cache_write = tidy(row.cache_write_cost_per_1m_tokens);
+    const patched = patchCost(text, cost, header);
+    if (patched === null) skipped.push({ model: id, reason: "upstream's file has cost tiers; not patched" });
+    else files.set(p, patched);
+  }
+  // Priced models upstream does not list. Adding their files would collide with upstream later.
+  return { files, skipped, unlisted: [...rows.keys()].sort() };
+}
 
 const LOGO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
   <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
@@ -155,13 +241,14 @@ export interface Rendered {
 }
 
 /** The files the feed wants under providers/<provider>/. */
-export function render(provider: string, feed: Feed, list: PriceList, checked: string): Rendered {
+export function render(provider: string, feed: Feed, list: PriceList, checked: string, note = ""): Rendered {
   const files = new Map<string, string>();
   const skipped: { model: string; reason: string }[] = [];
   const dir = `providers/${provider}`;
   const header = [
     `# Static price feed: ${feed.source}, checked ${checked}.`,
-    `# Written by local/script/apply-static.ts from ${provider}.json. Edit the feed, not this file.`,
+    `# Written by local/script/apply-static.ts from ${feed.fetch?.url ?? `${provider}.json`}. Edit the feed, not this file.`,
+    ...(note ? [`# ${note}`] : []),
   ];
 
   files.set(
@@ -206,6 +293,7 @@ export function render(provider: string, feed: Feed, list: PriceList, checked: s
       output: tidy(row.output_cost_per_1m_tokens),
     };
     if (row.cache_read_cost_per_1m_tokens != null) cost.cache_read = tidy(row.cache_read_cost_per_1m_tokens);
+    if (row.cache_write_cost_per_1m_tokens != null) cost.cache_write = tidy(row.cache_write_cost_per_1m_tokens);
 
     // Override the context only when the provider states one and it differs from the lab's.
     const labLimit = (lab.limit ?? {}) as { context?: number; output?: number };
@@ -231,18 +319,21 @@ function git(args: string[]): { ok: boolean; out: string } {
   return { ok: r.exitCode === 0, out: r.stdout.toString() + r.stderr.toString() };
 }
 
-function apply(provider: string): "unchanged" | "changed" | "skipped" {
-  const src = path.join(STATIC_DIR, `${provider}.json`);
+function apply(provider: string, patch: boolean): "unchanged" | "changed" | "skipped" {
+  const feed = Feed.parse(readToml(path.join(REPO, "local/feeds", `${provider}.toml`)));
+  const src = feed.fetch ? snapshotPath(provider) : path.join(STATIC_DIR, `${provider}.json`);
   if (!existsSync(src)) {
-    log("static.skip", { provider, reason: "no feed file", path: src });
+    log("static.skip", { provider, reason: feed.fetch ? "not fetched yet" : "no feed file", path: src });
     return "skipped";
   }
-  const feed = Feed.parse(readToml(path.join(REPO, "local/feeds", `${provider}.toml`)));
-  const list = PriceList.parse(JSON.parse(readFileSync(src, "utf8")));
-  const checked = statSync(src).mtime.toISOString().slice(0, 10);
-
-  const { files: want, skipped } = render(provider, feed, list, checked);
-  for (const s of skipped) log("static.unmatched", { provider, model: s.model, reason: s.reason });
+  let list: PriceList, checked: string, note: string;
+  if (feed.fetch) {
+    ({ rows: list, checked, note } = Snapshot.parse(JSON.parse(readFileSync(src, "utf8"))));
+  } else {
+    list = PriceList.parse(JSON.parse(readFileSync(src, "utf8")));
+    checked = statSync(src).mtime.toISOString().slice(0, 10);
+    note = "";
+  }
 
   const dir = path.join(REPO, "providers", provider);
   const have = new Map<string, string>();
@@ -250,13 +341,24 @@ function apply(provider: string): "unchanged" | "changed" | "skipped" {
     if (existsSync(file)) have.set(path.relative(REPO, file), readFileSync(file, "utf8"));
   }
 
+  let want: Map<string, string>, skipped: Rendered["skipped"];
+  if (patch) {
+    const r = renderPatch(provider, feed, list, checked, note, have);
+    ({ files: want, skipped } = r);
+    if (r.unlisted.length > 0) log("static.unlisted", { provider, models: r.unlisted.join(",") });
+  } else {
+    ({ files: want, skipped } = render(provider, feed, list, checked, note));
+  }
+  for (const s of skipped) log("static.unmatched", { provider, model: s.model, reason: s.reason });
+
   // The header carries the feed's date. A file touched but not changed must not count as a change.
   const body = (text: string | undefined) => text?.split("\n").slice(1).join("\n");
   const writes = [...want].filter(([p, text]) => body(have.get(p)) !== body(text));
-  const deletes = [...have.keys()].filter((p) => !want.has(p));
-  const needLogo = !existsSync(path.join(dir, "logo.svg"));
+  // A patch never deletes: upstream owns the model list.
+  const deletes = patch ? [] : [...have.keys()].filter((p) => !want.has(p));
+  const needLogo = !patch && !existsSync(path.join(dir, "logo.svg"));
   if (writes.length === 0 && deletes.length === 0 && !needLogo) {
-    log("static.unchanged", { provider, models: want.size - 1, skipped: skipped.length });
+    log("static.unchanged", { provider, models: patch ? want.size : want.size - 1, skipped: skipped.length });
     return "unchanged";
   }
   log("static.diff", { provider, write: writes.length, delete: deletes.length, skipped: skipped.length });
@@ -281,7 +383,7 @@ function apply(provider: string): "unchanged" | "changed" | "skipped" {
 
   if (!NO_COMMIT) {
     git(["add", "-A", "--", `providers/${provider}`]);
-    const c = git(["commit", "-q", "-m", `chore(prices): update ${provider} static prices (checked ${checked})`]);
+    const c = git(["commit", "-q", "-m", `chore(prices): update ${provider} prices (checked ${checked})`]);
     if (!c.ok) throw new Error(`git commit failed: ${c.out}`);
   }
   log("static.applied", { provider, write: writes.length, delete: deletes.length, committed: NO_COMMIT ? 0 : 1 });
@@ -293,7 +395,7 @@ if (import.meta.main) {
   let failed = 0;
   for (const provider of allow.providers) {
     try {
-      apply(provider);
+      apply(provider, allow.patch.includes(provider));
     } catch (e) {
       failed++;
       log("static.error", { provider, error: e instanceof Error ? e.message : String(e) });

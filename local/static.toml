@@ -1,4 +1,11 @@
-# Providers the static price feed may write. The feed reads <provider>.json from
-# PRICE_STATIC_DIR and writes only providers/<provider>/. It never touches a provider
-# missing from this list. Add one only when the owner says so.
-providers = ["sumopod"]
+# Providers the price feed may write. It never touches a provider missing from this list. Add one
+# only when the owner says so.
+#
+# A feed reads <provider>.json from PRICE_STATIC_DIR, or, when local/feeds/<provider>.toml has a
+# [fetch] table, the list local/script/fetch-feeds.ts pulled from the provider.
+providers = ["sumopod", "kenari"]
+
+# Upstream owns these folders. The feed rewrites only the [cost] table of upstream's files, never
+# adds or deletes one, and an upstream merge conflict there takes upstream's file (the next run
+# writes the price again).
+patch = ["kenari"]
