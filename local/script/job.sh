@@ -27,8 +27,13 @@ case "${1:-}" in
   *) log job.usage "got=\"${1:-}\""; exit 64 ;;
 esac
 
-[ "${PRICE_PUSH:-0}" = "1" ] || exit 0
+# Rebuild the local site when the repo moved since the last build. A failed build keeps the old
+# site and fails the job, so the log reports it.
+if [ "${PRICE_DRY_RUN:-0}" != "1" ] && [ "$(cat local/.site/.built-from 2>/dev/null)" != "$(git rev-parse HEAD)" ]; then
+  bash local/script/publish-site.sh
+fi
 
+[ "${PRICE_PUSH:-0}" = "1" ] || exit 0
 if [ "$(git rev-parse HEAD)" = "$(git rev-parse -q --verify origin/router || true)" ]; then exit 0; fi
 
 net=()
