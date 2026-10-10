@@ -1,8 +1,7 @@
 # Static price feed: Kenari GET /v1/models (public price list), checked 2026-10-10.
 # Written by local/script/apply-static.ts from https://kenari.id/v1/models. Edit the feed, not this file.
 # Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
-# reasoning_options from kenari's own model list
-# Toggle: reasoning.enabled = true|false (Chat completions)
+# reasoning_options copied from providers/baseten/models/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B.toml
 base_model = "nvidia/nemotron-3-ultra-550b-a55b"
 
 [[reasoning_options]]
