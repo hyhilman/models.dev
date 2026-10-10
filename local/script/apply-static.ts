@@ -1,7 +1,12 @@
-// Apply the static price feed: one JSON file per provider, written by the owner.
+// Apply the static price feed: a provider's own price list, exported as JSON, dropped in a folder.
 //
 // The feed may write only the providers listed in local/static.toml, and only inside
 // providers/<provider>/. It never touches another provider, upstream-owned or not.
+//
+// Two inputs per provider:
+//   $PRICE_STATIC_DIR/<provider>.json  the price list as the provider shows it (prices.json shape)
+//   local/feeds/<provider>.toml        what the list does not say: the API, the env var, the source,
+//                                      and a name map for models whose lab file name differs
 //
 // Run: bun local/script/apply-static.ts
 // Env: PRICE_STATIC_DIR  folder that holds <provider>.json (default ~/.price-router/static)
@@ -11,64 +16,54 @@ import path from "node:path";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { z } from "../lib/deps.ts";
 import { formatToml } from "../../packages/core/src/sync/index.ts";
-import { ReasoningOption } from "../../packages/core/src/schema.ts";
 
 const REPO = path.resolve(import.meta.dir, "../..");
 const STATIC_DIR = process.env.PRICE_STATIC_DIR ?? path.join(process.env.HOME ?? "/tmp", ".price-router/static");
 const DRY_RUN = process.env.PRICE_DRY_RUN === "1";
 const NO_COMMIT = process.env.PRICE_NO_COMMIT === "1";
 
-// A model id becomes a file path, so it must not climb out of the provider folder.
-const ModelId = z
+// A model name becomes a file path, so it must not climb out of the provider folder.
+const ModelName = z
   .string()
   .regex(/^[A-Za-z0-9][A-Za-z0-9._:\/-]*$/)
   .refine((s) => !s.split("/").includes(".."), "must not contain ..");
 
 const Price = z.number().nonnegative();
 
-const Cost = z
-  .object({
-    input: Price,
-    output: Price,
-    cache_read: Price.optional(),
-    cache_write: Price.optional(),
-    reasoning: Price.optional(),
-  })
-  .strict();
+/** One row of the provider's price list. Extra fields the provider adds later are ignored. */
+const PriceRow = z.object({
+  model_name: ModelName,
+  // The route behind the provider (a lab or another host), not the host itself.
+  provider: z.string(),
+  input_cost_per_1m_tokens: Price,
+  output_cost_per_1m_tokens: Price,
+  cache_read_cost_per_1m_tokens: Price.nullable().optional(),
+  // 0 means the provider does not say.
+  context_length: z.number().int().nonnegative().optional(),
+});
+export const PriceList = z.array(PriceRow).min(1).superRefine((rows, ctx) => {
+  const seen = new Set<string>();
+  for (const r of rows) {
+    if (seen.has(r.model_name)) ctx.addIssue({ code: "custom", message: `duplicate model_name ${r.model_name}` });
+    seen.add(r.model_name);
+  }
+});
+export type PriceList = z.infer<typeof PriceList>;
 
-const StaticModel = z
+export const Feed = z
   .object({
-    id: ModelId,
-    base_model: z.string().regex(/^[a-z0-9-]+\/[A-Za-z0-9._-]+$/),
-    cost: Cost,
-    // Optional. When left out and the base model reasons, it is copied from a peer host.
-    reasoning_options: z.array(ReasoningOption).optional(),
-    status: z.enum(["alpha", "beta", "deprecated"]).optional(),
-  })
-  .strict();
-
-export const StaticFile = z
-  .object({
-    provider: z.string().regex(/^[a-z0-9-]+$/),
     name: z.string().min(1),
     api: z.string().url(),
     env: z.array(z.string().regex(/^[A-Z][A-Z0-9_]*$/)).min(1),
     doc: z.string().url().optional(),
     npm: z.string().default("@ai-sdk/openai-compatible"),
-    // Hard rule: every price carries a source and the date it was checked.
+    // Hard rule: every price carries a source. The date is the feed file's own date.
     source: z.string().min(1),
-    checked: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    models: z.array(StaticModel).min(1),
+    // model_name -> "<lab>/<model>", for names that do not match a lab file name.
+    map: z.record(z.string(), z.string().regex(/^[a-z0-9-]+\/[A-Za-z0-9._-]+$/)).default({}),
   })
-  .strict()
-  .superRefine((f, ctx) => {
-    const seen = new Set<string>();
-    for (const m of f.models) {
-      if (seen.has(m.id)) ctx.addIssue({ code: "custom", message: `duplicate model id ${m.id}` });
-      seen.add(m.id);
-    }
-  });
-export type StaticFile = z.infer<typeof StaticFile>;
+  .strict();
+export type Feed = z.infer<typeof Feed>;
 
 const Allow = z.object({ providers: z.array(z.string().regex(/^[a-z0-9-]+$/)) }).strict();
 
@@ -95,11 +90,30 @@ function walk(dir: string): string[] {
   });
 }
 
-/** The base model's `reasoning`, or null when the lab file is missing. */
-function baseReasons(baseModel: string): boolean | null {
-  const file = path.join(REPO, "models", `${baseModel}.toml`);
-  if (!existsSync(file)) return null;
-  return readToml(file).reasoning === true;
+/** Exported prices carry float noise (0.09999999999999999). Six significant digits is plenty. */
+export const tidy = (n: number): number => Number(n.toPrecision(6));
+
+/** Lab files by lower-case file name: "deepseek-v4-pro" -> ["deepseek/deepseek-v4-pro"]. */
+function labIndex(): Map<string, string[]> {
+  const idx = new Map<string, string[]>();
+  for (const file of walk(path.join(REPO, "models"))) {
+    const rel = path.relative(path.join(REPO, "models"), file).replace(/\.toml$/, "");
+    const key = path.basename(rel).toLowerCase();
+    idx.set(key, [...(idx.get(key) ?? []), rel]);
+  }
+  return idx;
+}
+
+/**
+ * The lab model a price row stands for. The feed's map wins; else the one lab file whose name is
+ * the model name without a route prefix (`gemini/`) or a host suffix (`:netra`). Two matches or
+ * none is no answer: a guess would put a price on the wrong model.
+ */
+export function baseModelOf(name: string, feed: Feed, idx: Map<string, string[]>): string | null {
+  if (feed.map[name]) return feed.map[name]!;
+  const key = name.split("/").at(-1)!.split(":")[0]!.toLowerCase();
+  const hits = idx.get(key) ?? [];
+  return hits.length === 1 ? hits[0]! : null;
 }
 
 /** The lab model a host file stands for: its base_model, else its row in local/aliases.toml. */
@@ -133,47 +147,83 @@ function peerReasoning(baseModel: string, self: string): { from: string; options
   return empty;
 }
 
-/** The files the feed wants under providers/<provider>/, keyed by repo-relative path. */
-export function render(feed: StaticFile): Map<string, string> {
-  const out = new Map<string, string>();
-  const dir = `providers/${feed.provider}`;
+export interface Rendered {
+  /** Repo-relative path -> file text. */
+  readonly files: Map<string, string>;
+  /** Rows left out, with the reason. They are logged on every run until the map covers them. */
+  readonly skipped: readonly { readonly model: string; readonly reason: string }[];
+}
+
+/** The files the feed wants under providers/<provider>/. */
+export function render(provider: string, feed: Feed, list: PriceList, checked: string): Rendered {
+  const files = new Map<string, string>();
+  const skipped: { model: string; reason: string }[] = [];
+  const dir = `providers/${provider}`;
   const header = [
-    `# Static price feed: ${feed.source}, checked ${feed.checked}.`,
-    "# Written by local/script/apply-static.ts. Edit the feed JSON, not this file.",
+    `# Static price feed: ${feed.source}, checked ${checked}.`,
+    `# Written by local/script/apply-static.ts from ${provider}.json. Edit the feed, not this file.`,
   ];
 
-  const prov = [
-    ...header,
-    `name = ${JSON.stringify(feed.name)}`,
-    `env = [${feed.env.map((e) => JSON.stringify(e)).join(", ")}]`,
-    `npm = ${JSON.stringify(feed.npm)}`,
-    `api = ${JSON.stringify(feed.api)}`,
-    ...(feed.doc ? [`doc = ${JSON.stringify(feed.doc)}`] : []),
-  ];
-  out.set(`${dir}/provider.toml`, prov.join("\n") + "\n");
+  files.set(
+    `${dir}/provider.toml`,
+    [
+      ...header,
+      `name = ${JSON.stringify(feed.name)}`,
+      `env = [${feed.env.map((e) => JSON.stringify(e)).join(", ")}]`,
+      `npm = ${JSON.stringify(feed.npm)}`,
+      `api = ${JSON.stringify(feed.api)}`,
+      ...(feed.doc ? [`doc = ${JSON.stringify(feed.doc)}`] : []),
+    ].join("\n") + "\n",
+  );
 
-  for (const m of feed.models) {
-    const reasons = baseReasons(m.base_model);
-    if (reasons === null) throw new Error(`${m.id}: base_model ${m.base_model} has no file under models/`);
-    let reasoning_options = m.reasoning_options;
+  const idx = labIndex();
+  for (const row of list) {
+    const base = baseModelOf(row.model_name, feed, idx);
+    if (base === null) {
+      skipped.push({ model: row.model_name, reason: "no lab model by that name; add it to [map] in the feed toml" });
+      continue;
+    }
+    const labFile = path.join(REPO, "models", `${base}.toml`);
+    if (!existsSync(labFile)) {
+      skipped.push({ model: row.model_name, reason: `[map] names ${base}, which has no file under models/` });
+      continue;
+    }
+    const lab = readToml(labFile);
     const notes: string[] = [];
-    if (reasons && reasoning_options === undefined) {
-      const peer = peerReasoning(m.base_model, feed.provider);
+    let reasoning_options: unknown[] | undefined;
+    if (lab.reasoning === true) {
+      const peer = peerReasoning(base, provider);
       if (peer === null) {
-        throw new Error(`${m.id}: ${m.base_model} reasons, no peer host has reasoning_options; set them in the feed`);
+        skipped.push({ model: row.model_name, reason: `${base} reasons and no peer host has reasoning_options` });
+        continue;
       }
-      reasoning_options = peer.options as typeof reasoning_options;
+      reasoning_options = peer.options;
       notes.push(`# reasoning_options copied from ${peer.from}`);
     }
+
+    const cost: Record<string, number> = {
+      input: tidy(row.input_cost_per_1m_tokens),
+      output: tidy(row.output_cost_per_1m_tokens),
+    };
+    if (row.cache_read_cost_per_1m_tokens != null) cost.cache_read = tidy(row.cache_read_cost_per_1m_tokens);
+
+    // Override the context only when the provider states one and it differs from the lab's.
+    const labLimit = (lab.limit ?? {}) as { context?: number; output?: number };
+    const ctxLen = row.context_length ?? 0;
+    const limit =
+      ctxLen > 0 && ctxLen !== labLimit.context
+        ? { context: ctxLen, ...(labLimit.output !== undefined && labLimit.output > ctxLen ? { output: ctxLen } : {}) }
+        : undefined;
+
     const body = formatToml({
-      base_model: m.base_model,
-      ...(m.status ? { status: m.status } : {}),
-      ...(reasons ? { reasoning_options } : {}),
-      cost: m.cost,
+      base_model: base,
+      ...(reasoning_options ? { reasoning_options } : {}),
+      cost,
+      ...(limit ? { limit } : {}),
     } as Parameters<typeof formatToml>[0]);
-    out.set(`${dir}/models/${m.id}.toml`, [...header, ...notes, body.trimEnd()].join("\n") + "\n");
+    files.set(`${dir}/models/${row.model_name}.toml`, [...header, ...notes, body.trimEnd()].join("\n") + "\n");
   }
-  return out;
+  return { files, skipped };
 }
 
 function git(args: string[]): { ok: boolean; out: string } {
@@ -187,24 +237,29 @@ function apply(provider: string): "unchanged" | "changed" | "skipped" {
     log("static.skip", { provider, reason: "no feed file", path: src });
     return "skipped";
   }
-  const feed = StaticFile.parse(JSON.parse(readFileSync(src, "utf8")));
-  if (feed.provider !== provider) throw new Error(`${src}: provider is ${feed.provider}, file name says ${provider}`);
+  const feed = Feed.parse(readToml(path.join(REPO, "local/feeds", `${provider}.toml`)));
+  const list = PriceList.parse(JSON.parse(readFileSync(src, "utf8")));
+  const checked = statSync(src).mtime.toISOString().slice(0, 10);
 
-  const want = render(feed);
+  const { files: want, skipped } = render(provider, feed, list, checked);
+  for (const s of skipped) log("static.unmatched", { provider, model: s.model, reason: s.reason });
+
   const dir = path.join(REPO, "providers", provider);
   const have = new Map<string, string>();
   for (const file of [path.join(dir, "provider.toml"), ...walk(path.join(dir, "models"))]) {
     if (existsSync(file)) have.set(path.relative(REPO, file), readFileSync(file, "utf8"));
   }
 
-  const writes = [...want].filter(([p, text]) => have.get(p) !== text);
+  // The header carries the feed's date. A file touched but not changed must not count as a change.
+  const body = (text: string | undefined) => text?.split("\n").slice(1).join("\n");
+  const writes = [...want].filter(([p, text]) => body(have.get(p)) !== body(text));
   const deletes = [...have.keys()].filter((p) => !want.has(p));
   const needLogo = !existsSync(path.join(dir, "logo.svg"));
   if (writes.length === 0 && deletes.length === 0 && !needLogo) {
-    log("static.unchanged", { provider, models: feed.models.length });
+    log("static.unchanged", { provider, models: want.size - 1, skipped: skipped.length });
     return "unchanged";
   }
-  log("static.diff", { provider, write: writes.map(([p]) => p).join(","), delete: deletes.join(",") });
+  log("static.diff", { provider, write: writes.length, delete: deletes.length, skipped: skipped.length });
   if (DRY_RUN) return "changed";
 
   for (const [p, text] of writes) {
@@ -217,7 +272,7 @@ function apply(provider: string): "unchanged" | "changed" | "skipped" {
 
   const v = Bun.spawnSync(["bun", "validate"], { cwd: REPO, stdout: "pipe", stderr: "pipe" });
   if (v.exitCode !== 0) {
-    // Put the provider folder back exactly as it was, so the service keeps the last good prices.
+    // Put the provider folder back exactly as it was, so the last good prices stay.
     git(["checkout", "--", `providers/${provider}`]);
     git(["clean", "-fdq", "--", `providers/${provider}`]);
     const err = (v.stderr.toString() + v.stdout.toString()).split("\n").filter(Boolean).slice(-15).join("\n");
@@ -226,7 +281,7 @@ function apply(provider: string): "unchanged" | "changed" | "skipped" {
 
   if (!NO_COMMIT) {
     git(["add", "-A", "--", `providers/${provider}`]);
-    const c = git(["commit", "-q", "-m", `chore(prices): update ${provider} static prices (checked ${feed.checked})`]);
+    const c = git(["commit", "-q", "-m", `chore(prices): update ${provider} static prices (checked ${checked})`]);
     if (!c.ok) throw new Error(`git commit failed: ${c.out}`);
   }
   log("static.applied", { provider, write: writes.length, delete: deletes.length, committed: NO_COMMIT ? 0 : 1 });
