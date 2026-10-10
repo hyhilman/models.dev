@@ -1,0 +1,12 @@
+# What Sumopod's price list does not say. The list itself is $PRICE_STATIC_DIR/sumopod.json.
+# The list's prices already include Sumopod's discounts (the console shows the struck-out price
+# next to the one in the list), so no discount is stored.
+# API URL: https://ai.sumopod.com/v1, as the pi-sumopod-connector package (1.2.2) uses it.
+name = "SumoPod"
+env = ["SUMOPOD_API_KEY"]
+api = "https://ai.sumopod.com/v1"
+doc = "https://ai.sumopod.com"
+source = "Sumopod console price list, exported by the owner"
+
+# model_name = "<lab>/<model>" for a name that does not match a lab file name.
+[map]
