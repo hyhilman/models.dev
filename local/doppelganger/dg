@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Run the doppelganger installed in this folder against the repo root.
+# npm installs it here, not at the root, because npm cannot install into the Bun workspace root.
+# Usage: local/doppelganger/dg <command> [args]   (same commands as `npx doppelganger`)
+set -euo pipefail
+here="$(cd "$(dirname "$0")" && pwd)"
+export ENGINE_ROOT="${ENGINE_ROOT:-$(cd "$here/../.." && pwd)}"
+cd "$ENGINE_ROOT"
+exec "$here/node_modules/.bin/doppelganger" "$@"
