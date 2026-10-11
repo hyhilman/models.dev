@@ -2,3 +2,7 @@
 # The feed uses this to find a peer's reasoning_options; the price service uses it to match
 # a host entry to its lab model.
 "opencode-go/deepseek-v4-pro" = "deepseek/deepseek-v4-pro"
+# OpenCode Zen ids that drop the lab's suffix; same name and release date as the lab file.
+"opencode/claude-sonnet-4" = "anthropic/claude-sonnet-4-0"
+"opencode/gemini-3.1-pro" = "google/gemini-3.1-pro-preview"
+"opencode/gemini-3-flash" = "google/gemini-3-flash-preview"
