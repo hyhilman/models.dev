@@ -98,10 +98,15 @@ export const Feed = z
         // dashscope: the currency of the list, and the region its note names.
         currency: z.enum(["USD", "CNY"]).default("USD"),
         region: z.string().min(1).optional(),
+        // "models": price the listed models with another feed's prices (its last fetched list),
+        // times price_factor. For a plan billed in credits that has no published rate per model.
+        price_from: z.string().regex(/^[a-z0-9-]+$/).optional(),
+        price_factor: z.number().positive().default(1),
         // A list that would delete more than this share of a patch folder is refused as broken.
         max_retire: z.number().gt(0).max(1).default(0.5),
       })
       .strict()
+      .refine((f) => f.price_from === undefined || f.format === "models", "price_from is for a models list")
       .optional(),
   })
   .strict();
