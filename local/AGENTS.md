@@ -147,9 +147,10 @@ Each of upstream's Alibaba folders has its own feed in `local/feeds/`, all in `p
 ## OpenCode (Zen and Go)
 
 `opencode` and `opencode-go` are `patch` feeds of format `models`: each reads its gateway's model
-list (`opencode.ai/zen/v1/models`, `opencode.ai/zen/go/v1/models`) with `[prices] opencode_api_key`
-and deletes upstream's files for models the gateway no longer serves. Prices stay upstream's: the
-OpenCode team runs models.dev, and Go's own prices (cheaper DeepSeek) are deliberate.
+list (`opencode.ai/zen/v1/models`, `opencode.ai/zen/go/v1/models`), public and without a key (a
+key shows only what one account has turned on), and deletes upstream's files for models the
+gateway no longer serves. Prices stay upstream's: the OpenCode team runs models.dev, and Go's own
+prices (cheaper DeepSeek) are deliberate.
 
 ## How to change a price
 
