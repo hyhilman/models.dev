@@ -22,7 +22,8 @@ This fork tracks `anomalyco/models.dev` (remote `upstream`, branch `dev`). Our w
 | Path | What |
 |---|---|
 | `local/static.toml` | Providers the price feed may write (now: `sumopod`, `kenari`, the six `alibaba*`, `opencode`, `opencode-go`), and which are `patch` |
-| `local/aliases.toml` | Lab model for a host entry that has no `base_model` |
+| `local/aliases.toml` | Lab model for a host entry that has no `base_model` and no lab file named like it |
+| `local/house-models.toml` | Host models with no lab model, so no canonical id is expected |
 | `local/feeds/<p>.toml` | Provider details the price list does not carry, and its name map |
 | `local/example/<p>.json` | A cut of a real price list, the format reference |
 | `local/script/fetch-feeds.ts` | Pulls a published price list (a feed with `[fetch]`) into `local/.feeds/<p>.json`, in USD |
@@ -33,6 +34,7 @@ This fork tracks `anomalyco/models.dev` (remote `upstream`, branch `dev`). Our w
 | `local/docker/compose.yml` | The local site on `0.0.0.0:7311` |
 | `local/script/serve.ts` | Runs upstream's own `worker.ts` over `local/.site` |
 | `local/script/publish-site.sh` | Builds `packages/web/dist` and swaps it into `local/.site` |
+| `local/script/canonical.ts` | Fills the `canonical_model_id` upstream leaves out for our providers (alias, else lab file name), in the built JSON |
 | `local/doppelganger/` | doppelganger, installed from a release tarball (`vendor/`), and its `dg` wrapper |
 | `local/doppelganger/tools/prices/` | The `prices` plugin: the `ops-price-static` and `ops-price-sync` jobs |
 | `doppelganger.config.ts`, `doppelganger.toml` | Attach the plugin; the shared settings (no secrets) |
@@ -165,7 +167,8 @@ settings) when something happened:
 
 - `💲 <provider>: N file(s) written, M removed (names)` for every commit a feed makes, the
   off-peak switches included; `🔀` for an upstream merge, `↩️` when a merge kept upstream's files.
-- `❌` once for a new failure (a fetch, an apply, the merge, the job), and `✅ ... works again`
+- `❌` once for a new failure (a fetch, an apply, the merge, the job, a model in our providers
+  with no canonical id that `local/house-models.toml` does not list), and `✅ ... works again`
   once when it clears. Open failures live in `local/.feeds/alerts.json`, so a failure that lasts
   is not repeated every minute. A quiet run sends nothing; a dry run never sends.
 
