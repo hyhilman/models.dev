@@ -59,13 +59,12 @@ test("every list's ids count as listed", () => {
   expect(kenariIds([list, { data: [{ id: "bge-m3" }] }])).toEqual(["bge-m3", "claude-fable-5", "hy3:free", "nano-banana"]);
 });
 
-test("a model the provider no longer lists is retired; a list that would empty the folder is refused", () => {
+test("a model the provider no longer lists is retired, however many", () => {
   const f = (ids: string[]) => new Map(ids.map((i) => [`providers/k/models/${i}.toml`, ""]));
   const have = new Map([["providers/k/provider.toml", ""], ...f(["a", "b", "c"])]);
   expect(retired("k", have, ["a", "b"])).toEqual(["providers/k/models/c.toml"]);
-  expect(retired("k", have, ["a"])).toEqual([]);
+  expect(retired("k", have, ["a"])).toEqual(["providers/k/models/b.toml", "providers/k/models/c.toml"]);
   expect(retired("k", have, undefined)).toEqual([]);
-  expect(retired("k", have, ["a"], 0.75)).toEqual(["providers/k/models/b.toml", "providers/k/models/c.toml"]);
 });
 
 const ds = (prices: object[], ranges = ["Default"]) => ({
