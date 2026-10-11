@@ -77,7 +77,7 @@ export const PRICES_OPENCODE_API_KEY_ENV: EnvSpec = {
   key: "PRICES_OPENCODE_API_KEY",
   default: "",
   secret: true,
-  why: "OpenCode Zen API key for the opencode and opencode-go model lists; empty skips those feeds",
+  why: "OpenCode Zen API key; the opencode feeds read the public lists, so it is unused for now",
 };
 
 /** Each feed's key: the env var the feed's key_env names, and the setting that holds it. */
