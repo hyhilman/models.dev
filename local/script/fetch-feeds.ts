@@ -362,6 +362,7 @@ async function models(feed: Feed, key: string | undefined): Promise<Got> {
     const rows = opencodeDocRows(await (await get(f.price_doc)).text());
     return { note: `prices from OpenCode's docs source, ${f.price_doc}.`, rows, listed };
   }
+  if (f.static_prices) return { note: "", rows: [], listed };
   if (!f.price_from) return { note: "", rows: [], listed };
   const src = snapshotPath(f.price_from);
   if (!existsSync(src)) throw new Error(`no prices yet from ${f.price_from}`);

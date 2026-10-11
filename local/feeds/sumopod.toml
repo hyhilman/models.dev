@@ -8,5 +8,13 @@ api = "https://ai.sumopod.com/v1"
 doc = "https://ai.sumopod.com"
 source = "Sumopod console price list, exported by the owner"
 
+# The prices stay in the exported list. Sumopod's own model list (needs a key) decides which of
+# them stay: a model it no longer serves is dropped, and its file is deleted.
+[fetch]
+url = "https://ai.sumopod.com/v1/models"
+format = "models"
+key_env = "SUMOPOD_API_KEY"
+static_prices = true
+
 # model_name = "<lab>/<model>" for a name that does not match a lab file name.
 [map]

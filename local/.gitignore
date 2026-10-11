@@ -4,3 +4,5 @@
 .site.old/
 # A fetched price list (local/script/fetch-feeds.ts). The provider files carry the history.
 .feeds/
+# Price lists exported by hand (PRICE_STATIC_DIR). The file date is the "checked" date, which git would reset.
+.static/

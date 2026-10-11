@@ -160,6 +160,14 @@ Each of upstream's Alibaba folders has its own feed in `local/feeds/`, all in `p
   (`~~$1.36~~ $0.68`) is its current price. A row or sentence it cannot read fails the whole fetch,
   so the last prices stay.
 
+## Sumopod (static prices, live list)
+
+`sumopod` keeps its prices in the exported `$PRICE_STATIC_DIR/sumopod.json` (default for this
+machine: `local/.static/`, gitignored). Its `[fetch]` has `static_prices = true`: the job pulls
+`https://ai.sumopod.com/v1/models` (needs `[prices] sumopod_api_key`) and drops every static row
+whose model that list does not have (`static.delisted`), so its file is deleted. A failed or empty
+fetch changes nothing; a missing key skips the feed (`fetch.skip`) and all static rows stay.
+
 ## Notifications
 
 After each run, the plugin (`tools/prices/run.ts`, `report`) sends one ntfy message (the `[ntfy]`

@@ -55,3 +55,11 @@ test("a reasoning model gets a peer's reasoning_options", () => {
   expect(text).toContain("[[reasoning_options]]");
   expect(text).toContain("# reasoning_options copied from providers/opencode-go/");
 });
+
+test("sumopod keeps its prices in the static list and reads the live list only to drop models", () => {
+  const f = feed().fetch!;
+  expect(f.static_prices).toBe(true);
+  expect(f.format).toBe("models");
+  const bad = { ...feed(), fetch: { ...f, format: "kenari" } };
+  expect(Feed.safeParse(bad).success).toBe(false);
+});
