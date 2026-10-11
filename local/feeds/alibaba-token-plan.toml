@@ -1,5 +1,8 @@
-# Alibaba Token Plan: a monthly subscription, so there is no per-token price,
-# and upstream's cost of 0 stays. The feed reads the plan's OpenAI-style model list and deletes
+# Alibaba Token Plan: a monthly subscription billed in Credits, and Alibaba publishes no Credit rate
+# per model. A cost of 0 would make a price router pick the plan for everything, so each listed
+# model gets the international pay-as-you-go price (the alibaba feed's list, fetched even while
+# that feed's own folder is off) times price_factor; a listed model with no such price (image,
+# audio) keeps upstream's 0. The feed reads the plan's OpenAI-style model list and deletes
 # upstream's file for a model the plan no longer serves. A list with more than one page changes
 # nothing. The list left out 16 of upstream's 28 files (image and video models among them); the
 # owner chose the list, hence max_retire = 0.75.
@@ -16,3 +19,6 @@ url = "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/mo
 format = "models"
 key_env = "ALIBABA_TOKEN_PLAN_API_KEY"
 max_retire = 0.75
+price_from = "alibaba"
+# 1 = the plan looks as dear as pay-as-you-go. Lower it to make the router prefer the plan.
+price_factor = 1
