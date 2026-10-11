@@ -218,7 +218,7 @@ To upgrade: download the new tarball into `local/doppelganger/vendor/`, then in 
 
 ## Pushing to GitHub
 
-With `[prices] push = 1`, a job pushes `router` to `origin` when it moved, and the hourly sync
+With `[prices] push = 1`, a job pushes `router` to `origin` when it moved, and the sync (every 15 minutes)
 also fast-forwards `origin`'s `dev` to `upstream/dev`, so the fork never shows as behind. `dev`
 holds none of our commits: a push that is not a fast-forward is refused and the job fails.
 
@@ -237,5 +237,5 @@ nvm on its PATH, and Docker must be the rootless daemon, so the lines set both:
 
 ```
 * * * * * PATH=/home/hyhilman/.nvm/versions/node/v22.23.1/bin:/usr/local/bin:/usr/bin:/bin DOCKER_HOST=unix:///run/user/1000/docker.sock /home/hyhilman/projects/me/models.dev/local/doppelganger/dg job ops-price-static >> /home/hyhilman/projects/me/models.dev/.doppelganger/logs/ops-price-static.log 2>&1
-27 * * * * PATH=/home/hyhilman/.nvm/versions/node/v22.23.1/bin:/usr/local/bin:/usr/bin:/bin DOCKER_HOST=unix:///run/user/1000/docker.sock /home/hyhilman/projects/me/models.dev/local/doppelganger/dg job ops-price-sync >> /home/hyhilman/projects/me/models.dev/.doppelganger/logs/ops-price-sync.log 2>&1
+12,27,42,57 * * * * PATH=/home/hyhilman/.nvm/versions/node/v22.23.1/bin:/usr/local/bin:/usr/bin:/bin DOCKER_HOST=unix:///run/user/1000/docker.sock /home/hyhilman/projects/me/models.dev/local/doppelganger/dg job ops-price-sync >> /home/hyhilman/projects/me/models.dev/.doppelganger/logs/ops-price-sync.log 2>&1
 ```
