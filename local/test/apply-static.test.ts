@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import path from "node:path";
 import { readFileSync } from "node:fs";
-import { baseModelOf, Feed, PriceList, render, tidy } from "../script/apply-static.ts";
+import { baseModelOf, costDiff, Feed, PriceList, render, tidy } from "../script/apply-static.ts";
 
 const example = () =>
   JSON.parse(readFileSync(path.join(import.meta.dir, "../example/sumopod.json"), "utf8")) as Record<string, unknown>[];
@@ -62,4 +62,11 @@ test("sumopod keeps its prices in the static list and reads the live list only t
   expect(f.format).toBe("models");
   const bad = { ...feed(), fetch: { ...f, format: "kenari" } };
   expect(Feed.safeParse(bad).success).toBe(false);
+});
+
+test("costDiff names only what changed, and nothing for an equal cost", () => {
+  expect(costDiff({ input: 2, output: 8 }, { input: 2.5, output: 8 })).toBe("input 2→2.5");
+  expect(costDiff({ input: 2, output: 8 }, { input: 2, output: 8 })).toBe("");
+  expect(costDiff({ input: 2, output: 8, cache_read: 0.2 }, { input: 2, output: 8 })).toBe("cache_read 0.2→-");
+  expect(costDiff({ input: 1, output: 2 }, { input: 1, output: 2, tiers: [{}] })).toBe("tiers or off-peak");
 });

@@ -173,8 +173,10 @@ fetch changes nothing; a missing key skips the feed (`fetch.skip`) and all stati
 After each run, the plugin (`tools/prices/run.ts`, `report`) sends one ntfy message (the `[ntfy]`
 settings) when something happened:
 
-- `💲 <provider>: N file(s) written, M removed (names)` for every commit a feed makes, the
-  off-peak switches included; `🔀` for an upstream merge, `↩️` when a merge kept upstream's files.
+- `💲 <provider>` and one line per model, `name: input 2→2.5, output 8→10` (or `new`, `removed`),
+  for every commit that changed a price, added or removed a model. A commit that changed no price
+  (a date, a rate comment) sends nothing. Off-peak switches show as price changes. `↩️` when a merge
+  kept upstream's files. A normal upstream merge sends nothing; a conflict or a failed check sends `❌`.
 - `❌` once for a new failure (a fetch, an apply, the merge, the job, a model in our providers
   with no canonical id that `local/house-models.toml` does not list), and `✅ ... works again`
   once when it clears. Open failures live in `local/.feeds/alerts.json`, so a failure that lasts
