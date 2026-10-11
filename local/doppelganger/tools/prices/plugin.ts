@@ -1,6 +1,6 @@
 // The price jobs. An attached plugin cannot schedule yet, so this machine's crontab runs them:
 //   * * * * *  ops-price-static   apply the static price feed
-//   27 * * * * ops-price-sync     merge upstream models.dev
+//   12,27,42,57 * * * * ops-price-sync  merge upstream models.dev (every 15 minutes)
 // See local/AGENTS.md for the crontab lines.
 import { definePlugin, killSwitch } from "doppelganger/plugin";
 import { defineJob } from "doppelganger/ports/job";
