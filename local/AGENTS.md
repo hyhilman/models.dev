@@ -134,6 +134,10 @@ Each of upstream's Alibaba folders has its own feed in `local/feeds/`, all in `p
 | `alibaba-token-plan` | `token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/models` | `alibaba_token_plan_api_key` | Deletes models the plan dropped |
 | `alibaba-token-plan-cn` | `token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/models` | `alibaba_token_plan_cn_api_key` | Deletes models the plan dropped |
 
+- `alibaba-token-plan` sets `price_from = "alibaba"`: each listed model gets the international
+  pay-as-you-go price (with its off-peak switch) times `price_factor`, because a cost of 0 would win
+  every routing choice and Alibaba publishes no Credit rate per model. Models with no such price
+  (image, audio) keep 0. A `price_from` feed is fetched even when its own folder is off.
 - The plans are monthly subscriptions. Their lists (format `models`) carry ids only, so upstream's
   cost of 0 stays; the feed only removes what the plan no longer serves (at most half the folder,
   or 75% for `alibaba-token-plan`, whose list left out 16 of 28 files).
