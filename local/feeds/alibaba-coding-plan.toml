@@ -1,7 +1,7 @@
 # Alibaba Coding Plan: a monthly subscription, so there is no per-token price,
 # and upstream's cost of 0 stays. The feed reads the plan's OpenAI-style model list and deletes
-# upstream's file for a model the plan no longer serves. A list with more than one page, or one
-# that would delete more than half the folder, changes nothing.
+# upstream's file for a model the plan no longer serves. A list with more than one page changes
+# nothing.
 # The list is public: no key.
 name = "Alibaba Coding Plan"
 env = ["ALIBABA_CODING_PLAN_API_KEY"]

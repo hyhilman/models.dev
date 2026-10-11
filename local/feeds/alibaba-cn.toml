@@ -5,7 +5,7 @@
 # (fetch.skip) and upstream's prices stay.
 # Prices are CNY. fetch-feeds.ts converts them at the ECB rate of the first day of the month.
 # Patch mode: only the cost tables of upstream's files change, and a file whose model the list
-# no longer has is deleted (at most 75% of the folder; the owner chose the live list).
+# no longer has is deleted (the owner chose the live list).
 # Off-peak: the same 22:00-08:00 UTC+8 switch as the international feed.
 name = "Alibaba (China)"
 env = ["DASHSCOPE_API_KEY"]
@@ -19,4 +19,3 @@ format = "dashscope"
 key_env = "DASHSCOPE_CN_API_KEY"
 currency = "CNY"
 region = "China (Beijing)"
-max_retire = 0.75
