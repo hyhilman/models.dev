@@ -6,3 +6,6 @@
 .feeds/
 # Price lists exported by hand (PRICE_STATIC_DIR). The file date is the "checked" date, which git would reset.
 .static/
+# Editor swap files (vim keeps a copy of the file being edited, secrets included)
+*.swp
+*.swo
