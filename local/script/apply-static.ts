@@ -102,8 +102,6 @@ export const Feed = z
         // times price_factor. For a plan billed in credits that has no published rate per model.
         price_from: z.string().regex(/^[a-z0-9-]+$/).optional(),
         price_factor: z.number().positive().default(1),
-        // A list that would delete more than this share of a patch folder is refused as broken.
-        max_retire: z.number().gt(0).max(1).default(0.5),
       })
       .strict()
       .refine((f) => f.price_from === undefined || f.format === "models", "price_from is for a models list")
@@ -411,25 +409,16 @@ function git(args: string[]): { ok: boolean; out: string } {
 }
 
 /**
- * Upstream's model files for models the provider no longer lists. A list that would retire more
- * than `max` of the folder (half, unless the feed says) is more likely broken than true, so then
- * nothing is deleted.
+ * Upstream's model files for models the provider no longer lists. The live list wins, however
+ * many it drops: a fetch that failed (an HTTP error, bad JSON, an empty or paged list) never
+ * reaches here, so the last good list stays.
  */
-export function retired(
-  provider: string,
-  have: ReadonlyMap<string, string>,
-  listed: readonly string[] | undefined,
-  max = 0.5,
-): string[] {
+export function retired(provider: string, have: ReadonlyMap<string, string>, listed: readonly string[] | undefined): string[] {
   if (!listed) return [];
   const prefix = `providers/${provider}/models/`;
   const files = [...have.keys()].filter((p) => p.startsWith(prefix));
   const ids = new Set(listed);
   const gone = files.filter((p) => !ids.has(p.slice(prefix.length).replace(/\.toml$/, ""))).sort();
-  if (gone.length > files.length * max) {
-    log("static.retire_refused", { provider, would_delete: gone.length, of: files.length });
-    return [];
-  }
   if (gone.length > 0) log("static.retired", { provider, models: gone.map((p) => p.slice(prefix.length)).join(",") });
   return gone;
 }
@@ -470,7 +459,7 @@ function apply(provider: string, patch: boolean): "unchanged" | "changed" | "ski
   const body = (text: string | undefined) => text?.split("\n").slice(1).join("\n");
   const writes = [...want].filter(([p, text]) => body(have.get(p)) !== body(text));
   // A patch deletes only upstream files for models the provider's live list no longer has.
-  const deletes = patch ? retired(provider, have, listed, feed.fetch?.max_retire) : [...have.keys()].filter((p) => !want.has(p));
+  const deletes = patch ? retired(provider, have, listed) : [...have.keys()].filter((p) => !want.has(p));
   const needLogo = !patch && !existsSync(path.join(dir, "logo.svg"));
   if (writes.length === 0 && deletes.length === 0 && !needLogo) {
     log("static.unchanged", { provider, models: patch ? want.size : want.size - 1, skipped: skipped.length });

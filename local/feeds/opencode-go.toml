@@ -1,7 +1,7 @@
 # OpenCode Go: upstream owns providers/opencode-go/ and keeps its prices (the OpenCode team runs
 # models.dev, so they are first-party). This feed only reads the gateway's OpenAI-style model list
 # and deletes upstream's file for a model the gateway no longer serves; it never adds a file. A
-# list with more than one page, or one that would delete more than half the folder, changes nothing.
+# list with more than one page changes nothing.
 # The list is public, but read with the account's key, so it shows what that key can use: [prices]
 # opencode_api_key in doppelganger.secret.toml (gitignored), passed as OPENCODE_API_KEY. Without it
 # the feed is skipped (fetch.skip).

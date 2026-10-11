@@ -97,8 +97,8 @@ Kenari publishes its prices at `https://kenari.id/v1/models`, so nobody exports 
   logged as `static.unlisted`; no file is added.
 - Kenari's live list wins over upstream's catalog: an upstream file whose id is in none of
   Kenari's lists (the main one and each `?modality=`) is deleted (`static.retired`). A fetch where
-  any list fails changes nothing, and a list that would delete more than half the folder is
-  refused (`static.retire_refused`).
+  any list fails changes nothing. There is no limit on how many a good list deletes: a failed
+  call (HTTP error, bad JSON, an empty or paged list) never gets that far, so the last list stays.
 - An upstream merge that conflicts inside a patch folder takes upstream's file
   (`sync.took_upstream`). The next static run writes the price again. A conflict anywhere else
   still aborts the merge.
@@ -120,7 +120,7 @@ with an API key, so it works like Kenari with three differences:
   Alibaba's pricing page). The minute job writes the off-peak price inside those hours and the peak
   price outside them, so the catalog shows the price that applies now; each switch is a commit.
 - The key is a workspace key, and about half of upstream's folder is missing from its list. The
-  owner chose the list, so `max_retire = 0.75` lets the feed delete up to 75% of the folder.
+  owner chose the list.
 
 ## The other Alibaba providers
 
@@ -139,8 +139,7 @@ Each of upstream's Alibaba folders has its own feed in `local/feeds/`, all in `p
   every routing choice and Alibaba publishes no Credit rate per model. Models with no such price
   (image, audio) keep 0. A `price_from` feed is fetched even when its own folder is off.
 - The plans are monthly subscriptions. Their lists (format `models`) carry ids only, so upstream's
-  cost of 0 stays; the feed only removes what the plan no longer serves (at most half the folder,
-  or 75% for `alibaba-token-plan`, whose list left out 16 of 28 files).
+  cost of 0 stays; the feed only removes what the plan no longer serves.
 - A feed whose key is not set is skipped (`fetch.skip`), so it waits for its key without failing
   the job. A new key needs an `EnvSpec` in `KEY_ENVS` (`tools/prices/run.ts`) and its name in
   `local/script/run.sh`; a test checks both.
