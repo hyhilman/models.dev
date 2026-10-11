@@ -14,6 +14,13 @@ fi
 
 rm -rf local/.site.new local/.site.old
 cp -a packages/web/dist local/.site.new
+# Upstream leaves canonical_model_id out where a host file has no base_model; fill it from
+# local/aliases.toml in our copy only.
+if ! bun local/script/fill-canonical.ts local/.site.new; then
+  log site.canonical_failed
+  rm -rf local/.site.new
+  exit 1
+fi
 [ -d local/.site ] && mv local/.site local/.site.old
 mv local/.site.new local/.site
 rm -rf local/.site.old
