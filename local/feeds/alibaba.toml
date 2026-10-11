@@ -21,3 +21,4 @@ url = "https://dashscope-intl.aliyuncs.com/api/v1/models"
 format = "dashscope"
 key_env = "DASHSCOPE_API_KEY"
 max_retire = 0.75
+region = "international (Singapore)"

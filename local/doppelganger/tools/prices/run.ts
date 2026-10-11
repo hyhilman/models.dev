@@ -55,6 +55,32 @@ export const PRICES_DASHSCOPE_API_KEY_ENV: EnvSpec = {
   secret: true,
   why: "Alibaba Model Studio API key for the alibaba price list; set it in doppelganger.secret.toml",
 };
+export const PRICES_DASHSCOPE_CN_API_KEY_ENV: EnvSpec = {
+  key: "PRICES_DASHSCOPE_CN_API_KEY",
+  default: "",
+  secret: true,
+  why: "Alibaba Model Studio China-region API key for the alibaba-cn price list; empty skips that feed",
+};
+export const PRICES_ALIBABA_TOKEN_PLAN_API_KEY_ENV: EnvSpec = {
+  key: "PRICES_ALIBABA_TOKEN_PLAN_API_KEY",
+  default: "",
+  secret: true,
+  why: "Alibaba Token Plan API key for the alibaba-token-plan model list; empty skips that feed",
+};
+export const PRICES_ALIBABA_TOKEN_PLAN_CN_API_KEY_ENV: EnvSpec = {
+  key: "PRICES_ALIBABA_TOKEN_PLAN_CN_API_KEY",
+  default: "",
+  secret: true,
+  why: "Alibaba Token Plan China-region API key for the alibaba-token-plan-cn model list; empty skips that feed",
+};
+
+/** Each feed's key: the env var the feed's key_env names, and the setting that holds it. */
+export const KEY_ENVS: Readonly<Record<string, EnvSpec>> = {
+  DASHSCOPE_API_KEY: PRICES_DASHSCOPE_API_KEY_ENV,
+  DASHSCOPE_CN_API_KEY: PRICES_DASHSCOPE_CN_API_KEY_ENV,
+  ALIBABA_TOKEN_PLAN_API_KEY: PRICES_ALIBABA_TOKEN_PLAN_API_KEY_ENV,
+  ALIBABA_TOKEN_PLAN_CN_API_KEY: PRICES_ALIBABA_TOKEN_PLAN_CN_API_KEY_ENV,
+};
 
 export const PRICES_ENV: readonly EnvSpec[] = [
   PRICES_STATIC_DIR_ENV,
@@ -65,7 +91,7 @@ export const PRICES_ENV: readonly EnvSpec[] = [
   PRICES_PUSH_ENV,
   PRICES_DRY_RUN_ENV,
   PRICES_FETCH_MINUTES_ENV,
-  PRICES_DASHSCOPE_API_KEY_ENV,
+  ...Object.values(KEY_ENVS),
 ];
 
 export type Task = "static" | "sync";
@@ -130,7 +156,7 @@ export function priceRun(ctx: JobContext, task: Task): PriceRun {
     push: ctx.env.str(PRICES_PUSH_ENV) === "1",
     dryRun: ctx.env.str(PRICES_DRY_RUN_ENV) === "1",
     fetchMinutes: fetchMinutes(ctx.env.str(PRICES_FETCH_MINUTES_ENV)),
-    keys: keys({ DASHSCOPE_API_KEY: ctx.env.str(PRICES_DASHSCOPE_API_KEY_ENV).trim() }),
+    keys: keys(Object.fromEntries(Object.entries(KEY_ENVS).map(([k, spec]) => [k, ctx.env.str(spec).trim()]))),
   };
 }
 
