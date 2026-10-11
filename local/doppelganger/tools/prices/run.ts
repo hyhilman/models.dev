@@ -199,8 +199,8 @@ const short = (names: string, n = 8): string => {
 };
 
 /**
- * The ntfy report for one run, and the open problems after it. A change (prices written, models
- * removed, upstream merged) is reported every time; a failure only when it is new or its message
+ * The ntfy report for one run, and the open problems after it. A change (a price, a new or
+ * removed model) is reported with its diff; a plain upstream merge is not reported, a failed one is; a failure only when it is new or its message
  * changed, and once more when it clears. A run with neither sends nothing.
  */
 export function report(task: Task, lines: readonly string[], failed: string | null, open: Alerts): { body: string | null; open: Alerts } {
@@ -216,7 +216,13 @@ export function report(task: Task, lines: readonly string[], failed: string | nu
     delete next[key];
     out.push(`✅ ${what} works again`);
   };
-  const retired = new Map(ev.filter((e) => e.name === "static.retired").map((e) => [e.f.provider!, e.f.models!]));
+  // What changed per provider, one line per model: a price diff, a new model, a removed one.
+  const changes = new Map<string, string[]>();
+  for (const e of ev) {
+    if (e.name !== "static.change") continue;
+    const what = e.f.kind === "price" ? e.f.diff : e.f.kind === "new" ? "new" : "removed";
+    changes.set(e.f.provider!, [...(changes.get(e.f.provider!) ?? []), `${e.f.model}: ${what}`]);
+  }
   for (const e of ev) {
     const p = e.f.provider ?? "";
     if (e.name === "fetch.error") fail(`fetch:${p}`, `${p} fetch: ${e.f.error}`);
@@ -225,10 +231,10 @@ export function report(task: Task, lines: readonly string[], failed: string | nu
     else if (e.name === "static.unchanged") clear(`static:${p}`, `${p} apply`);
     else if (e.name === "static.applied") {
       clear(`static:${p}`, `${p} apply`);
-      const gone = retired.get(p);
-      out.push(`💲 ${p}: ${e.f.write} file(s) written, ${e.f.delete} removed${gone ? ` (${short(gone)})` : ""}`);
-    } else if (e.name === "sync.merged") out.push(`🔀 upstream merged (upstream ${e.f.upstream}, router ${e.f.to})`);
-    else if (e.name === "sync.took_upstream") out.push(`↩️ upstream's files kept on a conflict: ${short(e.f.files ?? "")}`);
+      // A write that changed no price (a date, a rate comment) says nothing.
+      const c = changes.get(p) ?? [];
+      if (c.length > 0) out.push(`💲 ${p}\n${c.slice(0, 10).join("\n")}${c.length > 10 ? `\n+${c.length - 10} more` : ""}`);
+    } else if (e.name === "sync.took_upstream") out.push(`↩️ upstream's files kept on a conflict: ${short(e.f.files ?? "")}`);
     else if (e.name === "sync.conflict" || e.name === "sync.check_failed") fail("sync", `upstream merge: ${e.name === "sync.conflict" ? `conflict in ${short(e.f.files ?? "")}` : `check failed at ${e.f.step}`}`);
     else if (e.name === "sync.unchanged") clear("sync", "upstream merge");
     else if (e.name === "site.canonical") {
