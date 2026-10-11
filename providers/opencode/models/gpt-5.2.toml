@@ -1,3 +1,6 @@
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-10-11.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/packages/web/src/content/docs/zen.mdx.
 name = "GPT-5.2"
 description = "GPT model for general reasoning, writing, coding, and tool-assisted tasks"
 family = "gpt"
@@ -14,7 +17,7 @@ open_weights = false
 
 [cost]
 input = 1.75
-output = 14.00
+output = 14
 cache_read = 0.175
 
 [limit]

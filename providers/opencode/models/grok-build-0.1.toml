@@ -1,10 +1,13 @@
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-10-11.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/packages/web/src/content/docs/zen.mdx.
 base_model = "xai/grok-build-0.1"
 reasoning_options = []
 
 [cost]
-input = 1.00
-output = 2.00
-cache_read = 0.20
+input = 1
+output = 2
+cache_read = 0.2
 
 [limit]
 context = 256_000

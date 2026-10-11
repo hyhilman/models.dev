@@ -1,3 +1,6 @@
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-10-11.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/packages/web/src/content/docs/zen.mdx.
 name = "GLM-5"
 description = "Flagship GLM model for hybrid reasoning, coding, and agentic engineering"
 family = "glm"
@@ -15,7 +18,7 @@ open_weights = true
 field = "reasoning_content"
 
 [cost]
-input = 1.0
+input = 1
 output = 3.2
 cache_read = 0.2
 

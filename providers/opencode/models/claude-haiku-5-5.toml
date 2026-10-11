@@ -1,3 +1,6 @@
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-10-11.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/packages/web/src/content/docs/zen.mdx.
 # Sources: https://opencode.ai/docs/zen/#endpoints and https://opencode.ai/docs/zen/#pricing
 # Toggle: thinking.type = adaptive|disabled (disabled only at low, medium, or high effort)
 # Effort: output_config.effort = low|medium|high|xhigh|max
@@ -6,15 +9,15 @@ base_model = "anthropic/claude-haiku-5-5"
 reasoning_options = [{ type = "toggle" }, { type = "effort", values = ["low", "medium", "high", "xhigh", "max"] }]
 
 [cost]
-input = 0.10
-output = 0.50
+input = 0.1
+output = 0.5
 cache_read = 0.01
 cache_write = 0.125
 
 [[cost.tiers]]
 tier = { type = "context", size = 100_000 }
-input = 0.50
-output = 2.50
+input = 0.5
+output = 2.5
 cache_read = 0.05
 cache_write = 0.625
 

@@ -1,3 +1,6 @@
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-10-11.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/packages/web/src/content/docs/zen.mdx.
 name = "Gemini 3.5 Flash"
 description = "Fast Gemini model balancing multimodal reasoning, tool use, and cost"
 family = "gemini-flash"
@@ -13,10 +16,9 @@ knowledge = "2025-01"
 open_weights = false
 
 [cost]
-input = 1.50
-output = 9.00
+input = 1.5
+output = 9
 cache_read = 0.15
-input_audio = 1.50
 
 [limit]
 context = 1_048_576
