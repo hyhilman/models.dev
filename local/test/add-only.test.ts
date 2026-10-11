@@ -27,6 +27,8 @@ export function withoutCost(text: string): string {
   let inCost = false;
   for (const line of text.split("\n")) {
     if (line.startsWith(PATCH_MARK)) continue;
+    // The feed may add a blank line before [cost]; layout is not content.
+    if (line.trim() === "") continue;
     // [cost], [cost.*] and [[cost.tiers]]: every cost table is the feed's.
     if (line.trim().startsWith("[")) inCost = /^\[\[?cost[\].]/.test(line.trim());
     if (!inCost) out.push(line);
