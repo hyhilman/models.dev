@@ -21,7 +21,7 @@ This fork tracks `anomalyco/models.dev` (remote `upstream`, branch `dev`). Our w
 
 | Path | What |
 |---|---|
-| `local/static.toml` | Providers the price feed may write (now: `sumopod`, `kenari`, and the six `alibaba*`), and which are `patch` |
+| `local/static.toml` | Providers the price feed may write (now: `sumopod`, `kenari`, the six `alibaba*`, `opencode`, `opencode-go`), and which are `patch` |
 | `local/aliases.toml` | Lab model for a host entry that has no `base_model` |
 | `local/feeds/<p>.toml` | Provider details the price list does not carry, and its name map |
 | `local/example/<p>.json` | A cut of a real price list, the format reference |
@@ -144,6 +144,20 @@ Each of upstream's Alibaba folders has its own feed in `local/feeds/`, all in `p
 - A feed whose key is not set is skipped (`fetch.skip`), so it waits for its key without failing
   the job. A new key needs an `EnvSpec` in `KEY_ENVS` (`tools/prices/run.ts`) and its name in
   `local/script/run.sh`; a test checks both.
+
+## OpenCode (Zen and Go)
+
+`opencode` and `opencode-go` are `patch` feeds of format `models`: each reads its gateway's model
+list (`opencode.ai/zen/v1/models`, `opencode.ai/zen/go/v1/models`) with `[prices] opencode_api_key`
+and deletes upstream's files for models the gateway no longer serves. Prices stay upstream's: the
+OpenCode team runs models.dev, and Go's own prices (cheaper DeepSeek) are deliberate.
+
+## canonical_model_id on the local site
+
+Upstream's JSON has `canonical_model_id` (`canonical_id` in v2) only for host files with
+`base_model`. `publish-site.sh` runs `local/script/fill-canonical.ts` on the built copy, which
+fills it from `local/aliases.toml` where it is missing (opencode-go has 12 such files; the two
+`space-bunny` ones have no lab model). Upstream's files stay untouched.
 
 ## How to change a price
 

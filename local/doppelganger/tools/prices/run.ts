@@ -73,6 +73,12 @@ export const PRICES_ALIBABA_TOKEN_PLAN_CN_API_KEY_ENV: EnvSpec = {
   secret: true,
   why: "Alibaba Token Plan China-region API key for the alibaba-token-plan-cn model list; empty skips that feed",
 };
+export const PRICES_OPENCODE_API_KEY_ENV: EnvSpec = {
+  key: "PRICES_OPENCODE_API_KEY",
+  default: "",
+  secret: true,
+  why: "OpenCode Zen API key for the opencode and opencode-go model lists; empty skips those feeds",
+};
 
 /** Each feed's key: the env var the feed's key_env names, and the setting that holds it. */
 export const KEY_ENVS: Readonly<Record<string, EnvSpec>> = {
@@ -80,6 +86,7 @@ export const KEY_ENVS: Readonly<Record<string, EnvSpec>> = {
   DASHSCOPE_CN_API_KEY: PRICES_DASHSCOPE_CN_API_KEY_ENV,
   ALIBABA_TOKEN_PLAN_API_KEY: PRICES_ALIBABA_TOKEN_PLAN_API_KEY_ENV,
   ALIBABA_TOKEN_PLAN_CN_API_KEY: PRICES_ALIBABA_TOKEN_PLAN_CN_API_KEY_ENV,
+  OPENCODE_API_KEY: PRICES_OPENCODE_API_KEY_ENV,
 };
 
 export const PRICES_ENV: readonly EnvSpec[] = [
