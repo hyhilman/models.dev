@@ -159,13 +159,3 @@ test("a plan borrows another feed's prices for its listed models only, times the
   const tiered = { ...a!, offpeak: undefined, tiers: [{ size: 256_000, input: 1, output: 2 }] };
   expect(borrowRows([tiered], ["m"], 0.5)[0]!.tiers).toEqual([{ size: 256_000, input: 0.5, output: 1 }]);
 });
-
-test("a missing canonical id is filled from the aliases; one upstream set stays", async () => {
-  const { fill } = await import("../script/fill-canonical.ts");
-  const api = { go: { models: { a: { id: "a" }, b: { id: "b", canonical_model_id: "lab/b" } } } };
-  expect(fill(api, { "go/a": "lab/a", "go/b": "lab/other", "go/gone": "lab/x" }, "canonical_model_id")).toBe(1);
-  expect(api.go.models).toEqual({ a: { id: "a", canonical_model_id: "lab/a" }, b: { id: "b", canonical_model_id: "lab/b" } });
-  const catalog = { providers: { go: { models: { a: {} } } } };
-  fill(catalog, { "go/a": "lab/a" }, "canonical_id");
-  expect(catalog.providers.go.models.a).toEqual({ canonical_id: "lab/a" });
-});

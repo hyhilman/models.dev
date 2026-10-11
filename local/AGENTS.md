@@ -151,13 +151,6 @@ list (`opencode.ai/zen/v1/models`, `opencode.ai/zen/go/v1/models`) with `[prices
 and deletes upstream's files for models the gateway no longer serves. Prices stay upstream's: the
 OpenCode team runs models.dev, and Go's own prices (cheaper DeepSeek) are deliberate.
 
-## canonical_model_id on the local site
-
-Upstream's JSON has `canonical_model_id` (`canonical_id` in v2) only for host files with
-`base_model`. `publish-site.sh` runs `local/script/fill-canonical.ts` on the built copy, which
-fills it from `local/aliases.toml` where it is missing (opencode-go has 12 such files; the two
-`space-bunny` ones have no lab model). Upstream's files stay untouched.
-
 ## How to change a price
 
 Drop a new export of the price list at `$PRICE_STATIC_DIR/<provider>.json`. The scheduled job
