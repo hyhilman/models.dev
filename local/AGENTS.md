@@ -135,7 +135,8 @@ Each of upstream's Alibaba folders has its own feed in `local/feeds/`, all in `p
 | `alibaba-token-plan-cn` | `token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/models` | `alibaba_token_plan_cn_api_key` | Deletes models the plan dropped |
 
 - The plans are monthly subscriptions. Their lists (format `models`) carry ids only, so upstream's
-  cost of 0 stays; the feed only removes what the plan no longer serves (at most half the folder).
+  cost of 0 stays; the feed only removes what the plan no longer serves (at most half the folder,
+  or 75% for `alibaba-token-plan`, whose list left out 16 of 28 files).
 - A feed whose key is not set is skipped (`fetch.skip`), so it waits for its key without failing
   the job. A new key needs an `EnvSpec` in `KEY_ENVS` (`tools/prices/run.ts`) and its name in
   `local/script/run.sh`; a test checks both.
