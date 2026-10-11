@@ -1,0 +1,16 @@
+# Alibaba Token Plan (China): a monthly subscription, so there is no per-token price,
+# and upstream's cost of 0 stays. The feed reads the plan's OpenAI-style model list and deletes
+# upstream's file for a model the plan no longer serves. A list with more than one page, or one
+# that would delete more than half the folder, changes nothing.
+# The list needs the plan's key: [prices] alibaba_token_plan_cn_api_key in doppelganger.secret.toml
+# (gitignored), passed as ALIBABA_TOKEN_PLAN_CN_API_KEY. Without it the feed is skipped (fetch.skip).
+name = "Alibaba Token Plan (China)"
+env = ["ALIBABA_TOKEN_PLAN_API_KEY"]
+api = "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+doc = "https://www.alibabacloud.com/help/zh/model-studio/token-plan-overview"
+source = "Alibaba Token Plan (China) model list (https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/models)"
+
+[fetch]
+url = "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/models"
+format = "models"
+key_env = "ALIBABA_TOKEN_PLAN_CN_API_KEY"
