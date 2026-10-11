@@ -65,13 +65,14 @@ const PriceRow = z.object({
   context_length: z.number().int().nonnegative().optional(),
 });
 export type PriceRow = z.infer<typeof PriceRow>;
-export const PriceList = z.array(PriceRow).min(1).superRefine((rows, ctx) => {
+const unique = (rows: readonly PriceRow[], ctx: z.RefinementCtx) => {
   const seen = new Set<string>();
   for (const r of rows) {
     if (seen.has(r.model_name)) ctx.addIssue({ code: "custom", message: `duplicate model_name ${r.model_name}` });
     seen.add(r.model_name);
   }
-});
+};
+export const PriceList = z.array(PriceRow).min(1).superRefine(unique);
 export type PriceList = z.infer<typeof PriceList>;
 
 export const Feed = z
@@ -89,9 +90,14 @@ export const Feed = z
     fetch: z
       .object({
         url: z.string().url(),
-        format: z.enum(["kenari", "dashscope"]),
+        // "models" is an OpenAI-style model list with no prices (a subscription plan): it only
+        // deletes upstream's files for models the plan no longer serves.
+        format: z.enum(["kenari", "dashscope", "models"]),
         // The env var that holds the list's API key, for a list that needs one.
         key_env: z.string().regex(/^[A-Z][A-Z0-9_]*$/).optional(),
+        // dashscope: the currency of the list, and the region its note names.
+        currency: z.enum(["USD", "CNY"]).default("USD"),
+        region: z.string().min(1).optional(),
         // A list that would delete more than this share of a patch folder is refused as broken.
         max_retire: z.number().gt(0).max(1).default(0.5),
       })
@@ -106,7 +112,8 @@ export const Snapshot = z
   .object({
     checked: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     note: z.string(),
-    rows: PriceList,
+    // Empty for a "models" list, which has no prices.
+    rows: z.array(PriceRow).superRefine(unique),
     // Every model the provider serves, priced or not. A patch deletes upstream's files for the
     // rest: the provider's live list wins over upstream's catalog.
     listed: z.array(z.string()).min(1).optional(),

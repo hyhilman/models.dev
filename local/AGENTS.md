@@ -21,7 +21,7 @@ This fork tracks `anomalyco/models.dev` (remote `upstream`, branch `dev`). Our w
 
 | Path | What |
 |---|---|
-| `local/static.toml` | Providers the price feed may write (now: `sumopod`, `kenari`, `alibaba`), and which are `patch` |
+| `local/static.toml` | Providers the price feed may write (now: `sumopod`, `kenari`, and the six `alibaba*`), and which are `patch` |
 | `local/aliases.toml` | Lab model for a host entry that has no `base_model` |
 | `local/feeds/<p>.toml` | Provider details the price list does not carry, and its name map |
 | `local/example/<p>.json` | A cut of a real price list, the format reference |
@@ -110,7 +110,7 @@ with an API key, so it works like Kenari with three differences:
 
 - The key lives in `doppelganger.secret.toml` as `[prices] dashscope_api_key`. The plugin passes it
   to the container as `DASHSCOPE_API_KEY`, by name only, so it never shows in `ps`. A missing key
-  fails the fetch (`fetch.error`) and the last prices stay.
+  skips the feed (`fetch.skip`) and the last prices stay.
 - Prices are USD already. A model needs `input_token` and `output_token` prices per 1M tokens;
   other models (image, video, speech) are not priced. The explicit cache price wins over the
   implicit one; a thinking output price that differs becomes `reasoning`; each later price range
@@ -121,6 +121,24 @@ with an API key, so it works like Kenari with three differences:
   price outside them, so the catalog shows the price that applies now; each switch is a commit.
 - The key is a workspace key, and about half of upstream's folder is missing from its list. The
   owner chose the list, so `max_retire = 0.75` lets the feed delete up to 75% of the folder.
+
+## The other Alibaba providers
+
+Each of upstream's Alibaba folders has its own feed in `local/feeds/`, all in `patch`:
+
+| Provider | List | Key (`[prices]` in `doppelganger.secret.toml`) | What the feed does |
+|---|---|---|---|
+| `alibaba-cn` | `dashscope.aliyuncs.com/api/v1/models` | `dashscope_cn_api_key` (China region) | Prices, as `alibaba`; CNY converted at the ECB rate of the first day of the month |
+| `alibaba-coding-plan` | `coding-intl.dashscope.aliyuncs.com/v1/models` | none, the list is public | Deletes models the plan dropped |
+| `alibaba-coding-plan-cn` | `coding.dashscope.aliyuncs.com/v1/models` | none, the list is public | Deletes models the plan dropped |
+| `alibaba-token-plan` | `token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/models` | `alibaba_token_plan_api_key` | Deletes models the plan dropped |
+| `alibaba-token-plan-cn` | `token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/models` | `alibaba_token_plan_cn_api_key` | Deletes models the plan dropped |
+
+- The plans are monthly subscriptions. Their lists (format `models`) carry ids only, so upstream's
+  cost of 0 stays; the feed only removes what the plan no longer serves (at most half the folder).
+- A feed whose key is not set is skipped (`fetch.skip`), so it waits for its key without failing
+  the job. A new key needs an `EnvSpec` in `KEY_ENVS` (`tools/prices/run.ts`) and its name in
+  `local/script/run.sh`; a test checks both.
 
 ## How to change a price
 

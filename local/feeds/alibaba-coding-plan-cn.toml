@@ -1,0 +1,14 @@
+# Alibaba Coding Plan (China): a monthly subscription, so there is no per-token price,
+# and upstream's cost of 0 stays. The feed reads the plan's OpenAI-style model list and deletes
+# upstream's file for a model the plan no longer serves. A list with more than one page, or one
+# that would delete more than half the folder, changes nothing.
+# The list is public: no key.
+name = "Alibaba Coding Plan (China)"
+env = ["ALIBABA_CODING_PLAN_API_KEY"]
+api = "https://coding.dashscope.aliyuncs.com/v1"
+doc = "https://help.aliyun.com/zh/model-studio/coding-plan"
+source = "Alibaba Coding Plan (China) model list (https://coding.dashscope.aliyuncs.com/v1/models)"
+
+[fetch]
+url = "https://coding.dashscope.aliyuncs.com/v1/models"
+format = "models"

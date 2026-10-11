@@ -27,7 +27,8 @@ export function withoutCost(text: string): string {
   let inCost = false;
   for (const line of text.split("\n")) {
     if (line.startsWith(PATCH_MARK)) continue;
-    if (line.trim().startsWith("[")) inCost = line.trim() === "[cost]";
+    // [cost], [cost.*] and [[cost.tiers]]: every cost table is the feed's.
+    if (line.trim().startsWith("[")) inCost = /^\[\[?cost[\].]/.test(line.trim());
     if (!inCost) out.push(line);
   }
   return out.join("\n").trim();
@@ -81,6 +82,7 @@ test("withoutCost drops the feed's comments and [cost], and keeps the rest", () 
   const a = 'base_model = "x/y"\n\n[cost]\ninput = 0\noutput = 0\n\n[limit]\ncontext = 1\n';
   const b = `${PATCH_MARK} hi\nbase_model = "x/y"\n\n[cost]\ninput = 2\noutput = 3\ncache_read = 1\n\n[limit]\ncontext = 1\n`;
   expect(withoutCost(a)).toBe(withoutCost(b));
+  expect(withoutCost(a)).toBe(withoutCost(b.replace("\n[limit]", "[[cost.tiers]]\ntier = { type = \"context\", size = 1 }\ninput = 9\n\n[limit]")));
   expect(withoutCost(a)).not.toBe(withoutCost(b.replace("context = 1", "context = 2")));
 });
 

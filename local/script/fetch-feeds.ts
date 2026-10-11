@@ -5,10 +5,11 @@
 // PRICE_FETCH_MINUTES, counted from the last try, so a provider that is down is not hit every minute.
 // A failed fetch keeps the last snapshot, so the last good prices stay.
 //
-// Formats: "kenari" (public, IDR) and "dashscope" (Alibaba Model Studio, USD, needs the key named
-// by [fetch] key_env).
+// Formats: "kenari" (public, IDR), "dashscope" (Alibaba Model Studio, USD or CNY) and "models" (an
+// OpenAI-style model list with no prices, for a subscription plan). A list behind a key reads the
+// env var named by [fetch] key_env; with that var unset the feed is skipped (fetch.skip), not failed.
 //
-// Currency: the kenari rate is the ECB reference rate of the first day of the month (via frankfurter.dev).
+// Currency: the rate is the ECB reference rate of the first day of the month (via frankfurter.dev).
 // One rate per month keeps a daily rate move from rewriting every price file every day.
 //
 // Run: bun local/script/fetch-feeds.ts
@@ -135,7 +136,7 @@ export function tierStart(range: string): number | null {
  * (input_token and output_token); image, video and speech prices are per image, second or
  * character. The first price range is the base price, each later one a long-prompt tier.
  */
-export function dashscopeRows(models: readonly DashscopeModel[]): PriceRow[] {
+export function dashscopeRows(models: readonly DashscopeModel[], perUsd = 1): PriceRow[] {
   const rows: PriceRow[] = [];
   for (const m of models) {
     const ranges = m.prices ?? [];
@@ -145,7 +146,7 @@ export function dashscopeRows(models: readonly DashscopeModel[]): PriceRow[] {
       for (const x of r.prices) {
         if (x.price_unit !== "Per 1M tokens") continue;
         const b = x.time_band ?? "standard";
-        if (band === "offpeak" ? b === "offpeak" : b === "standard" || b === "peak") out.set(x.type, Number(x.price));
+        if (band === "offpeak" ? b === "offpeak" : b === "standard" || b === "peak") out.set(x.type, Number(x.price) / perUsd);
       }
       return out;
     };
@@ -193,37 +194,40 @@ async function getJson(url: string, key?: string): Promise<unknown> {
   return r.json();
 }
 
-/** IDR per USD on `date`. The note in the last snapshot carries the rate, so a month asks once. */
-async function idrPerUsd(date: string, last: Snapshot | null): Promise<number> {
-  const m = last?.note.match(/at ([\d.]+) IDR per USD \(ECB rate of (\d{4}-\d{2}-\d{2})/);
+/** `cur` per USD on `date`. The note in the last snapshot carries the rate, so a month asks once. */
+async function perUsd(cur: string, date: string, last: Snapshot | null): Promise<number> {
+  const m = last?.note.match(new RegExp(`at ([\\d.]+) ${cur} per USD \\(ECB rate of (\\d{4}-\\d{2}-\\d{2})`));
   if (m && m[2] === date) return Number(m[1]);
   const fx = z
-    .object({ rates: z.object({ IDR: z.number().positive() }) })
-    .parse(await getJson(`${FX_URL}/${date}?base=USD&symbols=IDR`));
-  return fx.rates.IDR;
+    .object({ rates: z.record(z.string(), z.number().positive()) })
+    .parse(await getJson(`${FX_URL}/${date}?base=USD&symbols=${cur}`));
+  const rate = fx.rates[cur];
+  if (rate === undefined) throw new Error(`no ${cur} rate for ${date}`);
+  return rate;
 }
+
+const fxNote = (cur: string, rate: number, date: string) =>
+  `at ${rate} ${cur} per USD (ECB rate of ${date}, via frankfurter.dev).`;
 
 type Got = Pick<Snapshot, "note" | "rows" | "listed">;
 
 async function kenari(feed: Feed, last: Snapshot | null, now: Date): Promise<Got> {
   const date = rateDate(now);
-  const rate = await idrPerUsd(date, last);
+  const rate = await perUsd("IDR", date, last);
   const main = await getJson(feed.fetch!.url);
   const rows = kenariRows(main, rate);
   // Any list that fails fails the fetch: a short list would delete the models it left out.
   const others = await Promise.all(KENARI_MODALITIES.map((m) => getJson(`${feed.fetch!.url}?modality=${m}`)));
   return {
-    note: `Converted from IDR at ${rate} IDR per USD (ECB rate of ${date}, via frankfurter.dev).`,
+    note: `Converted from IDR ${fxNote("IDR", rate, date)}`,
     rows,
     listed: kenariIds([main, ...others]),
   };
 }
 
 /** Every page of the list. A short read fails the fetch, since a missing page would delete models. */
-async function dashscope(feed: Feed): Promise<Got> {
-  const name = feed.fetch!.key_env;
-  const key = name ? process.env[name] : undefined;
-  if (!key) throw new Error(`no API key: set ${name ?? "[fetch] key_env"}`);
+async function dashscope(feed: Feed, key: string, last: Snapshot | null, now: Date): Promise<Got> {
+  const f = feed.fetch!;
   const models: DashscopeModel[] = [];
   for (let page = 1; ; page++) {
     const got = DashscopePage.parse(await getJson(`${feed.fetch!.url}?page_no=${page}&page_size=100`, key)).output;
@@ -233,11 +237,26 @@ async function dashscope(feed: Feed): Promise<Got> {
       break;
     }
   }
+  const region = f.region ? ` of the ${f.region} region` : "";
+  const listed = [...new Set(models.map((m) => m.model))].sort();
+  if (f.currency === "USD") return { note: `USD list prices${region}.`, rows: dashscopeRows(models), listed };
+  const date = rateDate(now);
+  const rate = await perUsd(f.currency, date, last);
   return {
-    note: `USD list prices of the international (Singapore) region.`,
-    rows: dashscopeRows(models),
-    listed: [...new Set(models.map((m) => m.model))].sort(),
+    note: `${f.currency} list prices${region}, converted ${fxNote(f.currency, rate, date)}`,
+    rows: dashscopeRows(models, rate),
+    listed,
   };
+}
+
+/** An OpenAI-style model list with no prices. More pages than one would need paging we do not do. */
+const ModelList = z.object({ data: z.array(z.object({ id: z.string() })).min(1), hasMore: z.boolean().optional() });
+
+async function models(feed: Feed, key: string | undefined): Promise<Got> {
+  const got = ModelList.parse(await getJson(feed.fetch!.url, key));
+  // A short list would delete the models it left out.
+  if (got.hasMore) throw new Error("the list has more pages; read them before trusting it");
+  return { note: "", rows: [], listed: [...new Set(got.data.map((m) => m.id))].sort() };
 }
 
 async function fetchFeed(provider: string, feed: Feed): Promise<void> {
@@ -247,9 +266,19 @@ async function fetchFeed(provider: string, feed: Feed): Promise<void> {
   mkdirSync(path.dirname(out), { recursive: true });
   writeFileSync(tried, "");
 
+  const f = feed.fetch!;
+  const key = f.key_env ? process.env[f.key_env] : undefined;
+  // A feed waiting for its key is not broken: the last prices (or upstream's) stay.
+  if (f.key_env && !key) {
+    log("fetch.skip", { provider, reason: `no API key; set ${f.key_env}` });
+    return;
+  }
   const last = existsSync(out) ? Snapshot.safeParse(JSON.parse(readFileSync(out, "utf8"))).data ?? null : null;
   const now = new Date();
-  const got = feed.fetch!.format === "kenari" ? await kenari(feed, last, now) : await dashscope(feed);
+  const got =
+    f.format === "kenari" ? await kenari(feed, last, now)
+    : f.format === "dashscope" ? await dashscope(feed, key!, last, now)
+    : await models(feed, key);
   const snap: Snapshot = { checked: now.toISOString().slice(0, 10), ...got };
   // Write then rename, so apply-static never reads half a file.
   writeFileSync(`${out}.new`, JSON.stringify(snap, null, 1) + "\n");
