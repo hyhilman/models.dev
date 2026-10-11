@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { dockerArgs, eventLines, fetchMinutes, GH_IN_CONTAINER, keys, type PriceRun } from "../doppelganger/tools/prices/run.ts";
+import { dockerArgs, eventLines, fetchMinutes, GH_IN_CONTAINER, keys, type PriceRun, report } from "../doppelganger/tools/prices/run.ts";
 
 const base: PriceRun = {
   task: "static",
@@ -53,4 +53,20 @@ test("only the scripts' event lines are kept", () => {
   expect(eventLines('bun noise\nevent=static.unchanged provider="x"\n$ git\n')).toEqual([
     'event=static.unchanged provider="x"',
   ]);
+});
+
+test("a report: changes every time, a failure once, and once more when it clears", () => {
+  const applied = 'event=static.applied provider="kenari" write="2" delete="1" committed="1"';
+  const retiredLine = 'event=static.retired provider="kenari" models="a.toml"';
+  const r1 = report("static", [retiredLine, applied], null, {});
+  expect(r1.body).toBe("💲 kenari: 2 file(s) written, 1 removed (a)");
+  const err = 'event=fetch.error provider="alibaba" error="GET x: HTTP 500"';
+  const r2 = report("static", [err], "x", r1.open);
+  expect(r2.body).toBe("❌ alibaba fetch: GET x: HTTP 500\n❌ price static job failed: x");
+  // The same failure next time: nothing new to say.
+  expect(report("static", [err], "x", r2.open).body).toBeNull();
+  const r3 = report("static", ['event=fetch.done provider="alibaba" rows="1" listed="1"'], null, r2.open);
+  expect(r3.body).toBe("✅ alibaba fetch works again\n✅ price static job works again");
+  expect(r3.open).toEqual({});
+  expect(report("static", ['event=static.unchanged provider="x" models="1" skipped="0"'], null, {}).body).toBeNull();
 });

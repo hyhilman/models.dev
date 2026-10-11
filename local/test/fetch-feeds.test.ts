@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { borrowRows, DASHSCOPE_OFFPEAK, dashscopeRows, kenariIds, ModelList, kenariRows, rateDate, tierStart } from "../script/fetch-feeds.ts";
+import { borrowRows, DASHSCOPE_OFFPEAK, dashscopeRows, kenariIds, ModelList, money, opencodeDocRows, kenariRows, rateDate, tierStart } from "../script/fetch-feeds.ts";
 import { Feed, inHours, patchCost, PATCH_MARK, retired, rowCost, Snapshot } from "../script/apply-static.ts";
 import { KEY_ENVS } from "../doppelganger/tools/prices/run.ts";
 import { readdirSync, readFileSync } from "node:fs";
@@ -158,4 +158,52 @@ test("a plan borrows another feed's prices for its listed models only, times the
   expect(rows[0]!.offpeak).toEqual({ input: 0.075, output: 0.3, hours: DASHSCOPE_OFFPEAK });
   const tiered = { ...a!, offpeak: undefined, tiers: [{ size: 256_000, input: 1, output: 2 }] };
   expect(borrowRows([tiered], ["m"], 0.5)[0]!.tiers).toEqual([{ size: 256_000, input: 0.5, output: 1 }]);
+});
+
+const doc = `
+| Model           | Model ID        | Endpoint |
+| --------------- | --------------- | -------- |
+| Qwen3.7 Plus    | qwen3.7-plus    | x        |
+| DeepSeek V4 Pro | deepseek-v4-pro | x        |
+| Sale Model      | sale            | x        |
+| Free Model      | free-free       | x        |
+
+**DeepSeek V4 Pro:** Peak hours are 01:00-04:00 and 06:00-10:00 UTC, Monday through Friday; all other hours are Off-Peak.
+
+<Tabs>
+  <TabItem label="Go">
+
+    | Model                        | Input  | Output | Cached Read | Cached Write | Monthly limit |
+    | ---------------------------- | ------ | ------ | ----------- | ------------ | ------------- |
+    | Qwen3.7 Plus (≤ 256K tokens) | $0.40  | $1.60  | $0.04       | $0.50        | **$60**       |
+    | Qwen3.7 Plus (> 256K tokens) | $1.20  | $4.80  | $0.12       | $1.50        | **$60**       |
+    | DeepSeek V4 Pro (Off-Peak)   | $0.66  | $1.98  | $0.022      | -            | **$15**       |
+    | DeepSeek V4 Pro (Peak)       | $1.32  | $3.96  | $0.044      | -            | **$15**       |
+    | Sale Model (50% off)         | ~~$1.36~~ $0.68 | $2.09 | - | -          | **$15**       |
+    | Free Model                   | Free   | Free   | Free        | -            | **Unlimited** |
+`;
+
+test("opencode docs: tiers, peak and off-peak, sales and free rows, by model id", () => {
+  const rows = new Map(opencodeDocRows(doc).map((r) => [r.model_name, r]));
+  expect(rows.get("qwen3.7-plus")).toMatchObject({
+    input_cost_per_1m_tokens: 0.4, cache_write_cost_per_1m_tokens: 0.5,
+    tiers: [{ size: 256_000, input: 1.2, output: 4.8, cache_read: 0.12, cache_write: 1.5 }],
+  });
+  const ds = rows.get("deepseek-v4-pro")!;
+  expect(ds).toMatchObject({ input_cost_per_1m_tokens: 1.32, output_cost_per_1m_tokens: 3.96, cache_write_cost_per_1m_tokens: null });
+  expect(ds.offpeak).toMatchObject({ input: 0.66, output: 1.98, cache_read: 0.022 });
+  expect(rows.get("sale")).toMatchObject({ input_cost_per_1m_tokens: 0.68, output_cost_per_1m_tokens: 2.09 });
+  expect(rows.get("free-free")).toMatchObject({ input_cost_per_1m_tokens: 0, output_cost_per_1m_tokens: 0, cache_read_cost_per_1m_tokens: 0 });
+  // Peak on weekdays inside the windows only; a weekend is off-peak all day.
+  expect(rowCost(ds, new Date("2026-10-12T02:00:00Z")).cost.input).toBe(1.32); // Monday 02:00
+  expect(rowCost(ds, new Date("2026-10-12T05:00:00Z")).cost.input).toBe(0.66); // Monday 05:00
+  expect(rowCost(ds, new Date("2026-10-11T02:00:00Z")).cost.input).toBe(0.66); // Sunday 02:00
+  expect(rowCost(ds, new Date("2026-10-12T09:59:00Z")).notes[0]).toContain("01:00-04:00 UTC Mon-Fri, 06:00-10:00 UTC Mon-Fri");
+});
+
+test("opencode docs: a row it cannot read fails the whole list", () => {
+  expect(() => opencodeDocRows(doc.replace("$0.40", "40 cents"))).toThrow();
+  expect(() => opencodeDocRows(doc.replace("| DeepSeek V4 Pro | deepseek-v4-pro | x        |\n", ""))).toThrow(/Model ID/);
+  expect(() => opencodeDocRows(doc.replace("Peak hours are", "Busy hours are"))).toThrow(/Peak hours/);
+  expect(money("-")).toBeNull();
 });

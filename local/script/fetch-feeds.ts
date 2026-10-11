@@ -186,12 +186,107 @@ export function dashscopeRows(models: readonly DashscopeModel[], perUsd = 1): Pr
   return PriceList.parse(rows);
 }
 
-async function getJson(url: string, key?: string): Promise<unknown> {
-  const headers: Record<string, string> = { accept: "application/json" };
+async function get(url: string, key?: string): Promise<Response> {
+  const headers: Record<string, string> = { accept: "application/json, text/plain" };
   if (key) headers.authorization = `Bearer ${key}`;
   const r = await fetch(url, { signal: AbortSignal.timeout(30_000), headers });
   if (!r.ok) throw new Error(`GET ${url}: HTTP ${r.status}`);
-  return r.json();
+  return r;
+}
+const getJson = async (url: string, key?: string): Promise<unknown> => (await get(url, key)).json();
+
+/** Every Markdown table in `text`, indented ones too (inside <Tabs>). */
+export function mdTables(text: string): { head: string[]; rows: string[][] }[] {
+  const lines = text.split("\n").map((l) => l.trim());
+  const cells = (l: string) => l.replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
+  const out: { head: string[]; rows: string[][] }[] = [];
+  for (let i = 0; i < lines.length - 1; i++) {
+    if (!lines[i]!.startsWith("|") || !/^\|[\s:|-]+\|$/.test(lines[i + 1]!)) continue;
+    const rows: string[][] = [];
+    let j = i + 2;
+    for (; j < lines.length && lines[j]!.startsWith("|"); j++) rows.push(cells(lines[j]!));
+    out.push({ head: cells(lines[i]!), rows });
+    i = j - 1;
+  }
+  return out;
+}
+
+/** "$0.40" -> 0.4, "Free" -> 0, "-" -> null, "~~$1.36~~ $0.68" (a sale) -> 0.68. Else it throws. */
+export function money(cell: string): number | null {
+  if (cell === "-" || cell === "") return null;
+  if (cell === "Free") return 0;
+  const all = [...cell.replace(/~~[^~]*~~/g, "").matchAll(/\$(\d+(?:\.\d+)?)/g)];
+  if (all.length !== 1) throw new Error(`cannot read the price "${cell}"`);
+  return Number(all[0]![1]);
+}
+
+/** OpenCode's peak hours, from the sentence its docs use: "Peak hours are 01:00-04:00 and 06:00-10:00 UTC, Monday through Friday". */
+export function opencodePeak(text: string): Hours[] {
+  const found = [...new Set([...text.matchAll(/Peak hours are ([^;.]*?) UTC, Monday through Friday/g)].map((m) => m[1]!))];
+  if (found.length !== 1) throw new Error(`expected one "Peak hours are ... UTC, Monday through Friday" sentence, found ${found.length}`);
+  const spans = [...found[0]!.matchAll(/(\d\d:\d\d)-(\d\d:\d\d)/g)];
+  if (spans.length === 0) throw new Error(`no hours in "${found[0]}"`);
+  return spans.map((m) => ({ from: m[1]!, to: m[2]!, utc_offset: 0, days: [1, 2, 3, 4, 5] }));
+}
+
+/**
+ * OpenCode's price table (docs/zen.mdx, docs/go.mdx) as price rows, by model id. The table names a
+ * model by its display name; the "Model | Model ID" table gives the id. A name may carry one note:
+ * "(≤ 256K tokens)" is the base price and "(> 256K tokens)" a tier from 256K; "(Peak)" and
+ * "(Off-Peak)" are the two prices of the off-peak switch; any other note ("50% off") is the price
+ * now. Anything it cannot read fails the whole list, so a changed page never half-applies.
+ */
+export function opencodeDocRows(text: string): PriceRow[] {
+  const tables = mdTables(text);
+  const ids = new Map<string, string[]>();
+  for (const t of tables.filter((t) => t.head[0] === "Model" && t.head[1] === "Model ID")) {
+    for (const r of t.rows) ids.set(r[0]!, [...(ids.get(r[0]!) ?? []), r[1]!.replace(/`/g, "")]);
+  }
+  const table = tables.find((t) => t.head[0] === "Model" && t.head[1] === "Input" && t.head[2] === "Output");
+  if (!table || ids.size === 0) throw new Error("no price table or no Model ID table");
+  const col = (name: string) => table.head.indexOf(name);
+  const [read, write] = [col("Cached Read"), col("Cached Write")];
+  type C = { input: number; output: number; cache_read?: number; cache_write?: number };
+  const groups = new Map<string, { base?: C; peak?: C; off?: C; tiers: (C & { size: number })[] }>();
+  for (const r of table.rows) {
+    const m = r[0]!.match(/^(.*?)\s*(?:\(([^)]*)\))?$/)!;
+    const name = m[1]!, note = m[2] ?? "";
+    const input = money(r[1]!), output = money(r[2]!);
+    if (input === null || output === null) throw new Error(`${r[0]}: no input or output price`);
+    const c: C = { input, output };
+    const cr = read >= 0 ? money(r[read]!) : null, cw = write >= 0 ? money(r[write]!) : null;
+    if (cr !== null) c.cache_read = cr;
+    if (cw !== null) c.cache_write = cw;
+    const g = groups.get(name) ?? { tiers: [] };
+    groups.set(name, g);
+    const over = note.match(/^>\s*(\d+)([KM]) tokens$/);
+    const slot = note === "Peak" ? "peak" : note === "Off-Peak" ? "off" : over ? null : "base";
+    if (over) g.tiers.push({ ...c, size: Number(over[1]) * (over[2] === "K" ? 1_000 : 1_000_000) });
+    else if (g[slot!]) throw new Error(`${name}: two "${slot}" prices`);
+    else g[slot!] = c;
+  }
+  const peakHours = [...groups.values()].some((g) => g.off) ? opencodePeak(text) : [];
+  const rows: PriceRow[] = [];
+  for (const [name, g] of groups) {
+    const base = g.peak ?? g.base;
+    if (!base || (g.peak && g.base) || (g.off && !g.peak)) throw new Error(`${name}: cannot tell the base price`);
+    const modelIds = ids.get(name);
+    if (!modelIds) throw new Error(`${name}: not in the Model ID table`);
+    for (const id of modelIds) {
+      rows.push({
+        model_name: id,
+        provider: "",
+        input_cost_per_1m_tokens: base.input,
+        output_cost_per_1m_tokens: base.output,
+        cache_read_cost_per_1m_tokens: base.cache_read ?? null,
+        cache_write_cost_per_1m_tokens: base.cache_write ?? null,
+        ...(g.tiers.length > 0 ? { tiers: g.tiers } : {}),
+        ...(g.off ? { offpeak: { ...g.off, peak: peakHours } } : {}),
+        context_length: 0,
+      });
+    }
+  }
+  return PriceList.parse(rows);
 }
 
 /** `cur` per USD on `date`. The note in the last snapshot carries the rate, so a month asks once. */
@@ -263,6 +358,10 @@ async function models(feed: Feed, key: string | undefined): Promise<Got> {
   // A short list would delete the models it left out.
   if (got.hasMore || got.has_more) throw new Error("the list has more pages; read them before trusting it");
   const listed = [...new Set(got.data.map((m) => m.id))].sort();
+  if (f.price_doc) {
+    const rows = opencodeDocRows(await (await get(f.price_doc)).text());
+    return { note: `prices from OpenCode's docs source, ${f.price_doc}.`, rows, listed };
+  }
   if (!f.price_from) return { note: "", rows: [], listed };
   const src = snapshotPath(f.price_from);
   if (!existsSync(src)) throw new Error(`no prices yet from ${f.price_from}`);
