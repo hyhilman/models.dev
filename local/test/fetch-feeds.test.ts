@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { DASHSCOPE_OFFPEAK, dashscopeRows, kenariIds, kenariRows, rateDate, tierStart } from "../script/fetch-feeds.ts";
+import { DASHSCOPE_OFFPEAK, dashscopeRows, kenariIds, ModelList, kenariRows, rateDate, tierStart } from "../script/fetch-feeds.ts";
 import { Feed, inHours, patchCost, PATCH_MARK, retired, rowCost, Snapshot } from "../script/apply-static.ts";
 import { KEY_ENVS } from "../doppelganger/tools/prices/run.ts";
 import { readdirSync, readFileSync } from "node:fs";
@@ -140,4 +140,10 @@ test("every feed's key_env is passed to the job, and run.sh passes it too", () =
     expect(Object.keys(KEY_ENVS)).toContain(key);
     expect(runSh).toMatch(new RegExp(`for v in [^;]*\\b${key}\\b`));
   }
+});
+
+test("a model list reads both spellings of more pages", () => {
+  const data = [{ id: "glm-5" }];
+  expect(ModelList.parse({ data, has_more: true }).has_more).toBe(true);
+  expect(ModelList.parse({ data, hasMore: true }).hasMore).toBe(true);
 });
