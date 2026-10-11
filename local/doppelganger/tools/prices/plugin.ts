@@ -21,7 +21,7 @@ const opsPriceStatic = defineJob({
       ctx.log.info("off", { reason: NO_STATIC.key });
       return;
     }
-    runPriceTask(ctx, "static");
+    await runPriceTask(ctx, "static");
   },
 });
 
@@ -35,7 +35,7 @@ const opsPriceSync = defineJob({
       ctx.log.info("off", { reason: NO_SYNC.key });
       return;
     }
-    runPriceTask(ctx, "sync");
+    await runPriceTask(ctx, "sync");
   },
 });
 
