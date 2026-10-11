@@ -1,6 +1,9 @@
 import { expect, test } from "bun:test";
 import { DASHSCOPE_OFFPEAK, dashscopeRows, kenariIds, kenariRows, rateDate, tierStart } from "../script/fetch-feeds.ts";
-import { inHours, patchCost, PATCH_MARK, retired, rowCost } from "../script/apply-static.ts";
+import { Feed, inHours, patchCost, PATCH_MARK, retired, rowCost, Snapshot } from "../script/apply-static.ts";
+import { KEY_ENVS } from "../doppelganger/tools/prices/run.ts";
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
 
 const pricing = (p: Record<string, unknown>) => ({ currency: "IDR", unit: "micro_idr_per_1m_tokens", ...p });
 const list = {
@@ -114,4 +117,27 @@ test("inHours handles windows that do and do not wrap midnight", () => {
   expect(inHours(at(10), { from: "09:00", to: "17:00", utc_offset: 0 })).toBe(true);
   expect(inHours(at(17), { from: "09:00", to: "17:00", utc_offset: 0 })).toBe(false);
   expect(inHours(at(2), { from: "22:00", to: "08:00", utc_offset: 0 })).toBe(true);
+});
+
+test("dashscope: a CNY list is converted to USD at the given rate", () => {
+  const [row] = dashscopeRows([ds([p("input_token", "7.2", "peak"), p("input_token", "3.6", "offpeak"), p("output_token", "14.4", "peak"), p("output_token", "7.2", "offpeak")])], 7.2);
+  expect(row).toMatchObject({ input_cost_per_1m_tokens: 1, output_cost_per_1m_tokens: 2 });
+  expect(row!.offpeak).toMatchObject({ input: 0.5, output: 1 });
+});
+
+test("a model list with no prices deletes only what the plan stopped serving", () => {
+  const snap = Snapshot.parse({ checked: "2026-10-11", note: "", rows: [], listed: ["glm-5", "kimi-k2.5"] });
+  const have = new Map(["glm-5", "kimi-k2.5", "glm-4.7"].map((m) => [`providers/plan/models/${m}.toml`, ""]));
+  expect(retired("plan", have, snap.listed)).toEqual(["providers/plan/models/glm-4.7.toml"]);
+});
+
+test("every feed's key_env is passed to the job, and run.sh passes it too", () => {
+  const runSh = readFileSync(path.join(import.meta.dir, "../script/run.sh"), "utf8");
+  const dir = path.join(import.meta.dir, "../feeds");
+  for (const f of readdirSync(dir).filter((f) => f.endsWith(".toml"))) {
+    const key = Feed.parse(Bun.TOML.parse(readFileSync(path.join(dir, f), "utf8"))).fetch?.key_env;
+    if (!key) continue;
+    expect(Object.keys(KEY_ENVS)).toContain(key);
+    expect(runSh).toMatch(new RegExp(`for v in [^;]*\\b${key}\\b`));
+  }
 });
