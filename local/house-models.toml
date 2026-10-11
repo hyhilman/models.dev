@@ -1,0 +1,10 @@
+# Host models with no lab model behind them, so no canonical id is right. local/script/canonical.ts
+# alerts on any other model in our providers that ends up without one.
+models = [
+  "opencode/big-pickle",
+  "opencode/exo-free",
+  "opencode/muse-spark-1.3-contributor-free",
+  "opencode/space-bunny-free",
+  "opencode-go/muse-spark-1.3-contributor",
+  "opencode-go/space-bunny",
+]

@@ -70,3 +70,13 @@ test("a report: changes every time, a failure once, and once more when it clears
   expect(r3.open).toEqual({});
   expect(report("static", ['event=static.unchanged provider="x" models="1" skipped="0"'], null, {}).body).toBeNull();
 });
+
+test("a model without a canonical id alerts once, again when the list changes, and clears", () => {
+  const miss = (m: string) => `event=site.canonical files="7" filled="111" missing=${JSON.stringify(m)}`;
+  const r1 = report("static", [miss("go/a,go/b")], null, {});
+  expect(r1.body).toBe("❌ no canonical id: go/a, go/b");
+  expect(report("static", [miss("go/a,go/b")], null, r1.open).body).toBeNull();
+  const r2 = report("static", [miss("go/a")], null, r1.open);
+  expect(r2.body).toBe("❌ no canonical id: go/a");
+  expect(report("static", [miss("")], null, r2.open).body).toBe("✅ canonical id check works again");
+});
