@@ -250,12 +250,17 @@ async function dashscope(feed: Feed, key: string, last: Snapshot | null, now: Da
 }
 
 /** An OpenAI-style model list with no prices. More pages than one would need paging we do not do. */
-const ModelList = z.object({ data: z.array(z.object({ id: z.string() })).min(1), hasMore: z.boolean().optional() });
+// Coding Plan says hasMore, Token Plan says has_more.
+export const ModelList = z.object({
+  data: z.array(z.object({ id: z.string() })).min(1),
+  hasMore: z.boolean().nullable().optional(),
+  has_more: z.boolean().nullable().optional(),
+});
 
 async function models(feed: Feed, key: string | undefined): Promise<Got> {
   const got = ModelList.parse(await getJson(feed.fetch!.url, key));
   // A short list would delete the models it left out.
-  if (got.hasMore) throw new Error("the list has more pages; read them before trusting it");
+  if (got.hasMore || got.has_more) throw new Error("the list has more pages; read them before trusting it");
   return { note: "", rows: [], listed: [...new Set(got.data.map((m) => m.id))].sort() };
 }
 
