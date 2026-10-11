@@ -12,6 +12,8 @@ providers = [
   "alibaba-coding-plan-cn",
   "alibaba-token-plan",
   "alibaba-token-plan-cn",
+  "opencode",
+  "opencode-go",
 ]
 
 # Upstream owns these folders. The feed rewrites only the cost tables of upstream's files, deletes
@@ -25,4 +27,6 @@ patch = [
   "alibaba-coding-plan-cn",
   "alibaba-token-plan",
   "alibaba-token-plan-cn",
+  "opencode",
+  "opencode-go",
 ]
