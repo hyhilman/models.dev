@@ -223,6 +223,10 @@ export function report(task: Task, lines: readonly string[], failed: string | nu
     else if (e.name === "sync.took_upstream") out.push(`↩️ upstream's files kept on a conflict: ${short(e.f.files ?? "")}`);
     else if (e.name === "sync.conflict" || e.name === "sync.check_failed") fail("sync", `upstream merge: ${e.name === "sync.conflict" ? `conflict in ${short(e.f.files ?? "")}` : `check failed at ${e.f.step}`}`);
     else if (e.name === "sync.unchanged") clear("sync", "upstream merge");
+    else if (e.name === "site.canonical") {
+      if (e.f.missing) fail("canonical", `no canonical id: ${short(e.f.missing)}`);
+      else clear("canonical", "canonical id check");
+    }
   }
   if (failed !== null) fail(`job:${task}`, `price ${task} job failed: ${failed}`);
   else clear(`job:${task}`, `price ${task} job`);
