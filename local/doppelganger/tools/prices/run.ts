@@ -4,6 +4,8 @@
 // The repo mounts at its host path, so git paths and log lines read the same inside and out. Run
 // it on the rootless daemon (DOCKER_HOST): there container root is the host user, so files the job
 // writes stay owned by that user.
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import type { EnvSpec } from "doppelganger/plugin";
 import type { JobContext } from "doppelganger/ports/context";
 
@@ -170,15 +172,99 @@ export function priceRun(ctx: JobContext, task: Task): PriceRun {
 /** The scripts' own logfmt lines, which carry the result. Bun's and git's noise is left out. */
 export const eventLines = (out: string): string[] => out.split("\n").filter((l) => l.startsWith("event="));
 
-export function runPriceTask(ctx: JobContext, task: Task): void {
+/** One logfmt event line: `event=static.applied provider="x" write="4"`. */
+export function parseEvent(line: string): { name: string; f: Record<string, string> } {
+  const name = line.match(/^event=(\S+)/)?.[1] ?? "";
+  const f: Record<string, string> = {};
+  for (const m of line.matchAll(/(\w+)=("(?:[^"\\]|\\.)*"|\S+)/g)) {
+    if (m[1] !== "event") f[m[1]!] = m[2]!.startsWith('"') ? JSON.parse(m[2]!) : m[2]!;
+  }
+  return { name, f };
+}
+
+/** Open problems by key ("fetch:kenari"), so a failure is reported once, and again when it clears. */
+export type Alerts = Record<string, string>;
+
+const short = (names: string, n = 8): string => {
+  const all = names.split(",").map((x) => x.replace(/\.toml$/, ""));
+  return all.length <= n ? all.join(", ") : `${all.slice(0, n).join(", ")} +${all.length - n} more`;
+};
+
+/**
+ * The ntfy report for one run, and the open problems after it. A change (prices written, models
+ * removed, upstream merged) is reported every time; a failure only when it is new or its message
+ * changed, and once more when it clears. A run with neither sends nothing.
+ */
+export function report(task: Task, lines: readonly string[], failed: string | null, open: Alerts): { body: string | null; open: Alerts } {
+  const ev = lines.map(parseEvent);
+  const next: Alerts = { ...open };
+  const out: string[] = [];
+  const fail = (key: string, what: string) => {
+    if (next[key] !== what) out.push(`❌ ${what}`);
+    next[key] = what;
+  };
+  const clear = (key: string, what: string) => {
+    if (next[key] === undefined) return;
+    delete next[key];
+    out.push(`✅ ${what} works again`);
+  };
+  const retired = new Map(ev.filter((e) => e.name === "static.retired").map((e) => [e.f.provider!, e.f.models!]));
+  for (const e of ev) {
+    const p = e.f.provider ?? "";
+    if (e.name === "fetch.error") fail(`fetch:${p}`, `${p} fetch: ${e.f.error}`);
+    else if (e.name === "fetch.done") clear(`fetch:${p}`, `${p} fetch`);
+    else if (e.name === "static.error") fail(`static:${p}`, `${p} apply: ${(e.f.error ?? "").split("\n")[0]}`);
+    else if (e.name === "static.unchanged") clear(`static:${p}`, `${p} apply`);
+    else if (e.name === "static.applied") {
+      clear(`static:${p}`, `${p} apply`);
+      const gone = retired.get(p);
+      out.push(`💲 ${p}: ${e.f.write} file(s) written, ${e.f.delete} removed${gone ? ` (${short(gone)})` : ""}`);
+    } else if (e.name === "sync.merged") out.push(`🔀 upstream merged (upstream ${e.f.upstream}, router ${e.f.to})`);
+    else if (e.name === "sync.took_upstream") out.push(`↩️ upstream's files kept on a conflict: ${short(e.f.files ?? "")}`);
+    else if (e.name === "sync.conflict" || e.name === "sync.check_failed") fail("sync", `upstream merge: ${e.name === "sync.conflict" ? `conflict in ${short(e.f.files ?? "")}` : `check failed at ${e.f.step}`}`);
+    else if (e.name === "sync.unchanged") clear("sync", "upstream merge");
+  }
+  if (failed !== null) fail(`job:${task}`, `price ${task} job failed: ${failed}`);
+  else clear(`job:${task}`, `price ${task} job`);
+  if (task === "sync" && failed === null && !ev.some((e) => e.name === "sync.conflict" || e.name === "sync.check_failed")) clear("sync", "upstream merge");
+  return { body: out.length > 0 ? out.join("\n") : null, open: next };
+}
+
+const alertsPath = (root: string) => path.join(root, "local/.feeds/alerts.json");
+
+function readAlerts(root: string): Alerts {
+  try {
+    return existsSync(alertsPath(root)) ? (JSON.parse(readFileSync(alertsPath(root), "utf8")) as Alerts) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeAlerts(root: string, a: Alerts): void {
+  const p = alertsPath(root);
+  mkdirSync(path.dirname(p), { recursive: true });
+  writeFileSync(`${p}.new`, JSON.stringify(a, null, 1) + "\n");
+  renameSync(`${p}.new`, p);
+}
+
+export async function runPriceTask(ctx: JobContext, task: Task): Promise<void> {
   const run = priceRun(ctx, task);
   ctx.log.info("start", { task, dryRun: run.dryRun });
   const r = ctx.runIn(ctx.root, "docker", dockerArgs(run), { ...run.keys });
   const events = eventLines(r.out);
   for (const line of events) ctx.log.raw(line);
-  if (!r.ok) {
-    // No event line means the container never reached the script: a missing image, a bad mount.
-    const tail = events.length > 0 ? events.at(-1)! : r.out.trim().split("\n").slice(-3).join(" | ");
+  // No event line means the container never reached the script: a missing image, a bad mount.
+  const tail = r.ok ? null : events.length > 0 ? events.at(-1)! : r.out.trim().split("\n").slice(-3).join(" | ");
+  if (!run.dryRun) {
+    const { body, open } = report(task, events, tail, readAlerts(ctx.root));
+    // Saved before the send: a failed send must not repeat the same report every minute.
+    writeAlerts(ctx.root, open);
+    if (body !== null) {
+      const sent = await ctx.notify(`models.dev router\n${body}`);
+      if (!sent.ok) ctx.log.warn("notify-failed", { task });
+    }
+  }
+  if (tail !== null) {
     ctx.log.error("job-failed", { task, msg: tail });
     throw new Error(`price ${task} failed: ${tail}`);
   }
