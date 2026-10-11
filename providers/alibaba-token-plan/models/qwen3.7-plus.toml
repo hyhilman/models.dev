@@ -1,3 +1,6 @@
+# Price feed: Alibaba Token Plan model list (https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/models), checked 2026-10-11.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: price of alibaba (its own list) x 1: the plan bills in Credits, and Alibaba publishes no Credit rate per model.
 base_model = "alibaba/qwen3.7-plus"
 # Reasoning HTTP format (accessed 2026-06-25):
 # Hybrid, thinking on by default. Chat/DashScope `enable_thinking`: true|false;
@@ -20,10 +23,17 @@ reasoning_options = [{ type = "toggle" }, { type = "budget_tokens", max = 262_14
 field = "reasoning_content"
 
 [cost]
-input = 0
-output = 0
-cache_read = 0
-cache_write = 0
+input = 0.4
+output = 1.6
+cache_read = 0.04
+cache_write = 0.5
+
+[[cost.tiers]]
+tier = { type = "context", size = 256_000 }
+input = 1.2
+output = 4.8
+cache_read = 0.12
+cache_write = 1.5
 
 [limit]
 output = 65_536
