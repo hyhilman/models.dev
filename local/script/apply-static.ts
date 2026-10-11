@@ -461,6 +461,34 @@ export function retired(provider: string, have: ReadonlyMap<string, string>, lis
   return gone;
 }
 
+type Cost = Record<string, unknown>;
+
+/** The [cost] table of a provider model file, or null when the file has none or cannot be read. */
+function costOf(text: string | undefined): Cost | null {
+  if (text === undefined) return null;
+  try {
+    return ((Bun.TOML.parse(text) as { cost?: Cost }).cost ?? null);
+  } catch {
+    return null;
+  }
+}
+
+const num = (v: unknown) => (typeof v === "number" ? String(tidy(v)) : "-");
+
+/**
+ * What a price change says, for the notification: "input 2→2.5, output 8→10". Empty when the cost
+ * did not change (a changed comment or date is not a price change).
+ */
+export function costDiff(before: Cost | null, after: Cost | null): string {
+  if (JSON.stringify(before) === JSON.stringify(after)) return "";
+  const parts: string[] = [];
+  for (const k of ["input", "output", "cache_read", "cache_write", "reasoning"]) {
+    const a = before?.[k], b = after?.[k];
+    if (a !== b) parts.push(`${k} ${num(a)}→${num(b)}`);
+  }
+  return parts.length > 0 ? parts.join(", ") : "tiers or off-peak";
+}
+
 function apply(provider: string, patch: boolean): "unchanged" | "changed" | "skipped" {
   const feed = Feed.parse(readToml(path.join(REPO, "local/feeds", `${provider}.toml`)));
   const fromStatic = !feed.fetch || feed.fetch.static_prices;
@@ -540,6 +568,19 @@ function apply(provider: string, patch: boolean): "unchanged" | "changed" | "ski
     git(["add", "-A", "--", `providers/${provider}`]);
     const c = git(["commit", "-q", "-m", `chore(prices): update ${provider} prices (checked ${checked})`]);
     if (!c.ok) throw new Error(`git commit failed: ${c.out}`);
+  }
+  // One line per model whose price changed, new or removed, for the notification.
+  for (const [p, text] of writes) {
+    const id = p.replace(`providers/${provider}/models/`, "").replace(/\.toml$/, "");
+    const before = have.get(p);
+    if (before === undefined) log("static.change", { provider, model: id, kind: "new" });
+    else {
+      const d = costDiff(costOf(before), costOf(text));
+      if (d) log("static.change", { provider, model: id, kind: "price", diff: d });
+    }
+  }
+  for (const p of deletes) {
+    log("static.change", { provider, model: p.replace(`providers/${provider}/models/`, "").replace(/\.toml$/, ""), kind: "removed" });
   }
   log("static.applied", { provider, write: writes.length, delete: deletes.length, committed: NO_COMMIT ? 0 : 1 });
   return "changed";

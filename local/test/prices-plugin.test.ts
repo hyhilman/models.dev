@@ -57,9 +57,15 @@ test("only the scripts' event lines are kept", () => {
 
 test("a report: changes every time, a failure once, and once more when it clears", () => {
   const applied = 'event=static.applied provider="kenari" write="2" delete="1" committed="1"';
-  const retiredLine = 'event=static.retired provider="kenari" models="a.toml"';
-  const r1 = report("static", [retiredLine, applied], null, {});
-  expect(r1.body).toBe("💲 kenari: 2 file(s) written, 1 removed (a)");
+  const change = 'event=static.change provider="kenari" model="a" kind="price" diff="input 2→2.5, output 8→10"';
+  const gone = 'event=static.change provider="kenari" model="b" kind="removed"';
+  const r1 = report("static", [change, gone, applied], null, {});
+  expect(r1.body).toBe("💲 kenari\na: input 2→2.5, output 8→10\nb: removed");
+  // A write that changed no price says nothing.
+  expect(report("static", [applied], null, {}).body).toBeNull();
+  // A plain upstream merge says nothing; a conflict does.
+  expect(report("sync", ['event=sync.merged from="a" to="b" upstream="c"'], null, {}).body).toBeNull();
+  expect(report("sync", ['event=sync.conflict files="x.ts"'], null, {}).body).toBe("❌ upstream merge: conflict in x.ts");
   const err = 'event=fetch.error provider="alibaba" error="GET x: HTTP 500"';
   const r2 = report("static", [err], "x", r1.open);
   expect(r2.body).toBe("❌ alibaba fetch: GET x: HTTP 500\n❌ price static job failed: x");
