@@ -1,6 +1,6 @@
 # Static price feed: Sumopod console price list, exported by the owner, checked 2026-10-10.
 # Written by local/script/apply-static.ts from sumopod.json. Edit the feed, not this file.
-# reasoning_options copied from providers/302ai/models/MiniMax-M3.toml
+# reasoning_options copied from providers/opencode-go/models/minimax-m3.toml
 base_model = "minimax/MiniMax-M3"
 
 [[reasoning_options]]
