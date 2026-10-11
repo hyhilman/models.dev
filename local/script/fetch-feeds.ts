@@ -258,10 +258,42 @@ export const ModelList = z.object({
 });
 
 async function models(feed: Feed, key: string | undefined): Promise<Got> {
-  const got = ModelList.parse(await getJson(feed.fetch!.url, key));
+  const f = feed.fetch!;
+  const got = ModelList.parse(await getJson(f.url, key));
   // A short list would delete the models it left out.
   if (got.hasMore || got.has_more) throw new Error("the list has more pages; read them before trusting it");
-  return { note: "", rows: [], listed: [...new Set(got.data.map((m) => m.id))].sort() };
+  const listed = [...new Set(got.data.map((m) => m.id))].sort();
+  if (!f.price_from) return { note: "", rows: [], listed };
+  const src = snapshotPath(f.price_from);
+  if (!existsSync(src)) throw new Error(`no prices yet from ${f.price_from}`);
+  const from = Snapshot.parse(JSON.parse(readFileSync(src, "utf8")));
+  return {
+    note:
+      `price of ${f.price_from} (its own list) x ${f.price_factor}: the plan bills in Credits, ` +
+      `and Alibaba publishes no Credit rate per model.`,
+    rows: borrowRows(from.rows, listed, f.price_factor),
+    listed,
+  };
+}
+
+/** Another feed's rows for the listed models only, every price times `factor`. */
+export function borrowRows(rows: readonly PriceRow[], listed: readonly string[], factor: number): PriceRow[] {
+  const ids = new Set(listed);
+  const x = (n: number | null | undefined) => (n == null ? n : n * factor);
+  const cost = <T extends Record<string, unknown>>(c: T): T =>
+    Object.fromEntries(Object.entries(c).map(([k, v]) => [k, typeof v === "number" && k !== "size" ? v * factor : v])) as T;
+  return rows
+    .filter((r) => ids.has(r.model_name))
+    .map((r) => ({
+      ...r,
+      input_cost_per_1m_tokens: r.input_cost_per_1m_tokens * factor,
+      output_cost_per_1m_tokens: r.output_cost_per_1m_tokens * factor,
+      cache_read_cost_per_1m_tokens: x(r.cache_read_cost_per_1m_tokens),
+      cache_write_cost_per_1m_tokens: x(r.cache_write_cost_per_1m_tokens),
+      reasoning_cost_per_1m_tokens: x(r.reasoning_cost_per_1m_tokens),
+      ...(r.tiers ? { tiers: r.tiers.map(cost) } : {}),
+      ...(r.offpeak ? { offpeak: cost(r.offpeak) } : {}),
+    }));
 }
 
 async function fetchFeed(provider: string, feed: Feed): Promise<void> {
@@ -295,9 +327,14 @@ if (import.meta.main) {
   const allow = z
     .object({ providers: z.array(z.string()) })
     .parse(Bun.TOML.parse(readFileSync(path.join(REPO, "local/static.toml"), "utf8")));
+  const feedOf = (p: string) =>
+    Feed.parse(Bun.TOML.parse(readFileSync(path.join(REPO, "local/feeds", `${p}.toml`), "utf8")));
+  // A feed another one borrows prices from is fetched first, even when its own folder is off.
+  const sources = allow.providers.flatMap((p) => feedOf(p).fetch?.price_from ?? []);
+  const order = [...new Set([...sources, ...allow.providers])];
   let failed = 0;
-  for (const provider of allow.providers) {
-    const feed = Feed.parse(Bun.TOML.parse(readFileSync(path.join(REPO, "local/feeds", `${provider}.toml`), "utf8")));
+  for (const provider of order) {
+    const feed = feedOf(provider);
     if (!feed.fetch) continue;
     try {
       await fetchFeed(provider, feed);
