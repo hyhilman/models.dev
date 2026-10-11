@@ -1,0 +1,22 @@
+# Alibaba Model Studio, China (Beijing) region. Same list as local/feeds/alibaba.toml, on the China
+# host, behind a China-region key (an international key gets 401 here).
+# The key: [prices] dashscope_cn_api_key in doppelganger.secret.toml (gitignored), which the job
+# passes as DASHSCOPE_CN_API_KEY. Never put it in this file. Without it the feed is skipped
+# (fetch.skip) and upstream's prices stay.
+# Prices are CNY. fetch-feeds.ts converts them at the ECB rate of the first day of the month.
+# Patch mode: only the cost tables of upstream's files change, and a file whose model the list
+# no longer has is deleted (at most 75% of the folder; the owner chose the live list).
+# Off-peak: the same 22:00-08:00 UTC+8 switch as the international feed.
+name = "Alibaba (China)"
+env = ["DASHSCOPE_API_KEY"]
+api = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+doc = "https://help.aliyun.com/zh/model-studio/model-pricing"
+source = "Alibaba Model Studio GET /api/v1/models (China)"
+
+[fetch]
+url = "https://dashscope.aliyuncs.com/api/v1/models"
+format = "dashscope"
+key_env = "DASHSCOPE_CN_API_KEY"
+currency = "CNY"
+region = "China (Beijing)"
+max_retire = 0.75
