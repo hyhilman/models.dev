@@ -41,8 +41,18 @@ const Cost = z.object({
   reasoning: Price.optional(),
 });
 const Clock = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
-/** A daily window in local time at `utc_offset` hours. It may wrap midnight (22:00 to 08:00). */
-const Hours = z.object({ from: Clock, to: Clock, utc_offset: z.number().min(-12).max(14) }).strict();
+/**
+ * A daily window in local time at `utc_offset` hours. It may wrap midnight (22:00 to 08:00).
+ * `days` limits it to those local weekdays (0 = Sunday), counted on the day `now` falls in.
+ */
+const Hours = z
+  .object({
+    from: Clock,
+    to: Clock,
+    utc_offset: z.number().min(-12).max(14),
+    days: z.array(z.number().int().min(0).max(6)).min(1).optional(),
+  })
+  .strict();
 export type Hours = z.infer<typeof Hours>;
 
 /** One row of the provider's price list. Extra fields the provider adds later are ignored. */
@@ -60,7 +70,10 @@ const PriceRow = z.object({
   tiers: z.array(Cost.extend({ size: z.number().int().positive() })).optional(),
   // A cheaper price at night. The job writes it during `hours` and the normal price the rest of
   // the day, so the catalog shows the price that applies now.
-  offpeak: Cost.extend({ hours: Hours }).optional(),
+  // Either the off-peak `hours`, or the `peak` windows, with off-peak every other hour.
+  offpeak: Cost.extend({ hours: Hours.optional(), peak: z.array(Hours).min(1).optional() })
+    .refine((o) => (o.hours === undefined) !== (o.peak === undefined), "offpeak needs hours or peak, not both")
+    .optional(),
   // 0 means the provider does not say.
   context_length: z.number().int().nonnegative().optional(),
 });
@@ -101,10 +114,14 @@ export const Feed = z
         // "models": price the listed models with another feed's prices (its last fetched list),
         // times price_factor. For a plan billed in credits that has no published rate per model.
         price_from: z.string().regex(/^[a-z0-9-]+$/).optional(),
+        // "models": price the listed models from OpenCode's docs source, a Markdown price table
+        // (fetch-feeds.ts opencodeDocRows).
+        price_doc: z.string().url().optional(),
         price_factor: z.number().positive().default(1),
       })
       .strict()
-      .refine((f) => f.price_from === undefined || f.format === "models", "price_from is for a models list")
+      .refine((f) => (f.price_from ?? f.price_doc) === undefined || f.format === "models", "price_from and price_doc are for a models list")
+      .refine((f) => f.price_from === undefined || f.price_doc === undefined, "price_from or price_doc, not both")
       .optional(),
   })
   .strict();
@@ -174,9 +191,21 @@ const hm = (s: string) => Number(s.slice(0, 2)) * 60 + Number(s.slice(3));
 
 /** Whether `now` falls in the daily window. */
 export function inHours(now: Date, h: Hours): boolean {
-  const mins = (((now.getUTCHours() * 60 + now.getUTCMinutes() + h.utc_offset * 60) % 1440) + 1440) % 1440;
+  const local = new Date(now.getTime() + h.utc_offset * 3_600_000);
+  if (h.days && !h.days.includes(local.getUTCDay())) return false;
+  const mins = local.getUTCHours() * 60 + local.getUTCMinutes();
   const from = hm(h.from), to = hm(h.to);
   return from <= to ? mins >= from && mins < to : mins >= from || mins < to;
+}
+
+const DAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+/** "22:00-08:00 UTC+8", or "01:00-04:00 UTC Mon-Fri". */
+function spanOf(h: Hours): string {
+  const tz = h.utc_offset === 0 ? "UTC" : `UTC${h.utc_offset < 0 ? "-" : "+"}${Math.abs(h.utc_offset)}`;
+  const d = h.days ? [...h.days].sort() : [];
+  const run = d.length > 1 && d.every((x, i) => i === 0 || x === d[i - 1]! + 1);
+  const days = d.length === 0 ? "" : ` ${run ? `${DAY[d[0]!]}-${DAY[d.at(-1)!]}` : d.map((x) => DAY[x]).join(",")}`;
+  return `${h.from}-${h.to} ${tz}${days}`;
 }
 
 /**
@@ -197,14 +226,19 @@ export function rowCost(row: PriceRow, now: Date): { cost: Record<string, unknow
     peak.tiers = row.tiers.map(({ size, ...c }) => ({ tier: { type: "context", size }, ...clean(c) }));
   }
   if (!row.offpeak) return { cost: peak, notes: [] };
-  const { hours, ...o } = row.offpeak;
+  const { hours, peak: peakHours, ...o } = row.offpeak;
   const off = clean(o);
-  const sign = hours.utc_offset < 0 ? "-" : "+";
-  const span = `${hours.from}-${hours.to} UTC${sign}${Math.abs(hours.utc_offset)}`;
   const say = (c: Record<string, unknown>) => `input ${c.input}, output ${c.output}`;
-  return inHours(now, hours)
-    ? { cost: off, notes: [`off-peak price now (${span}); the peak price is ${say(peak)}.`] }
-    : { cost: peak, notes: [`peak price now; off-peak (${span}) is ${say(off)}.`] };
+  if (hours) {
+    const span = spanOf(hours);
+    return inHours(now, hours)
+      ? { cost: off, notes: [`off-peak price now (${span}); the peak price is ${say(peak)}.`] }
+      : { cost: peak, notes: [`peak price now; off-peak (${span}) is ${say(off)}.`] };
+  }
+  const span = peakHours!.map(spanOf).join(", ");
+  return peakHours!.some((h) => inHours(now, h))
+    ? { cost: peak, notes: [`peak price now (${span}); off-peak the rest of the time is ${say(off)}.`] }
+    : { cost: off, notes: [`off-peak price now; the peak price (${span}) is ${say(peak)}.`] };
 }
 
 /** The patched files for an upstream-owned provider: one per upstream file the list prices. */
