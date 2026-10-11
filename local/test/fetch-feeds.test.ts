@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { DASHSCOPE_OFFPEAK, dashscopeRows, kenariIds, ModelList, kenariRows, rateDate, tierStart } from "../script/fetch-feeds.ts";
+import { borrowRows, DASHSCOPE_OFFPEAK, dashscopeRows, kenariIds, ModelList, kenariRows, rateDate, tierStart } from "../script/fetch-feeds.ts";
 import { Feed, inHours, patchCost, PATCH_MARK, retired, rowCost, Snapshot } from "../script/apply-static.ts";
 import { KEY_ENVS } from "../doppelganger/tools/prices/run.ts";
 import { readdirSync, readFileSync } from "node:fs";
@@ -146,4 +146,17 @@ test("a model list reads both spellings of more pages", () => {
   const data = [{ id: "glm-5" }];
   expect(ModelList.parse({ data, has_more: true }).has_more).toBe(true);
   expect(ModelList.parse({ data, hasMore: true }).hasMore).toBe(true);
+});
+
+test("a plan borrows another feed's prices for its listed models only, times the factor", () => {
+  const [a] = dashscopeRows([
+    ds([p("input_token", "0.15", "offpeak"), p("input_token", "0.3", "peak"), p("output_token", "0.6", "offpeak"), p("output_token", "1.2", "peak")]),
+  ]);
+  const other = { ...a!, model_name: "not-in-plan" };
+  const rows = borrowRows([a!, other], ["m", "auto"], 0.5);
+  expect(rows.map((r) => r.model_name)).toEqual(["m"]);
+  expect(rows[0]).toMatchObject({ input_cost_per_1m_tokens: 0.15, output_cost_per_1m_tokens: 0.6 });
+  expect(rows[0]!.offpeak).toEqual({ input: 0.075, output: 0.3, hours: DASHSCOPE_OFFPEAK });
+  const tiered = { ...a!, offpeak: undefined, tiers: [{ size: 256_000, input: 1, output: 2 }] };
+  expect(borrowRows([tiered], ["m"], 0.5)[0]!.tiers).toEqual([{ size: 256_000, input: 0.5, output: 1 }]);
 });
