@@ -118,10 +118,14 @@ export const Feed = z
         // (fetch-feeds.ts opencodeDocRows).
         price_doc: z.string().url().optional(),
         price_factor: z.number().positive().default(1),
+        // "models": the prices stay in $PRICE_STATIC_DIR/<provider>.json; the live list only drops
+        // the rows of models the provider no longer serves.
+        static_prices: z.boolean().default(false),
       })
       .strict()
       .refine((f) => (f.price_from ?? f.price_doc) === undefined || f.format === "models", "price_from and price_doc are for a models list")
       .refine((f) => f.price_from === undefined || f.price_doc === undefined, "price_from or price_doc, not both")
+      .refine((f) => !f.static_prices || (f.format === "models" && !f.price_from && !f.price_doc), "static_prices is for a plain models list")
       .optional(),
   })
   .strict();
@@ -374,7 +378,7 @@ export function render(
   const dir = `providers/${provider}`;
   const header = [
     `# Static price feed: ${feed.source}, checked ${checked}.`,
-    `# Written by local/script/apply-static.ts from ${feed.fetch?.url ?? `${provider}.json`}. Edit the feed, not this file.`,
+    `# Written by local/script/apply-static.ts from ${feed.fetch && !feed.fetch.static_prices ? feed.fetch.url : `${provider}.json`}. Edit the feed, not this file.`,
     ...(note ? [`# ${note}`] : []),
   ];
 
@@ -459,18 +463,31 @@ export function retired(provider: string, have: ReadonlyMap<string, string>, lis
 
 function apply(provider: string, patch: boolean): "unchanged" | "changed" | "skipped" {
   const feed = Feed.parse(readToml(path.join(REPO, "local/feeds", `${provider}.toml`)));
-  const src = feed.fetch ? snapshotPath(provider) : path.join(STATIC_DIR, `${provider}.json`);
+  const fromStatic = !feed.fetch || feed.fetch.static_prices;
+  const src = fromStatic ? path.join(STATIC_DIR, `${provider}.json`) : snapshotPath(provider);
   if (!existsSync(src)) {
-    log("static.skip", { provider, reason: feed.fetch ? "not fetched yet" : "no feed file", path: src });
+    log("static.skip", { provider, reason: fromStatic ? "no feed file" : "not fetched yet", path: src });
     return "skipped";
   }
   let list: PriceList, checked: string, note: string, listed: string[] | undefined;
-  if (feed.fetch) {
+  if (!fromStatic) {
     ({ rows: list, checked, note, listed } = Snapshot.parse(JSON.parse(readFileSync(src, "utf8"))));
   } else {
     list = PriceList.parse(JSON.parse(readFileSync(src, "utf8")));
     checked = statSync(src).mtime.toISOString().slice(0, 10);
     note = "";
+  }
+  if (feed.fetch?.static_prices) {
+    // The live list wins: a static row for a model it does not list is dropped, so its file goes.
+    const snap = snapshotPath(provider);
+    if (!existsSync(snap)) {
+      log("static.skip", { provider, reason: "not fetched yet", path: snap });
+      return "skipped";
+    }
+    const live = new Set(Snapshot.parse(JSON.parse(readFileSync(snap, "utf8"))).listed);
+    const gone = list.filter((r) => !live.has(r.model_name)).map((r) => r.model_name);
+    if (gone.length > 0) log("static.delisted", { provider, models: gone.join(",") });
+    list = list.filter((r) => live.has(r.model_name));
   }
 
   const dir = path.join(REPO, "providers", provider);
