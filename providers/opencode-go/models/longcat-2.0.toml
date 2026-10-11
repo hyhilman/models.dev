@@ -1,3 +1,6 @@
+# Price feed: OpenCode Go model list (https://opencode.ai/zen/go/v1/models), checked 2026-10-11.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/packages/web/src/content/docs/go.mdx.
 base_model = "meituan/longcat-2.0"
 reasoning_options = [{ type = "toggle" }]
 
@@ -5,6 +8,6 @@ reasoning_options = [{ type = "toggle" }]
 field = "reasoning_content"
 
 [cost]
-input = 0.30
-output = 1.20
+input = 0.3
+output = 1.2
 cache_read = 0.006

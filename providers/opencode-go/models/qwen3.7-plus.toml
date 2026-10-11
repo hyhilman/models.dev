@@ -1,3 +1,6 @@
+# Price feed: OpenCode Go model list (https://opencode.ai/zen/go/v1/models), checked 2026-10-11.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/packages/web/src/content/docs/go.mdx.
 name = "Qwen3.7 Plus"
 description = "Multimodal reasoning model for visual analysis, planning, and tool use"
 family = "qwen3.7-plus"
@@ -11,17 +14,17 @@ tool_call = true
 open_weights = false
 
 [cost]
-input = 0.40
-output = 1.60
+input = 0.4
+output = 1.6
 cache_read = 0.04
 cache_write = 0.5
 
 [[cost.tiers]]
-tier = { size = 256_000 }
-input = 1.20
-output = 4.80
+tier = { type = "context", size = 256_000 }
+input = 1.2
+output = 4.8
 cache_read = 0.12
-cache_write = 1.50
+cache_write = 1.5
 
 [limit]
 context = 1_000_000

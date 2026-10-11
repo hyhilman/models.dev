@@ -1,3 +1,7 @@
+# Price feed: OpenCode Go model list (https://opencode.ai/zen/go/v1/models), checked 2026-10-11.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/packages/web/src/content/docs/go.mdx.
+# Price feed: off-peak price now; the peak price (01:00-04:00 UTC Mon-Fri, 06:00-10:00 UTC Mon-Fri) is input 1.32, output 3.96.
 name = "DeepSeek V4 Pro (New)"
 description = "Flagship DeepSeek model for coding, reasoning, and agentic work"
 family = "deepseek-thinking"
@@ -14,6 +18,7 @@ open_weights = true
 
 [interleaved]
 field = "reasoning_content"
+
 [cost]
 input = 0.66
 output = 1.98

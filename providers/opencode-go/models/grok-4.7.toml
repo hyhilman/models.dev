@@ -1,3 +1,6 @@
+# Price feed: OpenCode Go model list (https://opencode.ai/zen/go/v1/models), checked 2026-10-11.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/packages/web/src/content/docs/go.mdx.
 base_model = "xai/grok-4.7"
 
 [[reasoning_options]]
@@ -10,7 +13,7 @@ output = 6
 cache_read = 0.5
 
 [[cost.tiers]]
-tier = { type = "context", size = 200_000  }
+tier = { type = "context", size = 200_000 }
 input = 4
 output = 12
 cache_read = 1
