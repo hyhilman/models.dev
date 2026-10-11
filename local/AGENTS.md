@@ -146,11 +146,28 @@ Each of upstream's Alibaba folders has its own feed in `local/feeds/`, all in `p
 
 ## OpenCode (Zen and Go)
 
-`opencode` and `opencode-go` are `patch` feeds of format `models`: each reads its gateway's model
-list (`opencode.ai/zen/v1/models`, `opencode.ai/zen/go/v1/models`), public and without a key (a
-key shows only what one account has turned on), and deletes upstream's files for models the
-gateway no longer serves. Prices stay upstream's: the OpenCode team runs models.dev, and Go's own
-prices (cheaper DeepSeek) are deliberate.
+`opencode` and `opencode-go` are `patch` feeds of format `models` with a `price_doc`:
+
+- The model list (`opencode.ai/zen/v1/models`, `opencode.ai/zen/go/v1/models`, public, no key; a
+  key shows only what one account has turned on) decides which of upstream's files stay.
+- Prices come from OpenCode's own docs source on GitHub (`packages/web/src/content/docs/zen.mdx`,
+  `go.mdx`): the Markdown price table, matched to ids by the docs' "Model | Model ID" table.
+  `(≤ 256K tokens)` / `(> 256K tokens)` rows become `[[cost.tiers]]`; `(Peak)` / `(Off-Peak)` rows
+  become the off-peak switch with the hours the page states (Go: peak 01:00-04:00 and 06:00-10:00
+  UTC, Monday to Friday; off-peak the rest of the time, weekends included); `Free` is 0, and a sale
+  (`~~$1.36~~ $0.68`) is its current price. A row or sentence it cannot read fails the whole fetch,
+  so the last prices stay.
+
+## Notifications
+
+After each run, the plugin (`tools/prices/run.ts`, `report`) sends one ntfy message (the `[ntfy]`
+settings) when something happened:
+
+- `💲 <provider>: N file(s) written, M removed (names)` for every commit a feed makes, the
+  off-peak switches included; `🔀` for an upstream merge, `↩️` when a merge kept upstream's files.
+- `❌` once for a new failure (a fetch, an apply, the merge, the job), and `✅ ... works again`
+  once when it clears. Open failures live in `local/.feeds/alerts.json`, so a failure that lasts
+  is not repeated every minute. A quiet run sends nothing; a dry run never sends.
 
 ## How to change a price
 
