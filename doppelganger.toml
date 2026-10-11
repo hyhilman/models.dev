@@ -637,7 +637,7 @@ cmd = "/usr/bin/crontab"
 [prices]
 
 # host folder holding one <provider>.json static price feed per provider; mounted read-only
-static_dir = "/home/hyhilman/.price-router/static"
+static_dir = "/home/hyhilman/projects/me/models.dev/local/.static"
 
 # the .doppelganger/creds/gh/<name> login the price jobs push with
 gh = "hyhilman"
