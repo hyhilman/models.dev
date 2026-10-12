@@ -10,4 +10,4 @@ values = ["low", "high", "max"]
 [cost]
 input = 0.278614
 output = 3.34336
-cache_read = 0.0517425
+cache_read = 0.0518221
