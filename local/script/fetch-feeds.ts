@@ -230,7 +230,7 @@ export function opencodePeak(text: string): Hours[] {
 }
 
 /**
- * OpenCode's price table (docs/zen.mdx, docs/go.mdx) as price rows, by model id. The table names a
+ * OpenCode's price table (docs console/models.mdx, console/go.mdx) as price rows, by model id. The table names a
  * model by its display name; the "Model | Model ID" table gives the id. A name may carry one note:
  * "(≤ 256K tokens)" is the base price and "(> 256K tokens)" a tier from 256K; "(Peak)" and
  * "(Off-Peak)" are the two prices of the off-peak switch; any other note ("50% off") is the price
@@ -242,9 +242,15 @@ export function opencodeDocRows(text: string): PriceRow[] {
   for (const t of tables.filter((t) => t.head[0] === "Model" && t.head[1] === "Model ID")) {
     for (const r of t.rows) ids.set(r[0]!, [...(ids.get(r[0]!) ?? []), r[1]!.replace(/`/g, "")]);
   }
-  const table = tables.find((t) => t.head[0] === "Model" && t.head[1] === "Input" && t.head[2] === "Output");
+  const priced = tables.filter((t) => t.head[0] === "Model" && t.head[1] === "Input" && t.head[2] === "Output");
+  const table = priced[0];
   if (!table || ids.size === 0) throw new Error("no price table or no Model ID table");
   const col = (name: string) => table.head.indexOf(name);
+  // Go repeats the table once per plan, with a plan column added. The prices must agree.
+  const PRICE_COLS = ["Model", "Input", "Output", "Cached Read", "Cached Write"];
+  const prices = (t: (typeof tables)[number]) =>
+    JSON.stringify(t.rows.map((r) => PRICE_COLS.map((c) => (t.head.indexOf(c) >= 0 ? r[t.head.indexOf(c)] : null))));
+  if (priced.some((t) => prices(t) !== prices(table))) throw new Error("the price tables disagree");
   const [read, write] = [col("Cached Read"), col("Cached Write")];
   type C = { input: number; output: number; cache_read?: number; cache_write?: number };
   const groups = new Map<string, { base?: C; peak?: C; off?: C; tiers: (C & { size: number })[] }>();
