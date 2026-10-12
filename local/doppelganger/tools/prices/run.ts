@@ -242,7 +242,10 @@ export function report(task: Task, lines: readonly string[], failed: string | nu
       else clear("canonical", "canonical id check");
     }
   }
-  if (failed !== null) fail(`job:${task}`, `price ${task} job failed: ${failed}`);
+  // A failure a run already named (a fetch, an apply, the merge) is not reported twice. Else a
+  // fetch failure, which fails only the minutes that fetch, would flap the job alert on and off.
+  const named = ev.some((e) => ["fetch.error", "static.error", "sync.conflict", "sync.check_failed"].includes(e.name));
+  if (failed !== null && !named) fail(`job:${task}`, `price ${task} job failed: ${failed}`);
   else clear(`job:${task}`, `price ${task} job`);
   if (task === "sync" && failed === null && !ev.some((e) => e.name === "sync.conflict" || e.name === "sync.check_failed")) clear("sync", "upstream merge");
   return { body: out.length > 0 ? out.join("\n") : null, open: next };

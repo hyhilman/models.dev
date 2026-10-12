@@ -13,4 +13,4 @@ source = "OpenCode Zen model list (https://opencode.ai/zen/v1/models)"
 [fetch]
 url = "https://opencode.ai/zen/v1/models"
 format = "models"
-price_doc = "https://raw.githubusercontent.com/anomalyco/opencode/dev/packages/web/src/content/docs/zen.mdx"
+price_doc = "https://raw.githubusercontent.com/anomalyco/opencode/dev/services/www/src/docs/content/console/models.mdx"
