@@ -68,11 +68,17 @@ test("a report: changes every time, a failure once, and once more when it clears
   expect(report("sync", ['event=sync.conflict files="x.ts"'], null, {}).body).toBe("❌ upstream merge: conflict in x.ts");
   const err = 'event=fetch.error provider="alibaba" error="GET x: HTTP 500"';
   const r2 = report("static", [err], "x", r1.open);
-  expect(r2.body).toBe("❌ alibaba fetch: GET x: HTTP 500\n❌ price static job failed: x");
-  // The same failure next time: nothing new to say.
+  // The fetch alert names the failure, so the job adds none.
+  expect(r2.body).toBe("❌ alibaba fetch: GET x: HTTP 500");
+  // The same failure next time: nothing new to say. Nor on a minute that does not fetch.
   expect(report("static", [err], "x", r2.open).body).toBeNull();
+  expect(report("static", [], null, r2.open).body).toBeNull();
   const r3 = report("static", ['event=fetch.done provider="alibaba" rows="1" listed="1"'], null, r2.open);
-  expect(r3.body).toBe("✅ alibaba fetch works again\n✅ price static job works again");
+  expect(r3.body).toBe("✅ alibaba fetch works again");
+  // A failure no event names still alerts, and clears.
+  const r4 = report("static", [], "boom", {});
+  expect(r4.body).toBe("❌ price static job failed: boom");
+  expect(report("static", [], null, r4.open).body).toBe("✅ price static job works again");
   expect(r3.open).toEqual({});
   expect(report("static", ['event=static.unchanged provider="x" models="1" skipped="0"'], null, {}).body).toBeNull();
 });

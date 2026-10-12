@@ -207,3 +207,23 @@ test("opencode docs: a row it cannot read fails the whole list", () => {
   expect(() => opencodeDocRows(doc.replace("Peak hours are", "Busy hours are"))).toThrow(/Peak hours/);
   expect(money("-")).toBeNull();
 });
+
+// Copies of OpenCode's real docs pages (2026-10-12): Go repeats an indented price table per plan.
+const example = (f: string) => readFileSync(path.join(import.meta.dir, "../example", f), "utf8");
+
+test("opencode docs: the real Zen and Go pages read, every listed price row", () => {
+  const go = new Map(opencodeDocRows(example("opencode-go.mdx")).map((r) => [r.model_name, r]));
+  expect(go.size).toBe(32);
+  expect(go.get("deepseek-v4-pro")).toMatchObject({ input_cost_per_1m_tokens: 1.32, offpeak: { input: 0.66 } });
+  expect(go.get("qwen3.7-plus")!.tiers).toHaveLength(1);
+  const zen = new Map(opencodeDocRows(example("opencode.mdx")).map((r) => [r.model_name, r]));
+  expect(zen.size).toBe(88);
+  expect(zen.get("deepseek-v4-pro")).toMatchObject({ input_cost_per_1m_tokens: 1.74, output_cost_per_1m_tokens: 3.48 });
+});
+
+test("opencode docs: plan tables that disagree on a price fail the list", () => {
+  const go = example("opencode-go.mdx");
+  const last = go.lastIndexOf("| DeepSeek V4 Pro (Peak)");
+  const bad = go.slice(0, last) + go.slice(last).replace("$1.32", "$9.99");
+  expect(() => opencodeDocRows(bad)).toThrow(/disagree/);
+});
