@@ -1,3 +1,6 @@
+# Price feed: OpenCode Go model list (https://opencode.ai/zen/go/v1/models), checked 2026-10-15.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/services/www/src/docs/content/console/go.mdx.
 # StepFun Chat supports reasoning_effort = low|medium|high.
 # https://platform.stepfun.ai/docs/en/guides/models/step-5-preview
 base_model = "stepfun/step-5-preview"
@@ -10,6 +13,6 @@ output = 65_536
 field = "reasoning_content"
 
 [cost]
-input = 1.0
+input = 1
 output = 2.7
 cache_read = 0.1
