@@ -1,7 +1,7 @@
-# Price feed: OpenCode Go model list (https://opencode.ai/zen/go/v1/models), checked 2026-10-14.
+# Price feed: OpenCode Go model list (https://opencode.ai/zen/go/v1/models), checked 2026-10-15.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
 # Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/services/www/src/docs/content/console/go.mdx.
-# Price feed: off-peak price now; the peak price (01:00-04:00 UTC Mon-Fri, 06:00-10:00 UTC Mon-Fri) is input 0.3, output 1.2.
+# Price feed: peak price now (01:00-04:00 UTC Mon-Fri, 06:00-10:00 UTC Mon-Fri); off-peak the rest of the time is input 0.15, output 0.6.
 base_model = "deepseek/deepseek-v4.1-flash"
 name = "DeepSeek V4.1 Flash"
 
@@ -13,6 +13,6 @@ values = ["low", "high", "max"]
 field = "reasoning_content"
 
 [cost]
-input = 0.15
-output = 0.6
-cache_read = 0.003
+input = 0.3
+output = 1.2
+cache_read = 0.006
