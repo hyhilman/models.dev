@@ -29,3 +29,6 @@ output = 128_000
 [modalities]
 input = ["text"]
 output = ["text"]
+
+[provider]
+api = "https://opencode.ai/inference/go/openai/v1"
