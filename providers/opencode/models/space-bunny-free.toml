@@ -1,3 +1,6 @@
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-10-16.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/services/www/src/docs/content/console/models.mdx.
 name = "Space Bunny Free"
 description = "Anonymous preview reasoning model for coding, agentic tasks, tool use, and multimodal input"
 release_date = "2026-09-23"
@@ -18,7 +21,6 @@ field = "reasoning_content"
 input = 0
 output = 0
 cache_read = 0
-cache_write = 0
 
 [limit]
 context = 1_048_576
