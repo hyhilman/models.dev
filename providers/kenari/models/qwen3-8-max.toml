@@ -1,4 +1,4 @@
-# Price feed: Kenari GET /v1/models (public price list), checked 2026-10-13.
+# Price feed: Kenari GET /v1/models (public price list), checked 2026-10-17.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
 # Price feed: Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
 base_model = "alibaba/qwen3.8-max"
@@ -8,7 +8,7 @@ type = "effort"
 values = ["minimal", "low", "medium", "high", "xhigh"]
 
 [cost]
-input = 0.585089
-output = 1.67168
-cache_read = 0.0724395
-cache_write = 0.724395
+input = 0.234035
+output = 0.668673
+cache_read = 0.0289758
+cache_write = 0.289758
