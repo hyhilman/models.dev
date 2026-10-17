@@ -1,7 +1,7 @@
-# Price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-10-16.
+# Price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-10-17.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
 # Price feed: USD list prices of the international (Singapore) region.
-# Price feed: peak price now; off-peak (22:00-08:00 UTC+8) is input 0.22, output 0.66.
+# Price feed: off-peak price now (22:00-08:00 UTC+8); the peak price is input 0.44, output 1.32.
 # Sources (accessed 2026-08-08):
 # https://www.alibabacloud.com/help/en/model-studio/deepseek-api
 # https://www.alibabacloud.com/help/en/model-studio/model-pricing (Singapore list)
@@ -19,6 +19,6 @@ reasoning_options = [
 field = "reasoning_content"
 
 [cost]
-input = 0.44
-output = 1.32
-cache_read = 0.044
+input = 0.22
+output = 0.66
+cache_read = 0.022
