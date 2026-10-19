@@ -50,8 +50,11 @@ fi
 # The hourly sync refreshes what origin has. The minute job trusts the last known state, so it
 # does not call GitHub every minute.
 [ "${1:-}" = "sync" ] && git "${net[@]}" fetch -q origin
-if [ "$(git rev-parse HEAD)" != "$(git rev-parse -q --verify origin/router || true)" ]; then
-  git "${net[@]}" push -q origin router
+# The sync rebases router, so a push is often not a fast-forward. The lease names the origin/router
+# we last saw: a router that someone else moved on origin is refused, not overwritten.
+seen="$(git rev-parse -q --verify origin/router || true)"
+if [ "$(git rev-parse HEAD)" != "$seen" ]; then
+  git "${net[@]}" push -q --force-with-lease="router:$seen" origin router
   log job.pushed "branch=router head=$(git rev-parse --short=9 HEAD)"
 fi
 # The sync also keeps the fork's dev equal to upstream's. dev holds none of our commits, so this
