@@ -4,7 +4,7 @@
 import { expect, test } from "bun:test";
 import path from "node:path";
 import { readFileSync } from "node:fs";
-import { PATCH_MARK } from "../script/apply-static.ts";
+import { ADDED_MARK, PATCH_MARK } from "../script/apply-static.ts";
 
 const REPO = path.resolve(import.meta.dir, "../..");
 
@@ -64,15 +64,16 @@ test.skipIf(!base.ok)("every change since the fork point is add-only", () => {
   expect(bad).toEqual([]);
 });
 
-// In a patch provider the feed may change only [cost] and its own comments, and delete a model the
-// provider no longer lists. It never adds a file: everything else is upstream's.
-test.skipIf(!base.ok)("a patch provider differs from upstream only in [cost] and retired models", () => {
+// In a patch provider the feed may change only [cost] and its own comments, delete a model the
+// provider no longer lists, and add a file for a model upstream has none for (marked as ours).
+test.skipIf(!base.ok)("a patch provider differs from upstream only in [cost], retired and added models", () => {
   const bad: string[] = [];
   for (const p of staticToml().patch ?? []) {
     const changed = git("diff", "--name-status", base.out, "HEAD", "--", `providers/${p}`).out.split("\n").filter(Boolean);
     for (const row of changed) {
       const [status, file] = row.split("\t") as [string, string];
       if (status === "D") continue;
+      if (status === "A" && git("show", `HEAD:${file}`).out.startsWith(ADDED_MARK)) continue;
       if (status !== "M") { bad.push(`${status} ${file}`); continue; }
       if (withoutCost(git("show", `${base.out}:${file}`).out) !== withoutCost(git("show", `HEAD:${file}`).out)) bad.push(file);
     }
