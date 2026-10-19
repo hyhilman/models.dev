@@ -79,7 +79,8 @@ test.skipIf(!base.ok)("a patch provider differs from upstream only in [cost], re
     }
   }
   expect(bad).toEqual([]);
-});
+// Two git calls per file, and OpenRouter alone has 400 files.
+}, 60_000);
 
 test("withoutCost drops the feed's comments and [cost], and keeps the rest", () => {
   const a = 'base_model = "x/y"\n\n[cost]\ninput = 0\noutput = 0\n\n[limit]\ncontext = 1\n';
