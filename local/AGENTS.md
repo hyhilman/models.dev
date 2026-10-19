@@ -10,8 +10,9 @@ This fork tracks `anomalyco/models.dev` (remote `upstream`, branch `dev`). Our w
    `doppelganger.toml` and `doppelganger.config.ts`. `.gitignore` may only gain lines.
    `local/test/add-only.test.ts` enforces this. It keeps every upstream rebase free of conflicts.
    One exception: a `patch` provider in `local/static.toml` is upstream's folder, and the feed
-   changes only the cost tables and its own `# Price feed:` comments there, and deletes models
-   the provider no longer lists (also tested).
+   changes only the cost tables and its own `# Price feed:` comments there, deletes models
+   the provider no longer lists, and adds a file for a priced model upstream has none for
+   (also tested).
 2. Never commit a secret. Files name the env var that holds a key, never the key.
 3. Every price carries a source and the date it was checked.
 4. The static feed writes only the providers in `local/static.toml`. Add a provider there only
@@ -95,8 +96,15 @@ Kenari publishes its prices at `https://kenari.id/v1/models`, so nobody exports 
   Only chat models: image, video and speech prices are not per token.
 - Upstream already owns `providers/kenari/` (all costs 0, by their policy). So kenari is in
   `patch`: the feed rewrites only `[cost]` of upstream's files whose name is a Kenari id, and
-  adds three `# Price feed:` lines (source, date, rate). Priced models upstream does not list are
-  logged as `static.unlisted`; no file is added.
+  adds three `# Price feed:` lines (source, date, rate).
+- A priced model that upstream has no file for gets a whole file of ours, built like a Sumopod
+  file (`base_model`, a peer's `reasoning_options`, the cost). Its first line is
+  `# Added by the price feed:`, so the next run writes it again whole instead of patching it.
+  When upstream adds the same file later, the rebase takes upstream's file and the feed prices it.
+  A model with no lab file is skipped (`static.unmatched`). A feed whose files need a per-model
+  `[provider]` the list does not say sets `add = false` (OpenCode Zen and Go).
+- `reasoning_options` are copied only from upstream's files, never from a file the feed wrote:
+  two such files would copy from each other and flip on every run.
 - Kenari's live list wins over upstream's catalog: an upstream file whose id is in none of
   Kenari's lists (the main one and each `?modality=`) is deleted (`static.retired`). A fetch where
   any list fails changes nothing. There is no limit on how many a good list deletes: a failed
