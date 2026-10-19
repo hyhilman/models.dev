@@ -56,6 +56,13 @@ test("a reasoning model gets a peer's reasoning_options", () => {
   expect(text).toContain("# reasoning_options copied from providers/opencode-go/");
 });
 
+test("a v2 lab model that reasons gets a peer's reasoning_options too", () => {
+  const row = { model_name: "claude-opus-4-8", provider: "anthropic", input_cost_per_1m_tokens: 5, output_cost_per_1m_tokens: 25, cache_read_cost_per_1m_tokens: 0.5, context_length: 1000000 };
+  const { files, skipped } = render("sumopod", feed(), PriceList.parse([row]), "2026-10-19");
+  expect(skipped).toEqual([]);
+  expect(files.get("providers/sumopod/models/claude-opus-4-8.toml")).toContain("[[reasoning_options]]");
+});
+
 test("sumopod keeps its prices in the static list and reads the live list only to drop models", () => {
   const f = feed().fetch!;
   expect(f.static_prices).toBe(true);
