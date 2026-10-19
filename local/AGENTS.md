@@ -22,7 +22,7 @@ This fork tracks `anomalyco/models.dev` (remote `upstream`, branch `dev`). Our w
 
 | Path | What |
 |---|---|
-| `local/static.toml` | Providers the price feed may write (now: `sumopod`, `kenari`, the six `alibaba*`, `opencode`, `opencode-go`), and which are `patch` |
+| `local/static.toml` | Providers the price feed may write (now: `sumopod`, `kenari`, the six `alibaba*`, `opencode`, `opencode-go`, `engy`), and which are `patch` |
 | `local/aliases.toml` | Lab model for a host entry that has no `base_model` and no lab file named like it |
 | `local/house-models.toml` | Host models with no lab model, so no canonical id is expected |
 | `local/feeds/<p>.toml` | Provider details the price list does not carry, and its name map |
@@ -166,6 +166,16 @@ Each of upstream's Alibaba folders has its own feed in `local/feeds/`, all in `p
   UTC, Monday to Friday; off-peak the rest of the time, weekends included); `Free` is 0, and a sale
   (`~~$1.36~~ $0.68`) is its current price. A row or sentence it cannot read fails the whole fetch,
   so the last prices stay.
+
+## Engy
+
+`engy` is a `patch` feed of format `openrouter`: `https://api.engy.ai/v1/models` is public (no
+key) and OpenRouter-shaped, prices in USD per token (`pricing.prompt`, `completion`,
+`input_cache_read`), so the feed multiplies by 1,000,000. A `0` cache price means none. Upstream
+already prices `providers/engy/` from the same list, so a run usually changes only the
+`# Price feed:` lines. It works like Kenari: costs patched, a delisted id deleted, a new priced
+model added with a peer's `reasoning_options` (no `[interleaved]` or probed controls) until
+upstream adds its own file. An empty list fails the fetch.
 
 ## Sumopod (static prices, live list)
 
