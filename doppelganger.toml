@@ -36,7 +36,7 @@
 # typo never passes in silence.
 #
 # These come only from the environment and are never in either file:
-#   ENGINE_ROOT          the project to work on (the folder you run from, if unset)
+#   PROJECT_ROOT         the project to work on (the folder you run from, if unset)
 #   DOPPELGANGER_CONFIG  the path of this file, or none for no file; the secret file is the one
 #                        beside it
 #   RELEASE_DRY_RUN      the release tool, which is not in the package
@@ -47,7 +47,7 @@
 instance = "models-dev"
 
 # the engine release this repo runs: an exact version like 0.1.0-dev.3, or the channel dev, which follows the newest dev build; image mode picks the image by it, and a built engine whose own version is not the exact pin refuses to start
-version = "0.1.0-dev.4"
+version = "0.2.0"
 
 # the plugins this checkout runs, built-in and attached, as comma-separated names; unset runs every plugin, the project's own included, except those that only fit the engine's own source when ROOT is another folder; an unknown name, or such a plugin named there, refuses at boot
 plugins = ["todo", "ops", "prices"]
@@ -114,17 +114,8 @@ plugins = ["todo", "ops", "prices"]
 # wall-clock bound on ONE gh/git call; an unbounded stalled gh blocks the event loop so lease heartbeats stop
 # timeout_ms = 180000
 
-# the <owner>/<name> repo whose issues and PRs the executor loop works. No default: an unset row stops the loop, since a guessed repo would put two engines on one label lane, which means two owners for one claim
-tracker = "hyhilman/models.dev"
-
-# the branch the executor loop branches an issue from and merges its PR into, unless the issue header names another `Base:`
-base = "dev"
-
 # the one-line shell command that runs the target repo's whole test suite (for example `npm test`, `pytest` or `go test ./...`); the agents run it before they commit. No default: unset, an agent finds the command in the repo's AGENTS.md, CLAUDE.md, README or build files
 # test_cmd = ""
-
-# 1 = read the tracker and log the step a tick would take; run no agent and write nothing (no label, comment, push or merge). Default ON; set 0 to go live
-dry_run = true
 
 # 1 = drop planning IDs (a short family prefix, a dash and a number) from the PR title the loop writes and the subject it gives git, for a repo whose AGENTS.md bans them; off by default, since another repo's issue keys look the same
 # strip_ids = 0
@@ -470,11 +461,6 @@ cmd = "/usr/bin/crontab"
 # 1 = print the route/model split and write nothing — no route, no step attempt, no model call
 # dry_run = 0
 
-[intent]
-
-# override the model one switch tick spends on without a code change; runJob checks it is pinned
-# model = ""
-
 [probe]
 
 # how many newest routed rows one probe reads; bounds a hand run's prompt and time
@@ -586,17 +572,6 @@ cmd = "/usr/bin/crontab"
 # author_cache_max = 80
 
 # 1 = query and print the items this sweep would emit, write nothing, and ignore the interval
-# dry_run = 0
-
-[tracker]
-
-# the tracker repository, `<owner>/<name>`; the read fails closed when empty — point it at the same repository the issue executor uses (`EXEC_TRACKER`)
-# repo = ""
-
-# open issues read per sweep; a read that reaches the limit may be truncated, and the sweep then reports degraded
-# fetch_limit = 300
-
-# 1: list and print what the sweep would queue, write nothing, cursor held
 # dry_run = 0
 
 [slack]
