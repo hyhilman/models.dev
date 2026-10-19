@@ -22,7 +22,7 @@ This fork tracks `anomalyco/models.dev` (remote `upstream`, branch `dev`). Our w
 
 | Path | What |
 |---|---|
-| `local/static.toml` | Providers the price feed may write (now: `sumopod`, `kenari`, the six `alibaba*`, `opencode`, `opencode-go`, `engy`), and which are `patch` |
+| `local/static.toml` | Providers the price feed may write (now: `sumopod`, `kenari`, the six `alibaba*`, `opencode`, `opencode-go`, `engy`, `openrouter`), and which are `patch` |
 | `local/aliases.toml` | Lab model for a host entry that has no `base_model` and no lab file named like it |
 | `local/house-models.toml` | Host models with no lab model, so no canonical id is expected |
 | `local/feeds/<p>.toml` | Provider details the price list does not carry, and its name map |
@@ -176,6 +176,24 @@ already prices `providers/engy/` from the same list, so a run usually changes on
 `# Price feed:` lines. It works like Kenari: costs patched, a delisted id deleted, a new priced
 model added with a peer's `reasoning_options` (no `[interleaved]` or probed controls) until
 upstream adds its own file. An empty list fails the fetch.
+
+## OpenRouter
+
+`openrouter` is a `patch` feed of format `openrouter` with `add = false`. It reads
+`https://openrouter.ai/api/v1/models?output_modalities=all` (public): every model, so a model
+missing from it is deleted. `openrouterRows` maps prices as upstream's OpenRouter sync does
+(`packages/core/src/sync/providers/openrouter.ts`): text and decision models only, a `-1` price
+(a router) or an empty parameter list (a dead route) is left out, `internal_reasoning` is
+`reasoning` for a reasoning model, a `min_prompt_tokens` override is a tier, the 1h cache write is
+not read. Two differences from upstream:
+
+- The live list wins: a tier the list no longer has is removed (upstream's sync keeps the old one).
+- Time overrides (`utc_start`, `utc_end`, `utc_days`) become the off-peak switch: dearer windows
+  are peak hours (`peak`), one cheaper window is the off-peak `hours`. Any other shape keeps the
+  top-level price (`fetch.peak_unread`).
+
+Upstream adds new OpenRouter models through its own sync, so the feed never adds one. Some
+prices (DeepSeek routes, `~` aliases) move often, and each move is a commit and an ntfy message.
 
 ## Sumopod (static prices, live list)
 

@@ -1,0 +1,21 @@
+# OpenRouter publishes its prices at https://openrouter.ai/api/v1/models (public, no key), USD per
+# token. ?output_modalities=all lists every model, so a model missing from it is one OpenRouter no
+# longer serves. local/script/fetch-feeds.ts pulls it at most once per [prices] fetch_minutes (10)
+# and maps it as upstream's OpenRouter sync does (packages/core/src/sync/providers/openrouter.ts),
+# plus the time overrides (peak and off-peak hours) that sync ignores.
+# Upstream owns providers/openrouter/ and keeps it in sync itself. OpenRouter is in `patch` in
+# local/static.toml, so the feed rewrites only the [cost] table of upstream's files and deletes a
+# file whose id the list no longer has. name, env, api and doc go unused.
+name = "OpenRouter"
+env = ["OPENROUTER_API_KEY"]
+api = "https://openrouter.ai/api/v1"
+doc = "https://openrouter.ai/models"
+source = "OpenRouter GET /api/v1/models (public price list)"
+
+# Upstream's sync adds models itself, and leaves out on purpose routers, :batch routes and dead
+# routes, so a model upstream has no file for is skipped, not added.
+add = false
+
+[fetch]
+url = "https://openrouter.ai/api/v1/models?output_modalities=all"
+format = "openrouter"
