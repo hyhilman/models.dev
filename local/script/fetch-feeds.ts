@@ -5,8 +5,9 @@
 // PRICE_FETCH_MINUTES, counted from the last try, so a provider that is down is not hit every minute.
 // A failed fetch keeps the last snapshot, so the last good prices stay.
 //
-// Formats: "kenari" (public, IDR), "dashscope" (Alibaba Model Studio, USD or CNY) and "models" (an
-// OpenAI-style model list with no prices, for a subscription plan). A list behind a key reads the
+// Formats: "kenari" (public, IDR), "dashscope" (Alibaba Model Studio, USD or CNY), "openrouter" (an
+// OpenRouter-style list, USD per token, e.g. Engy) and "models" (an OpenAI-style model list with no
+// prices, for a subscription plan). A list behind a key reads the
 // env var named by [fetch] key_env; with that var unset the feed is skipped (fetch.skip), not failed.
 //
 // Currency: the rate is the ECB reference rate of the first day of the month (via frankfurter.dev).
@@ -184,6 +185,43 @@ export function dashscopeRows(models: readonly DashscopeModel[], perUsd = 1): Pr
     });
   }
   return PriceList.parse(rows);
+}
+
+/** One entry of an OpenRouter-style GET /v1/models (Engy). Prices are USD per token, as strings. */
+const PerToken = z.string().regex(/^\d+(\.\d+)?(e-?\d+)?$/i).nullable().optional();
+const OpenrouterModel = z.object({
+  id: z.string(),
+  owned_by: z.string().optional(),
+  output_modalities: z.array(z.string()).optional(),
+  context_length: z.number().int().nonnegative().nullable().optional(),
+  pricing: z.object({ prompt: PerToken, completion: PerToken, input_cache_read: PerToken, input_cache_write: PerToken }),
+});
+// An empty list would delete every file of the provider.
+const OpenrouterList = z.object({ data: z.array(OpenrouterModel).min(1) });
+
+/**
+ * An OpenRouter-style list as price rows in USD per 1M tokens. Only models with a prompt and a
+ * completion price that write text; a "0" cache price means none.
+ */
+export function openrouterRows(json: unknown): { rows: PriceList; listed: string[] } {
+  const perM = (s: string | null | undefined) => (s == null ? null : Number(s) * 1e6);
+  const data = OpenrouterList.parse(json).data;
+  const rows: PriceRow[] = [];
+  for (const m of data) {
+    const p = m.pricing;
+    if (!(m.output_modalities ?? ["text"]).includes("text") || p.prompt == null || p.completion == null) continue;
+    const cache = (s: string | null | undefined) => (perM(s) || null);
+    rows.push({
+      model_name: m.id,
+      provider: m.owned_by ?? "",
+      input_cost_per_1m_tokens: perM(p.prompt)!,
+      output_cost_per_1m_tokens: perM(p.completion)!,
+      cache_read_cost_per_1m_tokens: cache(p.input_cache_read),
+      cache_write_cost_per_1m_tokens: cache(p.input_cache_write),
+      context_length: m.context_length ?? 0,
+    });
+  }
+  return { rows: PriceList.parse(rows), listed: [...new Set(data.map((m) => m.id))].sort() };
 }
 
 async function get(url: string, key?: string): Promise<Response> {
@@ -421,6 +459,7 @@ async function fetchFeed(provider: string, feed: Feed): Promise<void> {
   const got =
     f.format === "kenari" ? await kenari(feed, last, now)
     : f.format === "dashscope" ? await dashscope(feed, key!, last, now)
+    : f.format === "openrouter" ? { note: "USD list prices.", ...openrouterRows(await getJson(f.url, key)) }
     : await models(feed, key);
   const snap: Snapshot = { checked: now.toISOString().slice(0, 10), ...got };
   // Write then rename, so apply-static never reads half a file.

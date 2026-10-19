@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { borrowRows, DASHSCOPE_OFFPEAK, dashscopeRows, kenariIds, ModelList, money, opencodeDocRows, kenariRows, rateDate, tierStart } from "../script/fetch-feeds.ts";
+import { borrowRows, DASHSCOPE_OFFPEAK, dashscopeRows, kenariIds, ModelList, money, opencodeDocRows, openrouterRows, kenariRows, rateDate, tierStart } from "../script/fetch-feeds.ts";
 import { Feed, inHours, patchCost, PATCH_MARK, retired, rowCost, Snapshot } from "../script/apply-static.ts";
 import { KEY_ENVS } from "../doppelganger/tools/prices/run.ts";
 import { readdirSync, readFileSync } from "node:fs";
@@ -226,4 +226,19 @@ test("opencode docs: plan tables that disagree on a price fail the list", () => 
   const last = go.lastIndexOf("| DeepSeek V4 Pro (Peak)");
   const bad = go.slice(0, last) + go.slice(last).replace("$1.32", "$9.99");
   expect(() => opencodeDocRows(bad)).toThrow(/disagree/);
+});
+
+test("openrouter prices per token become USD per 1M tokens; a 0 cache price is none", () => {
+  const ex = JSON.parse(readFileSync(path.join(import.meta.dir, "../example/engy.json"), "utf8"));
+  const { rows, listed } = openrouterRows(ex);
+  expect(listed).toEqual(["deepseek-v4-flash-0731", "deepseek-v4.1-flash", "deepseek-v4.1-flash-1017"]);
+  expect(rows[0]!.input_cost_per_1m_tokens).toBeCloseTo(0.045, 12);
+  expect(rows[0]!.output_cost_per_1m_tokens).toBeCloseTo(0.09, 12);
+  expect(rows[0]!.cache_read_cost_per_1m_tokens).toBeCloseTo(0.009, 12);
+  expect(rows[0]!.cache_write_cost_per_1m_tokens).toBeNull();
+  expect(rows[0]!.context_length).toBe(1_048_576);
+});
+
+test("an empty openrouter list fails, so it never deletes every file", () => {
+  expect(() => openrouterRows({ object: "list", data: [] })).toThrow();
 });
