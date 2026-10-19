@@ -15,6 +15,7 @@ providers = [
   "opencode",
   "opencode-go",
   "engy",
+  "openrouter",
 ]
 
 # Upstream owns these folders. The feed rewrites only the cost tables of upstream's files, deletes
@@ -33,4 +34,5 @@ patch = [
   "opencode",
   "opencode-go",
   "engy",
+  "openrouter",
 ]

@@ -228,7 +228,7 @@ test("opencode docs: plan tables that disagree on a price fail the list", () => 
   expect(() => opencodeDocRows(bad)).toThrow(/disagree/);
 });
 
-test("openrouter prices per token become USD per 1M tokens; a 0 cache price is none", () => {
+test("engy prices per token become USD per 1M tokens", () => {
   const ex = JSON.parse(readFileSync(path.join(import.meta.dir, "../example/engy.json"), "utf8"));
   const { rows, listed } = openrouterRows(ex);
   expect(listed).toEqual(["deepseek-v4-flash-0731", "deepseek-v4.1-flash", "deepseek-v4.1-flash-1017"]);
@@ -241,4 +241,38 @@ test("openrouter prices per token become USD per 1M tokens; a 0 cache price is n
 
 test("an empty openrouter list fails, so it never deletes every file", () => {
   expect(() => openrouterRows({ object: "list", data: [] })).toThrow();
+});
+
+test("openrouter: a dead route and an image model are listed, not priced; a long prompt is a tier", () => {
+  const ex = JSON.parse(readFileSync(path.join(import.meta.dir, "../example/openrouter.json"), "utf8"));
+  const { rows, listed } = openrouterRows(ex);
+  expect(listed).toHaveLength(6);
+  const by = new Map(rows.map((r) => [r.model_name, r]));
+  expect([...by.keys()].sort()).toEqual([
+    "anthropic/claude-haiku-5.5", "deepseek/deepseek-v4.1-flash-1017", "minimax/minimax-m3.1-flash:free", "tencent/hy3",
+  ]);
+  const haiku = by.get("anthropic/claude-haiku-5.5")!;
+  expect(haiku).toMatchObject({ input_cost_per_1m_tokens: 0.1, output_cost_per_1m_tokens: 0.5, cache_write_cost_per_1m_tokens: 0.125 });
+  expect(haiku.tiers).toEqual([{ size: 100_000, input: 0.5, output: 2.5, cache_read: 0.05, cache_write: 0.625 }]);
+  expect(by.get("minimax/minimax-m3.1-flash:free")).toMatchObject({ input_cost_per_1m_tokens: 0, output_cost_per_1m_tokens: 0 });
+});
+
+test("openrouter: dearer windows are the peak price, a cheaper window the off-peak price", () => {
+  const ex = JSON.parse(readFileSync(path.join(import.meta.dir, "../example/openrouter.json"), "utf8"));
+  const by = new Map(openrouterRows(ex).rows.map((r) => [r.model_name, r]));
+  const ds = by.get("deepseek/deepseek-v4.1-flash-1017")!;
+  expect(ds).toMatchObject({ input_cost_per_1m_tokens: 0.3, output_cost_per_1m_tokens: 1.2 });
+  expect(ds.offpeak).toEqual({
+    input: 0.15, output: 0.6, cache_read: 0.003,
+    peak: [
+      { from: "01:00", to: "04:00", utc_offset: 0, days: [1, 2, 3, 4, 5] },
+      { from: "06:00", to: "10:00", utc_offset: 0, days: [1, 2, 3, 4, 5] },
+    ],
+  });
+  const hy = by.get("tencent/hy3")!;
+  expect(hy.input_cost_per_1m_tokens).toBe(0.132);
+  expect(hy.offpeak).toEqual({ input: 0.0825, output: 0.33, cache_read: 0.020625, hours: { from: "16:00", to: "00:00", utc_offset: 0 } });
+  const cost = (iso: string) => rowCost(ds, new Date(iso)).cost;
+  expect(cost("2026-10-19T02:00:00Z")).toMatchObject({ input: 0.3 }); // Monday, peak
+  expect(cost("2026-10-18T02:00:00Z")).toMatchObject({ input: 0.15 }); // Sunday
 });
