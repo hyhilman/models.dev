@@ -409,7 +409,9 @@ export function render(
     const lab = readToml(labFile);
     const notes: string[] = [];
     let reasoning_options: unknown[] | undefined;
-    if (lab.reasoning === true) {
+    // A v2 lab file (`schema = 2`) says it under [capabilities] instead.
+    const capabilities = (lab.capabilities ?? {}) as { reasoning?: { supported?: boolean } };
+    if (lab.reasoning === true || capabilities.reasoning?.supported === true) {
       const peer = peerReasoning(base, provider);
       if (peer === null) {
         skipped.push({ model: row.model_name, reason: `${base} reasons and no peer host has reasoning_options` });
