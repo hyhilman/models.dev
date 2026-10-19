@@ -231,7 +231,7 @@ const clock = (n: number) => `${String(Math.floor(n / 100) % 24).padStart(2, "0"
 /**
  * An OpenRouter-style list as price rows in USD per 1M tokens, mapped as upstream's OpenRouter sync
  * (packages/core/src/sync/providers/openrouter.ts) maps it, so a patch changes only what moved:
- * - only text and decision models; a price below 0 or (but for a decision model) no parameters
+ * - only text and decision models, no :batch route; a price below 0 or (but for a decision model) no parameters
  *   is a dead route, left out;
  * - `reasoning` is internal_reasoning, for a model that takes a reasoning parameter;
  * - an override with min_prompt_tokens is a context tier; the 1h cache write is not read.
@@ -251,6 +251,8 @@ export function openrouterRows(json: unknown): { rows: PriceList; listed: string
     const out = m.architecture?.output_modalities ?? m.output_modalities ?? ["text"];
     const decision = out.includes("decisions");
     if (!out.includes("text") && !decision) continue;
+    // Upstream's sync skips batch routes too: no catalog has a file for them.
+    if (m.id.endsWith(":batch")) continue;
     const p = m.pricing;
     if (Number(p.prompt) < 0 || Number(p.completion) < 0) continue;
     if (m.supported_parameters?.length === 0 && !decision) continue;
