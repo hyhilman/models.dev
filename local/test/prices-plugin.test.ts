@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { dockerArgs, eventLines, fetchMinutes, GH_IN_CONTAINER, keys, type PriceRun, report } from "../doppelganger/tools/prices/run.ts";
+import { dockerArgs, eventLines, fetchMinutes, GH_IN_CONTAINER, keys, type PriceRun, report, SSH_IN_CONTAINER } from "../doppelganger/tools/prices/run.ts";
 
 const base: PriceRun = {
   task: "static",
@@ -9,6 +9,7 @@ const base: PriceRun = {
   gitName: "n",
   gitEmail: "e@x",
   ghDir: null,
+  sshDir: null,
   push: false,
   dryRun: false,
   fetchMinutes: 10,
@@ -28,6 +29,12 @@ test("a dry run never pushes, even with push on", () => {
   const env = envOf(dockerArgs({ ...base, push: true, dryRun: true }));
   expect(env).toContain("PRICE_DRY_RUN=1");
   expect(env).not.toContain("PRICE_PUSH=1");
+});
+
+test("the ssh deploy key mounts read-only", () => {
+  const args = dockerArgs({ ...base, push: true, sshDir: "/p/.doppelganger/creds/ssh/deploy" });
+  expect(args).toContain(`/p/.doppelganger/creds/ssh/deploy:${SSH_IN_CONTAINER}:ro`);
+  expect(args).toContain(`PRICE_SSH_DIR=${SSH_IN_CONTAINER}`);
 });
 
 test("push carries the flag; the gh login mounts read-only", () => {
