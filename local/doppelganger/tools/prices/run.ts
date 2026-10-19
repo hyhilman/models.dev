@@ -34,6 +34,11 @@ export const PRICES_GH_ENV: EnvSpec = {
   default: "",
   why: "the .doppelganger/creds/gh/<name> login the price jobs push with; empty = no login, so a push can only fail",
 };
+export const PRICES_SSH_ENV: EnvSpec = {
+  key: "PRICES_SSH",
+  default: "",
+  why: "the .doppelganger/creds/ssh/<name> deploy key (id_ed25519, known_hosts) the price jobs push with; set, it wins over gh",
+};
 export const PRICES_PUSH_ENV: EnvSpec = {
   key: "PRICES_PUSH",
   default: "0",
@@ -105,6 +110,7 @@ export const PRICES_ENV: readonly EnvSpec[] = [
   PRICES_GIT_NAME_ENV,
   PRICES_GIT_EMAIL_ENV,
   PRICES_GH_ENV,
+  PRICES_SSH_ENV,
   PRICES_PUSH_ENV,
   PRICES_DRY_RUN_ENV,
   PRICES_FETCH_MINUTES_ENV,
@@ -122,6 +128,8 @@ export interface PriceRun {
   readonly gitEmail: string;
   /** Host path of a gh login, or null for none. */
   readonly ghDir: string | null;
+  /** Host path of an ssh deploy key folder, or null for none. */
+  readonly sshDir: string | null;
   readonly push: boolean;
   readonly dryRun: boolean;
   readonly fetchMinutes: number;
@@ -131,6 +139,8 @@ export interface PriceRun {
 
 /** In-container path of the gh login. Read-only: the job uses the token, never writes the login. */
 export const GH_IN_CONTAINER = "/gh";
+/** In-container path of the ssh deploy key folder. Read-only. */
+export const SSH_IN_CONTAINER = "/ssh";
 
 export function dockerArgs(p: PriceRun): string[] {
   // HOME points at a throwaway folder: Bun keeps its install cache there.
@@ -146,6 +156,7 @@ export function dockerArgs(p: PriceRun): string[] {
   // A dry run never pushes, whatever PRICES_PUSH says.
   if (p.push && !p.dryRun) args.push("-e", "PRICE_PUSH=1");
   if (p.ghDir !== null) args.push("-v", `${p.ghDir}:${GH_IN_CONTAINER}:ro`, "-e", `GH_CONFIG_DIR=${GH_IN_CONTAINER}`);
+  if (p.sshDir !== null) args.push("-v", `${p.sshDir}:${SSH_IN_CONTAINER}:ro`, "-e", `PRICE_SSH_DIR=${SSH_IN_CONTAINER}`);
   args.push(p.image, "bash", "local/script/job.sh", p.task);
   return args;
 }
@@ -162,6 +173,7 @@ export const keys = (all: Record<string, string>): Record<string, string> =>
 
 export function priceRun(ctx: JobContext, task: Task): PriceRun {
   const gh = ctx.env.str(PRICES_GH_ENV).trim();
+  const ssh = ctx.env.str(PRICES_SSH_ENV).trim();
   return {
     task,
     repo: ctx.root,
@@ -170,6 +182,7 @@ export function priceRun(ctx: JobContext, task: Task): PriceRun {
     gitName: ctx.env.str(PRICES_GIT_NAME_ENV),
     gitEmail: ctx.env.str(PRICES_GIT_EMAIL_ENV),
     ghDir: gh === "" ? null : ctx.path(".doppelganger", "creds", "gh", gh),
+    sshDir: ssh === "" ? null : ctx.path(".doppelganger", "creds", "ssh", ssh),
     push: ctx.env.str(PRICES_PUSH_ENV) === "1",
     dryRun: ctx.env.str(PRICES_DRY_RUN_ENV) === "1",
     fetchMinutes: fetchMinutes(ctx.env.str(PRICES_FETCH_MINUTES_ENV)),
