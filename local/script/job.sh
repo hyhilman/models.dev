@@ -7,7 +7,8 @@
 #
 # Env: PRICE_PUSH=1     push `router` to origin when it moved; after a sync, fast-forward origin's
 #                       `dev` to upstream's
-#      GH_CONFIG_DIR    a gh login, mounted read-only; pushes go over https with its token
+#      PRICE_SSH_DIR    an ssh deploy key folder, mounted read-only; pushes go over ssh with it
+#      GH_CONFIG_DIR    a gh login, mounted read-only; with no ssh key, pushes go over https with its token
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -41,7 +42,11 @@ fi
 [ "${PRICE_PUSH:-0}" = "1" ] || exit 0
 
 net=()
-if [ -n "${GH_CONFIG_DIR:-}" ]; then
+if [ -n "${PRICE_SSH_DIR:-}" ]; then
+  # A deploy key: it can push to this one repo only, workflow files included (a gh token needs
+  # the workflow scope for those). Known hosts come from the folder, so a changed host key fails.
+  net=(-c "core.sshCommand=ssh -i $PRICE_SSH_DIR/id_ed25519 -o IdentitiesOnly=yes -o UserKnownHostsFile=$PRICE_SSH_DIR/known_hosts -o StrictHostKeyChecking=yes")
+elif [ -n "${GH_CONFIG_DIR:-}" ]; then
   # origin is an ssh URL and the image has no key, so talk https with the gh login's token.
   net=(-c "url.https://github.com/.insteadOf=git@github.com:"
        -c credential.helper=

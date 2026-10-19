@@ -617,6 +617,9 @@ static_dir = "/home/hyhilman/projects/me/models.dev/local/.static"
 # the .doppelganger/creds/gh/<name> login the price jobs push with
 gh = "hyhilman"
 
+# the .doppelganger/creds/ssh/<name> deploy key (id_ed25519, known_hosts) the price jobs push with; set, it wins over gh. A deploy key can push workflow files, a gh token cannot without the workflow scope
+ssh = "deploy"
+
 # 1 = push the router branch to origin after a job moves it; the sync also fast-forwards origin dev
 push = 1
 
