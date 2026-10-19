@@ -264,8 +264,20 @@ The sync rebases `router`, so its push is a force push with a lease (`--force-wi
 overwrites origin's `router` only if it is still the one this checkout last saw). Never base other
 work on `origin/router`: its commits change on every rebase.
 
-Upstream's commits change `.github/workflows/`, so the gh login needs the `workflow` scope, or
-GitHub refuses the push: `GH_CONFIG_DIR=.doppelganger/creds/gh/<name> gh auth refresh -s workflow`.
+Pushes go over ssh with a deploy key (a key that can push to this one repo only):
+`[prices] ssh = "deploy"` names `.doppelganger/creds/ssh/deploy/` (gitignored), which holds
+`id_ed25519` and GitHub's `known_hosts`. It is mounted read-only. A deploy key can push changes to
+`.github/workflows/`, which upstream's commits carry; a gh token would need the `workflow` scope for
+that. The key is registered on `hyhilman/models.dev` (Settings → Deploy keys, write access). To make
+a new one:
+
+```bash
+d=.doppelganger/creds/ssh/deploy
+ssh-keygen -t ed25519 -N "" -f $d/id_ed25519 && ssh-keyscan -t ed25519,rsa,ecdsa github.com > $d/known_hosts
+gh api repos/hyhilman/models.dev/keys -f title=price-router -f key="$(cat $d/id_ed25519.pub)" -F read_only=false
+```
+
+With no `ssh` set, pushes use the gh login below over https.
 
 The image has no ssh key, so pushes use a gh login kept for the jobs (gitignored):
 
