@@ -45,9 +45,20 @@ test("a name matches its lab file without the route prefix or the host suffix", 
 test("render writes only inside the provider folder, and skips what it cannot match", () => {
   const { files, skipped } = rendered();
   for (const p of files.keys()) expect(p.startsWith("providers/sumopod/")).toBe(true);
-  expect(skipped.map((s) => s.model)).toEqual(["seed-2-0-mini"]);
+  expect(skipped.map((s) => s.model)).toEqual([]);
+  expect(files.get("providers/sumopod/models/seed-2-0-mini.toml")).toContain('base_model = "bytedance-seed/seed-2.0-mini"');
   expect(files.get("providers/sumopod/models/gpt-4.1-mini.toml")).toContain("input = 0.4\noutput = 1.6\ncache_read = 0.1");
   expect(files.has("providers/sumopod/models/gemini/gemini-3-flash-preview.toml")).toBe(true);
+});
+
+test("a dated snapshot or a dashed version finds its lab model", () => {
+  const idx = new Map([["qwen-plus", ["alibaba/qwen-plus"]], ["qwen3.8-flash", ["alibaba/qwen3.8-flash"]], ["claude-opus-5-5", ["anthropic/claude-opus-5-5"]]]);
+  const f = feed();
+  expect(baseModelOf("qwen-plus-2025-07-14", f, idx)).toBe("alibaba/qwen-plus");
+  expect(baseModelOf("qwen-plus-latest", f, idx)).toBe("alibaba/qwen-plus");
+  expect(baseModelOf("qwen3-8-flash:free", f, idx)).toBe("alibaba/qwen3.8-flash");
+  expect(baseModelOf("claude-opus-5-5", f, idx)).toBe("anthropic/claude-opus-5-5");
+  expect(baseModelOf("qwen-plus-character", f, idx)).toBeNull();
 });
 
 test("a reasoning model gets a peer's reasoning_options", () => {
