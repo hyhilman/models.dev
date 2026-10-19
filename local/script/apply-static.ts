@@ -107,8 +107,9 @@ export const Feed = z
       .object({
         url: z.string().url(),
         // "models" is an OpenAI-style model list with no prices (a subscription plan): it only
-        // deletes upstream's files for models the plan no longer serves.
-        format: z.enum(["kenari", "dashscope", "models"]),
+        // deletes upstream's files for models the plan no longer serves. "openrouter" is an
+        // OpenRouter-style priced list (USD per token).
+        format: z.enum(["kenari", "dashscope", "openrouter", "models"]),
         // The env var that holds the list's API key, for a list that needs one.
         key_env: z.string().regex(/^[A-Z][A-Z0-9_]*$/).optional(),
         // dashscope: the currency of the list, and the region its note names.
