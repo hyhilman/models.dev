@@ -1,0 +1,18 @@
+# Engy publishes its prices at https://api.engy.ai/v1/models (public, no key): an OpenRouter-style
+# list, USD per token. local/script/fetch-feeds.ts pulls it at most once per [prices]
+# fetch_minutes (10).
+# Upstream owns providers/engy/ (prices from the same list, limits and reasoning controls from
+# authed reads and live probes). Engy is in `patch` in local/static.toml, so the feed rewrites only
+# the [cost] table of upstream's files and deletes a file whose id the list no longer has.
+# A priced model upstream has no file for is added (as Kenari): base_model, a peer's
+# reasoning_options and the cost. It lacks upstream's probed controls and [interleaved] until
+# upstream adds its own file, which the rebase then takes. name, env, api and doc go unused.
+name = "Engy"
+env = ["ENGY_API_KEY"]
+api = "https://api.engy.ai/v1"
+doc = "https://engy.ai/pricing"
+source = "Engy GET /v1/models (public price list)"
+
+[fetch]
+url = "https://api.engy.ai/v1/models"
+format = "openrouter"
