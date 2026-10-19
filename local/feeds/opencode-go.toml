@@ -10,6 +10,10 @@ api = "https://opencode.ai/zen/go/v1"
 doc = "https://opencode.ai/docs/zen"
 source = "OpenCode Go model list (https://opencode.ai/zen/go/v1/models)"
 
+# Its model files carry a per-model [provider] (npm, api) the docs table does not say, so a
+# model upstream has no file for is skipped, not added.
+add = false
+
 [fetch]
 url = "https://opencode.ai/zen/go/v1/models"
 format = "models"

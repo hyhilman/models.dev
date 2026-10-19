@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import path from "node:path";
 import { readFileSync } from "node:fs";
-import { baseModelOf, costDiff, Feed, PriceList, render, tidy } from "../script/apply-static.ts";
+import { ADDED_MARK, baseModelOf, costDiff, Feed, PriceList, render, renderPatch, tidy } from "../script/apply-static.ts";
 
 const example = () =>
   JSON.parse(readFileSync(path.join(import.meta.dir, "../example/sumopod.json"), "utf8")) as Record<string, unknown>[];
@@ -61,6 +61,20 @@ test("a v2 lab model that reasons gets a peer's reasoning_options too", () => {
   const { files, skipped } = render("sumopod", feed(), PriceList.parse([row]), "2026-10-19");
   expect(skipped).toEqual([]);
   expect(files.get("providers/sumopod/models/claude-opus-4-8.toml")).toContain("[[reasoning_options]]");
+});
+
+test("a patch feed adds a whole file of ours for a priced model upstream has none for", () => {
+  const row = { model_name: "deepseek-v4.1-flash-1017", provider: "deepseek", input_cost_per_1m_tokens: 1, output_cost_per_1m_tokens: 2, cache_read_cost_per_1m_tokens: null, context_length: 0 };
+  const p = "providers/alibaba-token-plan/models/deepseek-v4.1-flash-1017.toml";
+  const { files, skipped } = renderPatch("alibaba-token-plan", feed(), PriceList.parse([row]), "2026-10-19", "", new Map());
+  expect(skipped).toEqual([]);
+  const text = files.get(p)!;
+  expect(text.startsWith(ADDED_MARK)).toBe(true);
+  expect(text).toContain('base_model = "deepseek/deepseek-v4.1-flash-1017"');
+  expect(text).toContain("[[reasoning_options]]");
+  // Next run: the file is ours, so it is written again whole, not patched.
+  const again = renderPatch("alibaba-token-plan", feed(), PriceList.parse([row]), "2026-10-20", "", new Map([[p, text]]));
+  expect(again.files.get(p)!.split("\n").slice(1).join("\n")).toBe(text.split("\n").slice(1).join("\n"));
 });
 
 test("sumopod keeps its prices in the static list and reads the live list only to drop models", () => {

@@ -97,6 +97,9 @@ export const Feed = z
     npm: z.string().default("@ai-sdk/openai-compatible"),
     // Hard rule: every price carries a source. The date is the feed file's own date.
     source: z.string().min(1),
+    // A patch feed adds a file for a priced model upstream has none for. false for a host whose
+    // files need a per-model [provider] (npm, api) that the price list does not say (OpenCode).
+    add: z.boolean().default(true),
     // model_name -> "<lab>/<model>", for names that do not match a lab file name.
     map: z.record(z.string(), z.string().regex(/^[a-z0-9-]+\/[A-Za-z0-9._-]+$/)).default({}),
     // The provider publishes its list: fetch-feeds.ts pulls it with the named adapter.
@@ -160,6 +163,8 @@ export type Allow = z.infer<typeof Allow>;
 
 /** Every comment line the patch writes starts with this, so the next patch can find and replace it. */
 export const PATCH_MARK = "# Price feed:";
+/** The first line of a file the feed added to a patch provider, for a model upstream has no file for. */
+export const ADDED_MARK = "# Added by the price feed:";
 
 /**
  * An upstream file with its cost tables ([cost], [cost.*] and [[cost.*]]) replaced and our header
@@ -254,7 +259,7 @@ export function renderPatch(
   note: string,
   have: ReadonlyMap<string, string>,
   now = new Date(),
-): Rendered & { unlisted: string[] } {
+): Rendered {
   const header = [
     `${feed.source}, checked ${checked}.`,
     `only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.`,
@@ -266,6 +271,8 @@ export function renderPatch(
   const prefix = `providers/${provider}/models/`;
   for (const [p, text] of have) {
     if (!p.startsWith(prefix)) continue;
+    // A file the feed added is ours whole: it is written again below, like any other new model.
+    if (text.startsWith(ADDED_MARK)) continue;
     const id = p.slice(prefix.length).replace(/\.toml$/, "");
     const row = rows.get(id);
     if (!row) continue;
@@ -273,8 +280,24 @@ export function renderPatch(
     const { cost, notes } = rowCost(row, now);
     files.set(p, patchCost(text, cost, [...header, ...notes]));
   }
-  // Priced models upstream does not list. Adding their files would collide with upstream later.
-  return { files, skipped, unlisted: [...rows.keys()].sort() };
+  // A priced model upstream has no file for gets a whole file of ours, as a non-patch feed writes
+  // it. When upstream adds that file later, the rebase takes upstream's and the patch above prices it.
+  const added = [
+    `${ADDED_MARK} ${feed.source}, checked ${checked}.`,
+    `${ADDED_MARK} upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.`,
+    ...(note ? [`${ADDED_MARK} ${note}`] : []),
+  ];
+  const idx = labIndex();
+  for (const row of rows.values()) {
+    if (!feed.add) {
+      skipped.push({ model: row.model_name, reason: "upstream has no file for it, and this feed does not add one (add = false)" });
+      continue;
+    }
+    const r = renderModel(provider, feed, row, added, idx, now);
+    if ("skip" in r) skipped.push({ model: row.model_name, reason: r.skip });
+    else files.set(r.path, r.text);
+  }
+  return { files, skipped };
 }
 
 const LOGO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -347,6 +370,10 @@ function peerReasoning(baseModel: string, self: string): { from: string; options
   let empty: { from: string; options: unknown[] } | null = null;
   for (const p of providers) {
     for (const file of walk(path.join(REPO, "providers", p, "models"))) {
+      // Only upstream's files are peers. Two files the feed wrote would copy from each other, and
+      // the note naming the peer would flip on every run.
+      const head = readFileSync(file, "utf8");
+      if (head.startsWith(ADDED_MARK) || head.startsWith("# Static price feed:")) continue;
       const t = readToml(file);
       if (labOf(file, t, aliases) !== baseModel || !Array.isArray(t.reasoning_options)) continue;
       const hit = { from: path.relative(REPO, file), options: t.reasoning_options };
@@ -396,51 +423,62 @@ export function render(
 
   const idx = labIndex();
   for (const row of list) {
-    const base = baseModelOf(row.model_name, feed, idx);
-    if (base === null) {
-      skipped.push({ model: row.model_name, reason: "no lab model by that name; add it to [map] in the feed toml" });
-      continue;
-    }
-    const labFile = path.join(REPO, "models", `${base}.toml`);
-    if (!existsSync(labFile)) {
-      skipped.push({ model: row.model_name, reason: `[map] names ${base}, which has no file under models/` });
-      continue;
-    }
-    const lab = readToml(labFile);
-    const notes: string[] = [];
-    let reasoning_options: unknown[] | undefined;
-    // A v2 lab file (`schema = 2`) says it under [capabilities] instead.
-    const capabilities = (lab.capabilities ?? {}) as { reasoning?: { supported?: boolean } };
-    if (lab.reasoning === true || capabilities.reasoning?.supported === true) {
-      const peer = peerReasoning(base, provider);
-      if (peer === null) {
-        skipped.push({ model: row.model_name, reason: `${base} reasons and no peer host has reasoning_options` });
-        continue;
-      }
-      reasoning_options = peer.options;
-      notes.push(`# reasoning_options copied from ${peer.from}`);
-    }
-
-    const { cost, notes: priceNotes } = rowCost(row, now);
-    notes.push(...priceNotes.map((n) => `# ${n}`));
-
-    // Override the context only when the provider states one and it differs from the lab's.
-    const labLimit = (lab.limit ?? {}) as { context?: number; output?: number };
-    const ctxLen = row.context_length ?? 0;
-    const limit =
-      ctxLen > 0 && ctxLen !== labLimit.context
-        ? { context: ctxLen, ...(labLimit.output !== undefined && labLimit.output > ctxLen ? { output: ctxLen } : {}) }
-        : undefined;
-
-    const body = formatToml({
-      base_model: base,
-      ...(reasoning_options ? { reasoning_options } : {}),
-      cost,
-      ...(limit ? { limit } : {}),
-    } as Parameters<typeof formatToml>[0]);
-    files.set(`${dir}/models/${row.model_name}.toml`, [...header, ...notes, body.trimEnd()].join("\n") + "\n");
+    const r = renderModel(provider, feed, row, header, idx, now);
+    if ("skip" in r) skipped.push({ model: row.model_name, reason: r.skip });
+    else files.set(r.path, r.text);
   }
   return { files, skipped };
+}
+
+/** One model file for a row: its lab model as base_model, a peer's reasoning_options, the row's cost. */
+function renderModel(
+  provider: string,
+  feed: Feed,
+  row: PriceList[number],
+  header: readonly string[],
+  idx: ReturnType<typeof labIndex>,
+  now: Date,
+): { path: string; text: string } | { skip: string } {
+  const base = baseModelOf(row.model_name, feed, idx);
+  if (base === null) {
+    return { skip: "no lab model by that name; add it to [map] in the feed toml" };
+  }
+  const labFile = path.join(REPO, "models", `${base}.toml`);
+  if (!existsSync(labFile)) {
+    return { skip: `[map] names ${base}, which has no file under models/` };
+  }
+  const lab = readToml(labFile);
+  const notes: string[] = [];
+  let reasoning_options: unknown[] | undefined;
+  // A v2 lab file (`schema = 2`) says it under [capabilities] instead.
+  const capabilities = (lab.capabilities ?? {}) as { reasoning?: { supported?: boolean } };
+  if (lab.reasoning === true || capabilities.reasoning?.supported === true) {
+    const peer = peerReasoning(base, provider);
+    if (peer === null) {
+      return { skip: `${base} reasons and no peer host has reasoning_options` };
+    }
+    reasoning_options = peer.options;
+    notes.push(`# reasoning_options copied from ${peer.from}`);
+  }
+
+  const { cost, notes: priceNotes } = rowCost(row, now);
+  notes.push(...priceNotes.map((n) => `# ${n}`));
+
+  // Override the context only when the provider states one and it differs from the lab's.
+  const labLimit = (lab.limit ?? {}) as { context?: number; output?: number };
+  const ctxLen = row.context_length ?? 0;
+  const limit =
+    ctxLen > 0 && ctxLen !== labLimit.context
+      ? { context: ctxLen, ...(labLimit.output !== undefined && labLimit.output > ctxLen ? { output: ctxLen } : {}) }
+      : undefined;
+
+  const body = formatToml({
+    base_model: base,
+    ...(reasoning_options ? { reasoning_options } : {}),
+    cost,
+    ...(limit ? { limit } : {}),
+  } as Parameters<typeof formatToml>[0]);
+  return { path: `providers/${provider}/models/${row.model_name}.toml`, text: [...header, ...notes, body.trimEnd()].join("\n") + "\n" };
 }
 
 function git(args: string[]): { ok: boolean; out: string } {
@@ -528,9 +566,7 @@ function apply(provider: string, patch: boolean): "unchanged" | "changed" | "ski
 
   let want: Map<string, string>, skipped: Rendered["skipped"];
   if (patch) {
-    const r = renderPatch(provider, feed, list, checked, note, have);
-    ({ files: want, skipped } = r);
-    if (r.unlisted.length > 0) log("static.unlisted", { provider, models: r.unlisted.join(",") });
+    ({ files: want, skipped } = renderPatch(provider, feed, list, checked, note, have));
   } else {
     ({ files: want, skipped } = render(provider, feed, list, checked, note));
   }
