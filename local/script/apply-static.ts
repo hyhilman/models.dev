@@ -25,9 +25,10 @@ const DRY_RUN = process.env.PRICE_DRY_RUN === "1";
 const NO_COMMIT = process.env.PRICE_NO_COMMIT === "1";
 
 // A model name becomes a file path, so it must not climb out of the provider folder.
+// A leading ~ is OpenRouter's alias to a lab's latest model (~anthropic/claude-sonnet-latest).
 const ModelName = z
   .string()
-  .regex(/^[A-Za-z0-9][A-Za-z0-9._:\/-]*$/)
+  .regex(/^~?[A-Za-z0-9][A-Za-z0-9._:~\/-]*$/)
   .refine((s) => !s.split("/").includes(".."), "must not contain ..");
 
 const Price = z.number().nonnegative();

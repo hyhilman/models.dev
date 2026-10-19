@@ -6,7 +6,7 @@
 // A failed fetch keeps the last snapshot, so the last good prices stay.
 //
 // Formats: "kenari" (public, IDR), "dashscope" (Alibaba Model Studio, USD or CNY), "openrouter" (an
-// OpenRouter-style list, USD per token, e.g. Engy) and "models" (an OpenAI-style model list with no
+// OpenRouter-style list, USD per token: OpenRouter, Engy) and "models" (an OpenAI-style model list with no
 // prices, for a subscription plan). A list behind a key reads the
 // env var named by [fetch] key_env; with that var unset the feed is skipped (fetch.skip), not failed.
 //
@@ -187,37 +187,131 @@ export function dashscopeRows(models: readonly DashscopeModel[], perUsd = 1): Pr
   return PriceList.parse(rows);
 }
 
-/** One entry of an OpenRouter-style GET /v1/models (Engy). Prices are USD per token, as strings. */
-const PerToken = z.string().regex(/^\d+(\.\d+)?(e-?\d+)?$/i).nullable().optional();
+/**
+ * One entry of an OpenRouter-style GET /v1/models (OpenRouter, Engy). Prices are USD per token, as
+ * strings; "-1" is a router or a dead route with no fixed price. Engy puts the modalities at the
+ * top, OpenRouter under `architecture`.
+ */
+const PerToken = z.string().optional();
+const OpenrouterPrices = z.object({
+  prompt: PerToken,
+  completion: PerToken,
+  internal_reasoning: PerToken,
+  input_cache_read: PerToken,
+  input_cache_write: PerToken,
+});
 const OpenrouterModel = z.object({
   id: z.string(),
   owned_by: z.string().optional(),
   output_modalities: z.array(z.string()).optional(),
+  architecture: z.object({ output_modalities: z.array(z.string()) }).optional(),
+  supported_parameters: z.array(z.string()).optional(),
   context_length: z.number().int().nonnegative().nullable().optional(),
-  pricing: z.object({ prompt: PerToken, completion: PerToken, input_cache_read: PerToken, input_cache_write: PerToken }),
+  pricing: OpenrouterPrices.extend({
+    overrides: z
+      .array(
+        OpenrouterPrices.extend({
+          min_prompt_tokens: z.number().int().positive().optional(),
+          utc_days: z.array(z.string()).optional(),
+          utc_start: z.number().int().min(0).max(2400).optional(),
+          utc_end: z.number().int().min(0).max(2400).optional(),
+        }),
+      )
+      .optional(),
+  }),
 });
+type OpenrouterModel = z.infer<typeof OpenrouterModel>;
 // An empty list would delete every file of the provider.
 const OpenrouterList = z.object({ data: z.array(OpenrouterModel).min(1) });
 
+const WEEKDAY = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+/** 130 -> "01:30"; 2400 and 0 are both midnight. */
+const clock = (n: number) => `${String(Math.floor(n / 100) % 24).padStart(2, "0")}:${String(n % 100).padStart(2, "0")}`;
+
 /**
- * An OpenRouter-style list as price rows in USD per 1M tokens. Only models with a prompt and a
- * completion price that write text; a "0" cache price means none.
+ * An OpenRouter-style list as price rows in USD per 1M tokens, mapped as upstream's OpenRouter sync
+ * (packages/core/src/sync/providers/openrouter.ts) maps it, so a patch changes only what moved:
+ * - only text and decision models; a price below 0 or (but for a decision model) no parameters
+ *   is a dead route, left out;
+ * - `reasoning` is internal_reasoning, for a model that takes a reasoning parameter;
+ * - an override with min_prompt_tokens is a context tier; the 1h cache write is not read.
+ * Upstream ignores the time overrides (utc_start, utc_end, utc_days). Here, when the windows hold
+ * the top-level price and one other, the other is the price in its windows: a dearer one is the
+ * peak price, a cheaper one (in a single window) the off-peak price. Any other shape keeps the top-level price, logged as fetch.peak_unread.
  */
 export function openrouterRows(json: unknown): { rows: PriceList; listed: string[] } {
-  const perM = (s: string | null | undefined) => (s == null ? null : Number(s) * 1e6);
+  const perM = (s: string | undefined) => {
+    if (s === undefined) return undefined;
+    const n = Number(s);
+    return Number.isFinite(n) && n >= 0 ? Math.round(n * 1e12) / 1e6 : undefined;
+  };
   const data = OpenrouterList.parse(json).data;
   const rows: PriceRow[] = [];
   for (const m of data) {
+    const out = m.architecture?.output_modalities ?? m.output_modalities ?? ["text"];
+    const decision = out.includes("decisions");
+    if (!out.includes("text") && !decision) continue;
     const p = m.pricing;
-    if (!(m.output_modalities ?? ["text"]).includes("text") || p.prompt == null || p.completion == null) continue;
-    const cache = (s: string | null | undefined) => (perM(s) || null);
+    if (Number(p.prompt) < 0 || Number(p.completion) < 0) continue;
+    if (m.supported_parameters?.length === 0 && !decision) continue;
+    const params = new Set(m.supported_parameters ?? []);
+    const reasons = params.has("reasoning") || params.has("include_reasoning");
+    const cost = (x: z.infer<typeof OpenrouterPrices>) => {
+      const input = perM(x.prompt), output = perM(x.completion);
+      if (input === undefined || output === undefined) return null;
+      const c: { input: number; output: number; reasoning?: number; cache_read?: number; cache_write?: number } = { input, output };
+      const r = reasons ? perM(x.internal_reasoning) : undefined, cr = perM(x.input_cache_read), cw = perM(x.input_cache_write);
+      if (r !== undefined) c.reasoning = r;
+      if (cr !== undefined) c.cache_read = cr;
+      if (cw !== undefined) c.cache_write = cw;
+      return c;
+    };
+    const top = cost(p);
+    if (top === null) continue;
+    const overrides = p.overrides ?? [];
+    const tiers = overrides
+      .flatMap((o) => (o.min_prompt_tokens === undefined ? [] : [{ size: o.min_prompt_tokens, c: cost(o) }]))
+      .flatMap((t) => (t.c === null ? [] : [{ size: t.size, ...t.c }]))
+      .sort((x, y) => x.size - y.size);
+    const timed = overrides.filter((o) => o.min_prompt_tokens === undefined);
+    let base = top, offpeak: PriceRow["offpeak"];
+    if (timed.length > 0) {
+      const same = (x: object | null, y: object) => JSON.stringify(x) === JSON.stringify(y);
+      const other = timed.map((o) => cost(o)).find((c) => !same(c, top));
+      const windows = timed.filter((o) => !same(cost(o), top));
+      const days = (o: (typeof timed)[number]) => o.utc_days?.map((d) => WEEKDAY.indexOf(d.toLowerCase()));
+      const hours = (o: (typeof timed)[number]): Hours => ({
+        from: clock(o.utc_start!),
+        to: clock(o.utc_end!),
+        utc_offset: 0,
+        ...(o.utc_days ? { days: days(o)! } : {}),
+      });
+      const readable =
+        other &&
+        tiers.length === 0 &&
+        windows.every((o) => same(cost(o), other) && o.utc_start !== undefined && o.utc_end !== undefined && !days(o)?.includes(-1));
+      if (readable && other.input < top.input) {
+        // Cheaper in its windows: an off-peak price. The catalog takes one off-peak window.
+        if (windows.length === 1) offpeak = { ...other, hours: hours(windows[0]!) };
+        else log("fetch.peak_unread", { model: m.id, reason: "more than one cheaper window; top-level price kept" });
+      } else if (readable) {
+        // Dearer in its windows: the peak price, the top-level one off-peak.
+        base = other;
+        offpeak = { ...top, peak: windows.map(hours) };
+      } else if (other) {
+        log("fetch.peak_unread", { model: m.id, reason: "time overrides not in a peak/off-peak shape; top-level price kept" });
+      }
+    }
     rows.push({
       model_name: m.id,
       provider: m.owned_by ?? "",
-      input_cost_per_1m_tokens: perM(p.prompt)!,
-      output_cost_per_1m_tokens: perM(p.completion)!,
-      cache_read_cost_per_1m_tokens: cache(p.input_cache_read),
-      cache_write_cost_per_1m_tokens: cache(p.input_cache_write),
+      input_cost_per_1m_tokens: base.input,
+      output_cost_per_1m_tokens: base.output,
+      cache_read_cost_per_1m_tokens: base.cache_read ?? null,
+      cache_write_cost_per_1m_tokens: base.cache_write ?? null,
+      reasoning_cost_per_1m_tokens: base.reasoning ?? null,
+      ...(tiers.length > 0 ? { tiers } : {}),
+      ...(offpeak ? { offpeak } : {}),
       context_length: m.context_length ?? 0,
     });
   }
