@@ -345,8 +345,16 @@ function labIndex(): Map<string, string[]> {
 export function baseModelOf(name: string, feed: Feed, idx: Map<string, string[]>): string | null {
   if (feed.map[name]) return feed.map[name]!;
   const key = name.split("/").at(-1)!.split(":")[0]!.toLowerCase();
-  const hits = idx.get(key) ?? [];
-  return hits.length === 1 ? hits[0]! : null;
+  // The exact name first. Then two loose forms, each only when the one before has no match:
+  // a dated snapshot or a "-latest" alias as its undated lab model (qwen-plus-2025-07-14 is
+  // qwen-plus), and a version written with dashes (Kenari's qwen3-8-flash is qwen3.8-flash).
+  const undated = key.replace(/-(\d{4}-\d{2}-\d{2}|latest)$/, "");
+  const dotted = (k: string) => k.replace(/(\d)-(?=\d)/g, "$1.");
+  for (const k of [key, dotted(key), undated, dotted(undated)]) {
+    const hits = idx.get(k) ?? [];
+    if (hits.length > 0) return hits.length === 1 ? hits[0]! : null;
+  }
+  return null;
 }
 
 /** The lab model a host file stands for: its base_model, else its row in local/aliases.toml. */
@@ -449,6 +457,9 @@ function renderModel(
   }
   const lab = readToml(labFile);
   const notes: string[] = [];
+  if (!feed.map[row.model_name] && base.split("/")[1]!.toLowerCase() !== row.model_name.split("/").at(-1)!.split(":")[0]!.toLowerCase()) {
+    notes.push(`# base_model ${base} is the nearest lab model: the lab has no file named ${row.model_name}`);
+  }
   let reasoning_options: unknown[] | undefined;
   // A v2 lab file (`schema = 2`) says it under [capabilities] instead.
   const capabilities = (lab.capabilities ?? {}) as { reasoning?: { supported?: boolean } };
