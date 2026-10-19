@@ -42,7 +42,7 @@ export const PRICES_PUSH_ENV: EnvSpec = {
 export const PRICES_DRY_RUN_ENV: EnvSpec = {
   key: "PRICES_DRY_RUN",
   default: "0",
-  why: "1 = print what the feed would write and what upstream would merge; write, commit and push nothing",
+  why: "1 = print what the feed would write and what the upstream rebase would pick; write, commit and push nothing",
 };
 
 export const PRICES_FETCH_MINUTES_ENV: EnvSpec = {
