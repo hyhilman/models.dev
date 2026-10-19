@@ -8,7 +8,7 @@ This fork tracks `anomalyco/models.dev` (remote `upstream`, branch `dev`). Our w
 1. **Add only.** Never edit a file upstream owns. Our changes live only in `local/`,
    `providers/<p>/` for each `<p>` in `local/static.toml`, and the root files `CLAUDE.md`,
    `doppelganger.toml` and `doppelganger.config.ts`. `.gitignore` may only gain lines.
-   `local/test/add-only.test.ts` enforces this. It keeps every upstream merge free of conflicts.
+   `local/test/add-only.test.ts` enforces this. It keeps every upstream rebase free of conflicts.
    One exception: a `patch` provider in `local/static.toml` is upstream's folder, and the feed
    changes only the cost tables and its own `# Price feed:` comments there, and deletes models
    the provider no longer lists (also tested).
@@ -28,7 +28,7 @@ This fork tracks `anomalyco/models.dev` (remote `upstream`, branch `dev`). Our w
 | `local/example/<p>.json` | A cut of a real price list, the format reference |
 | `local/script/fetch-feeds.ts` | Pulls a published price list (a feed with `[fetch]`) into `local/.feeds/<p>.json`, in USD |
 | `local/script/apply-static.ts` | Applies a price list to `providers/<p>/`, validates, commits |
-| `local/script/sync-upstream.sh` | Merges `upstream/dev` into `router`, checks, goes back on failure |
+| `local/script/sync-upstream.sh` | Rebases `router` on `upstream/dev` (code commits only, prices written again), checks, keeps the old `router` on failure |
 | `local/script/run.sh` | Runs a command in the Bun image (the host has no Bun) |
 | `local/docker/Dockerfile` | The tools image: pinned Bun, git, gh, flock |
 | `local/docker/compose.yml` | The local site on `0.0.0.0:7311` |
@@ -50,7 +50,7 @@ local/script/run.sh bun install --frozen-lockfile
 local/script/run.sh bun validate                          # upstream's check
 local/script/run.sh bun test local/test                   # our tests
 local/script/run.sh bun local/script/apply-static.ts      # apply the static feed
-local/script/run.sh bash local/script/sync-upstream.sh    # merge upstream
+local/script/run.sh bash local/script/sync-upstream.sh    # rebase on upstream
 ```
 
 Upstream's full `bun test` already has failures we do not own. Gate on `bun validate` and
@@ -101,9 +101,8 @@ Kenari publishes its prices at `https://kenari.id/v1/models`, so nobody exports 
   Kenari's lists (the main one and each `?modality=`) is deleted (`static.retired`). A fetch where
   any list fails changes nothing. There is no limit on how many a good list deletes: a failed
   call (HTTP error, bad JSON, an empty or paged list) never gets that far, so the last list stays.
-- An upstream merge that conflicts inside a patch folder takes upstream's file
-  (`sync.took_upstream`). The next static run writes the price again. A conflict anywhere else
-  still aborts the merge.
+- A rebase conflict inside a price folder takes upstream's file (`sync.took_upstream`). The
+  rebase writes the prices again right after. A conflict anywhere else aborts the rebase.
 
 ## Alibaba (DashScope, international)
 
@@ -168,6 +167,24 @@ machine: `local/.static/`, gitignored). Its `[fetch]` has `static_prices = true`
 whose model that list does not have (`static.delisted`), so its file is deleted. A failed or empty
 fetch changes nothing; a missing key skips the feed (`fetch.skip`) and all static rows stay.
 
+## The upstream sync (rebase)
+
+Every 15 minutes `sync-upstream.sh` rebases `router` on `upstream/dev`, so `router` is always
+upstream's `dev` plus our commits on top:
+
+- It replays only our code commits. Price commits (subject `chore(prices):`) are dropped, and the
+  feed writes the prices again on the new base from its last fetched lists, as one
+  `chore(prices): write the prices again on upstream <sha>` commit. The git history of each price
+  change is gone after a rebase; the ntfy messages keep it.
+- A commit that upstream already has comes out empty and is dropped.
+- It builds the new history on a detached HEAD (no branch checked out) and moves `router` only
+  after `bun validate`, our tests and a guard pass. The guard checks that our own files
+  (`local/`, `CLAUDE.md`, `doppelganger.*`) did not change. Any failure leaves `router` as it was.
+- A run that is killed half-way leaves HEAD detached. Both jobs then skip ("not on router") until
+  someone runs `git checkout -f router`.
+- So the price job never mixes into a rebase, never leave a change staged in this checkout: the
+  feed's commit takes the whole index.
+
 ## Notifications
 
 After each run, the plugin (`tools/prices/run.ts`, `report`) sends one ntfy message (the `[ntfy]`
@@ -175,9 +192,9 @@ settings) when something happened:
 
 - `💲 <provider>` and one line per model, `name: input 2→2.5, output 8→10` (or `new`, `removed`),
   for every commit that changed a price, added or removed a model. A commit that changed no price
-  (a date, a rate comment) sends nothing. Off-peak switches show as price changes. `↩️` when a merge
-  kept upstream's files. A normal upstream merge sends nothing; a conflict or a failed check sends `❌`.
-- `❌` once for a new failure (a fetch, an apply, the merge, the job, a model in our providers
+  (a date, a rate comment) sends nothing. Off-peak switches show as price changes. `↩️` when a rebase
+  kept upstream's files. A normal upstream rebase sends nothing; a conflict or a failed check sends `❌`.
+- `❌` once for a new failure (a fetch, an apply, the rebase, the job, a model in our providers
   with no canonical id that `local/house-models.toml` does not list), and `✅ ... works again`
   once when it clears. Open failures live in `local/.feeds/alerts.json`, so a failure that lasts
   is not repeated every minute. A quiet run sends nothing; a dry run never sends.
@@ -234,6 +251,13 @@ To upgrade: download the new tarball into `local/doppelganger/vendor/`, then in 
 With `[prices] push = 1`, a job pushes `router` to `origin` when it moved, and the sync (every 15 minutes)
 also fast-forwards `origin`'s `dev` to `upstream/dev`, so the fork never shows as behind. `dev`
 holds none of our commits: a push that is not a fast-forward is refused and the job fails.
+
+The sync rebases `router`, so its push is a force push with a lease (`--force-with-lease`, which
+overwrites origin's `router` only if it is still the one this checkout last saw). Never base other
+work on `origin/router`: its commits change on every rebase.
+
+Upstream's commits change `.github/workflows/`, so the gh login needs the `workflow` scope, or
+GitHub refuses the push: `GH_CONFIG_DIR=.doppelganger/creds/gh/<name> gh auth refresh -s workflow`.
 
 The image has no ssh key, so pushes use a gh login kept for the jobs (gitignored):
 

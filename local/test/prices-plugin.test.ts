@@ -65,6 +65,7 @@ test("a report: changes every time, a failure once, and once more when it clears
   expect(report("static", [applied], null, {}).body).toBeNull();
   // A plain upstream merge says nothing; a conflict does.
   expect(report("sync", ['event=sync.merged from="a" to="b" upstream="c"'], null, {}).body).toBeNull();
+  expect(report("sync", ['event=sync.rebased from="a" to="b" upstream="c" picked="3"'], null, {}).body).toBeNull();
   expect(report("sync", ['event=sync.conflict files="x.ts"'], null, {}).body).toBe("❌ upstream merge: conflict in x.ts");
   const err = 'event=fetch.error provider="alibaba" error="GET x: HTTP 500"';
   const r2 = report("static", [err], "x", r1.open);
