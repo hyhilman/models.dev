@@ -17,8 +17,10 @@ providers = [
 ]
 
 # Upstream owns these folders. The feed rewrites only the cost tables of upstream's files, deletes
-# a file whose model the provider's live list no longer has, and never adds one. An upstream merge
-# conflict there takes upstream's file (the next run writes the price again).
+# a file whose model the provider's live list no longer has, and adds a whole file of its own
+# (first line "# Added by the price feed:") for a priced model upstream has no file for, unless
+# the feed sets add = false. A rebase conflict there takes upstream's file (the rebase writes the
+# price again).
 patch = [
   "kenari",
   "alibaba",
