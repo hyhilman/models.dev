@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { borrowRows, DASHSCOPE_OFFPEAK, dashscopeRows, kenariIds, ModelList, money, opencodeDocRows, openrouterRows, kenariRows, rateDate, tierStart } from "../script/fetch-feeds.ts";
-import { Feed, inHours, patchCost, PATCH_MARK, retired, rowCost, Snapshot } from "../script/apply-static.ts";
+import { costDiff, Feed, flatCost, inHours, patchCost, PATCH_MARK, retired, rowCost, Snapshot } from "../script/apply-static.ts";
+import { CostV2 } from "../../packages/core/src/schema-v2.ts";
 import { KEY_ENVS } from "../doppelganger/tools/prices/run.ts";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -43,6 +44,50 @@ test("patchCost replaces only [cost], and a second patch replaces the first", ()
   const once = patchCost(up, { input: 1, output: 2 }, ["src, checked 2026-10-10."])!;
   expect(once).toBe(`${PATCH_MARK} src, checked 2026-10-10.\nbase_model = "a/b"\n\n[cost]\ninput = 1\noutput = 2\n\n[limit]\ncontext = 5\n`);
   expect(patchCost(once, { input: 1, output: 2 }, ["src, checked 2026-10-10."])).toBe(once);
+});
+
+// A cut of upstream's providers/alibaba/models/qwen3.8-max.toml, a schema 2 file.
+const V2_FILE = `# Sources (accessed 2026-08-04):
+schema = 2
+base_model = "alibaba/qwen3.8-max"
+
+[capabilities]
+tools = { supported = true, updates = false }
+structured_output = true
+
+[api.chat-completions]
+compatibility = { reasoning_field = "reasoning_content" }
+
+[cost.text.input]
+price = 2
+cache = { read = 0.25, write = 2.5 }
+
+[cost.text.output]
+price = 6
+`;
+
+test("patchCost writes a v2 cost in a schema 2 file, and keeps the rest", () => {
+  const cost = { input: 1, output: 3, cache_read: 0.1, reasoning: 4, tiers: [{ tier: { type: "context", size: 256_000 }, input: 2, output: 6 }] };
+  const out = patchCost(V2_FILE, cost, ["src, checked 2026-10-20."]);
+  const t = Bun.TOML.parse(out) as Record<string, unknown>;
+  expect(t.cost).toEqual({
+    text: {
+      input: { price: 1, cache: { read: 0.1 }, overrides: [{ when: { context: { gt: 256_000 } }, price: 2 }] },
+      output: { price: 3, reasoning: 4, overrides: [{ when: { context: { gt: 256_000 } }, price: 6 }] },
+    },
+  });
+  expect(CostV2.safeParse(t.cost).success).toBe(true);
+  expect(out.slice(0, out.indexOf("[cost"))).toBe(`${PATCH_MARK} src, checked 2026-10-20.\n${V2_FILE.slice(0, V2_FILE.indexOf("[cost"))}`);
+  expect(patchCost(out, cost, ["src, checked 2026-10-20."])).toBe(out);
+});
+
+test("flatCost reads a v2 cost in v1 names, so costDiff names the change", () => {
+  const before = flatCost({ text: { input: { price: 2, cache: { read: 0.25, write: 2.5 } }, output: { price: 6 } } });
+  expect(before).toEqual({ input: 2, output: 6, cache_read: 0.25, cache_write: 2.5 });
+  const after = flatCost({ text: { input: { price: 2, cache: { read: 0.17, write: 2.5 } }, output: { price: 6 } } });
+  expect(costDiff(before, after)).toBe("cache_read 0.25→0.17");
+  const tiered = flatCost({ text: { input: { price: 2, overrides: [{ when: {}, price: 3 }] }, output: { price: 6 } } });
+  expect(costDiff(flatCost({ text: { input: { price: 2 }, output: { price: 6 } } }), tiered)).toBe("tiers or off-peak");
 });
 
 test("patchCost replaces every cost table, tiers too, and keeps the rest", () => {
