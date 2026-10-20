@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import path from "node:path";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { ADDED_MARK, baseModelOf, costDiff, Feed, PriceList, render, renderPatch, tidy, walk } from "../script/apply-static.ts";
+import { ADDED_MARK, baseModelOf, costDiff, Feed, PriceList, reasoningOptionsOf, render, renderPatch, tidy, walk } from "../script/apply-static.ts";
 
 const example = () =>
   JSON.parse(readFileSync(path.join(import.meta.dir, "../example/sumopod.json"), "utf8")) as Record<string, unknown>[];
@@ -32,6 +32,36 @@ test("walk skips a symlink whose target is gone", () => {
     symlinkSync("real.toml", path.join(dir, "a/linked.toml"));
     symlinkSync("../gone/GLM-4.6.toml", path.join(dir, "a/dangling.toml"));
     expect(walk(dir).map((p) => path.relative(dir, p)).sort()).toEqual(["a/linked.toml", "a/real.toml"]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a v2 host file is a peer: its [capabilities] reasoning reads as v1 reasoning_options", () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "peer-"));
+  try {
+    // A cut of upstream's providers/minimax-coding-plan/models/MiniMax-M3.1-Flash-Preview.toml.
+    const file = path.join(dir, "MiniMax-M3.1-Flash-Preview.toml");
+    writeFileSync(
+      file,
+      `schema = 2
+base_model = "minimax/MiniMax-M3.1-Flash-Preview"
+status = "deprecated"
+
+[capabilities]
+reasoning = { supported = true, effort = ["low", "medium", "high", "xhigh", "max"] }
+
+[cost.text.input]
+price = 0
+
+[cost.text.output]
+price = 0
+`,
+    );
+    const t = Bun.TOML.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
+    expect(reasoningOptionsOf(file, t)).toEqual([{ type: "effort", values: ["low", "medium", "high", "xhigh", "max"] }]);
+    expect(reasoningOptionsOf(file, { reasoning_options: [{ type: "toggle" }] })).toEqual([{ type: "toggle" }]);
+    expect(reasoningOptionsOf(file, {})).toBeUndefined();
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
