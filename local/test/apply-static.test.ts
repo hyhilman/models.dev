@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test";
 import path from "node:path";
-import { readFileSync } from "node:fs";
-import { ADDED_MARK, baseModelOf, costDiff, Feed, PriceList, render, renderPatch, tidy } from "../script/apply-static.ts";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { ADDED_MARK, baseModelOf, costDiff, Feed, PriceList, render, renderPatch, tidy, walk } from "../script/apply-static.ts";
 
 const example = () =>
   JSON.parse(readFileSync(path.join(import.meta.dir, "../example/sumopod.json"), "utf8")) as Record<string, unknown>[];
@@ -21,6 +22,19 @@ test("a model name cannot climb out of the provider folder", () => {
 
 test("a duplicate model name fails", () => {
   expect(PriceList.safeParse([example()[0], example()[0]]).success).toBe(false);
+});
+
+test("walk skips a symlink whose target is gone", () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "walk-"));
+  try {
+    mkdirSync(path.join(dir, "a"));
+    writeFileSync(path.join(dir, "a/real.toml"), "");
+    symlinkSync("real.toml", path.join(dir, "a/linked.toml"));
+    symlinkSync("../gone/GLM-4.6.toml", path.join(dir, "a/dangling.toml"));
+    expect(walk(dir).map((p) => path.relative(dir, p)).sort()).toEqual(["a/linked.toml", "a/real.toml"]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("float noise is rounded away", () => {
