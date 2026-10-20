@@ -317,11 +317,14 @@ function readToml(file: string): Record<string, unknown> {
   return Bun.TOML.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
 }
 
-function walk(dir: string): string[] {
+export function walk(dir: string): string[] {
   if (!existsSync(dir)) return [];
   return readdirSync(dir).flatMap((name) => {
     const p = path.join(dir, name);
-    return statSync(p).isDirectory() ? walk(p) : p.endsWith(".toml") ? [p] : [];
+    // Upstream can leave a symlink whose target it deleted. It names no model, so skip it.
+    const s = statSync(p, { throwIfNoEntry: false });
+    if (s === undefined) return [];
+    return s.isDirectory() ? walk(p) : p.endsWith(".toml") ? [p] : [];
   });
 }
 
