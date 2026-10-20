@@ -643,7 +643,8 @@ function apply(provider: string, patch: boolean): "unchanged" | "changed" | "ski
     // Put the provider folder back exactly as it was, so the last good prices stay.
     git(["checkout", "--", `providers/${provider}`]);
     git(["clean", "-fdq", "--", `providers/${provider}`]);
-    const err = (v.stderr.toString() + v.stdout.toString()).split("\n").filter(Boolean).slice(-15).join("\n");
+    // The error and the file it names come first; the end is only a dump of the parsed file.
+    const err = (v.stderr.toString() + v.stdout.toString()).split("\n").filter(Boolean).slice(0, 20).join("\n");
     throw new Error(`bun validate failed, changes reverted:\n${err}`);
   }
 
