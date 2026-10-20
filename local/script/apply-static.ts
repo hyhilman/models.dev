@@ -18,6 +18,8 @@ import path from "node:path";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { z } from "../lib/deps.ts";
 import { formatToml } from "../../packages/core/src/sync/index.ts";
+import { toCostV2 } from "../../packages/core/src/generate-v2.ts";
+import { formatModelV2 } from "../../packages/core/src/model-file-v2.ts";
 
 const REPO = path.resolve(import.meta.dir, "../..");
 const STATIC_DIR = process.env.PRICE_STATIC_DIR ?? path.join(process.env.HOME ?? "/tmp", ".price-router/static");
@@ -170,7 +172,8 @@ export const ADDED_MARK = "# Added by the price feed:";
 
 /**
  * An upstream file with its cost tables ([cost], [cost.*] and [[cost.*]]) replaced and our header
- * on top. Everything else stays upstream's, byte for byte.
+ * on top. Everything else stays upstream's, byte for byte. `cost` is in the v1 shape; a v2 file
+ * (`schema = 2`) gets it in the v2 shape ([cost.text.input] and so on), as upstream writes it.
  */
 export function patchCost(text: string, cost: Record<string, unknown>, header: readonly string[]): string {
   const lines = text.split("\n").filter((l) => !l.startsWith(PATCH_MARK));
@@ -191,7 +194,14 @@ export function patchCost(text: string, cost: Record<string, unknown>, header: r
     while (ls.at(-1) === "") ls.pop();
     return ls;
   };
-  const block = formatToml({ cost } as Parameters<typeof formatToml>[0]).trim().split("\n");
+  const v2 = (Bun.TOML.parse(text) as { schema?: unknown }).schema === 2;
+  const block = (
+    v2
+      ? formatModelV2({ cost: toCostV2(cost as Parameters<typeof toCostV2>[0]) })
+      : formatToml({ cost } as Parameters<typeof formatToml>[0])
+  )
+    .trim()
+    .split("\n");
   const head = trim(kept.slice(0, at === -1 ? kept.length : at));
   const tail = at === -1 ? [] : trim(kept.slice(at));
   const out = [...head, ...(head.length > 0 ? [""] : []), ...block, ...(tail.length > 0 ? ["", ...tail] : [])];
@@ -523,10 +533,29 @@ type Cost = Record<string, unknown>;
 function costOf(text: string | undefined): Cost | null {
   if (text === undefined) return null;
   try {
-    return ((Bun.TOML.parse(text) as { cost?: Cost }).cost ?? null);
+    const cost = (Bun.TOML.parse(text) as { cost?: Cost }).cost;
+    return cost === undefined ? null : cost.text === undefined ? cost : flatCost(cost);
   } catch {
     return null;
   }
+}
+
+/**
+ * A v2 [cost] in the v1 names costDiff reads. What has no v1 name (overrides, multipliers, another
+ * modality) stays under `more`, so a change there still counts.
+ */
+export function flatCost(cost: Cost): Cost {
+  const { text, ...other } = cost as { text?: { input?: Cost; output?: Cost } } & Cost;
+  const { price: input, cache, ...inMore } = text?.input ?? {};
+  const { price: output, reasoning, ...outMore } = text?.output ?? {};
+  const { read, write, ...cacheMore } = (cache ?? {}) as Cost;
+  if (Object.keys(cacheMore).length > 0) inMore.cache = cacheMore;
+  const more = Object.fromEntries(
+    Object.entries({ ...other, input: inMore, output: outMore }).filter(([, v]) => Object.keys(v as object).length > 0),
+  );
+  const flat: Cost = { input, output, cache_read: read, cache_write: write, reasoning };
+  if (Object.keys(more).length > 0) flat.more = more;
+  return Object.fromEntries(Object.entries(flat).filter(([, v]) => v !== undefined));
 }
 
 const num = (v: unknown) => (typeof v === "number" ? String(tidy(v)) : "-");
