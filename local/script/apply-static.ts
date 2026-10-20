@@ -20,6 +20,7 @@ import { z } from "../lib/deps.ts";
 import { formatToml } from "../../packages/core/src/sync/index.ts";
 import { toCostV2 } from "../../packages/core/src/generate-v2.ts";
 import { formatModelV2 } from "../../packages/core/src/model-file-v2.ts";
+import { isSchemaV2, readProviderModel } from "../../packages/core/src/translate.ts";
 
 const REPO = path.resolve(import.meta.dir, "../..");
 const STATIC_DIR = process.env.PRICE_STATIC_DIR ?? path.join(process.env.HOME ?? "/tmp", ".price-router/static");
@@ -381,6 +382,23 @@ function labOf(file: string, t: Record<string, unknown>, aliases: Record<string,
 }
 
 /**
+ * A host file's reasoning_options in v1 form. A v2 file (`schema = 2`) says it under
+ * [capabilities] instead, so upstream's own reader turns it into v1. A v2 file it cannot read is
+ * no peer.
+ */
+export function reasoningOptionsOf(file: string, t: Record<string, unknown>): unknown[] | undefined {
+  let model = t;
+  if (isSchemaV2(t)) {
+    try {
+      model = readProviderModel(file);
+    } catch {
+      return undefined;
+    }
+  }
+  return Array.isArray(model.reasoning_options) ? model.reasoning_options : undefined;
+}
+
+/**
  * A relay copies the underlying model's controls from an established peer host. OpenCode Go
  * first, since it is a relay of the same kind; then the first other host with real controls.
  * An empty list is a last resort: it means "no caller control", which few hosts really mean.
@@ -398,9 +416,11 @@ function peerReasoning(baseModel: string, self: string): { from: string; options
       const head = readFileSync(file, "utf8");
       if (head.startsWith(ADDED_MARK) || head.startsWith("# Static price feed:")) continue;
       const t = readToml(file);
-      if (labOf(file, t, aliases) !== baseModel || !Array.isArray(t.reasoning_options)) continue;
-      const hit = { from: path.relative(REPO, file), options: t.reasoning_options };
-      if (t.reasoning_options.length > 0) return hit;
+      if (labOf(file, t, aliases) !== baseModel) continue;
+      const options = reasoningOptionsOf(file, t);
+      if (options === undefined) continue;
+      const hit = { from: path.relative(REPO, file), options };
+      if (options.length > 0) return hit;
       empty ??= hit;
     }
   }
