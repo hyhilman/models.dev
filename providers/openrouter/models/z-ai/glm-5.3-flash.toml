@@ -24,8 +24,8 @@ effort_updates = false
 context = 1_048_576
 
 [cost.text.input]
-price = 0.0139
-cache = { read = 0.0139 }
+price = 0.0132
+cache = { read = 0.0132 }
 
 [cost.text.output]
 price = 0.1589
