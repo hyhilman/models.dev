@@ -1,6 +1,7 @@
 # Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
 # Price feed: USD list prices.
+# Price feed: off-peak price now; the peak price (01:00-04:00 UTC Mon-Fri, 06:00-10:00 UTC Mon-Fri) is input 0.3, output 1.2.
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = true: forwarded in place (live: cache prefix kept on Together, InferenceNet)
 # effort_updates = false: configuration_update is rejected with a 400 for this model (https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#mid-conversation-effort)
 # tools.updates = false: Chat Completions rejects tool_addition/tool_removal for non-Claude-4.8+ models (live 400)
@@ -20,8 +21,8 @@ context = 1_048_576
 output = 393_216
 
 [cost.text.input]
-price = 0.3
-cache = { read = 0.006 }
+price = 0.15
+cache = { read = 0.003 }
 
 [cost.text.output]
-price = 1.2
+price = 0.6
