@@ -11,8 +11,8 @@ base_model = "minimax/MiniMax-M3"
 reasoning = { supported = true }
 
 [cost.text.input]
-price = 0.351053
-cache = { read = 0.0668673 }
+price = 0.0351053
+cache = { read = 0.00668673 }
 
 [cost.text.output]
-price = 1.39307
+price = 0.139307
