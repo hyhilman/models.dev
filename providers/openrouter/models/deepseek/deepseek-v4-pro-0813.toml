@@ -1,6 +1,7 @@
 # Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
 # Price feed: USD list prices.
+# Price feed: off-peak price now; the peak price (01:00-04:00 UTC Mon-Fri, 06:00-10:00 UTC Mon-Fri) is input 1.32, output 3.96.
 # Toggle: reasoning.enabled = true|false
 # https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = true: forwarded in place (live: cache prefix kept on Sail Research)
@@ -21,8 +22,8 @@ context = 1_048_576
 output = 393_216
 
 [cost.text.input]
-price = 1.32
-cache = { read = 0.044 }
+price = 0.66
+cache = { read = 0.022 }
 
 [cost.text.output]
-price = 3.96
+price = 1.98
