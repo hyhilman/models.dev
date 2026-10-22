@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices.
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = true: forwarded in place (live: cache prefix kept on Together, InferenceNet)
 # effort_updates = false: configuration_update is rejected with a 400 for this model (https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#mid-conversation-effort)
 # tools.updates = false: Chat Completions rejects tool_addition/tool_removal for non-Claude-4.8+ models (live 400)
@@ -20,59 +23,5 @@ output = 393_216
 price = 0.3
 cache = { read = 0.006 }
 
-[[cost.text.input.overrides]]
-when = { utc_days = { in = ["sat", "sun"] } }
-price = 0.15
-cache = { read = 0.003 }
-
-[[cost.text.input.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, utc_hours = { lt = "01:00" } }
-price = 0.15
-cache = { read = 0.003 }
-
-[[cost.text.input.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, all = [{ utc_hours = { gte = "01:00" } }, { utc_hours = { lt = "04:00" } }] }
-price = 0.3
-cache = { read = 0.006 }
-
-[[cost.text.input.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, all = [{ utc_hours = { gte = "04:00" } }, { utc_hours = { lt = "06:00" } }] }
-price = 0.15
-cache = { read = 0.003 }
-
-[[cost.text.input.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, all = [{ utc_hours = { gte = "06:00" } }, { utc_hours = { lt = "10:00" } }] }
-price = 0.3
-cache = { read = 0.006 }
-
-[[cost.text.input.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, utc_hours = { gte = "10:00" } }
-price = 0.15
-cache = { read = 0.003 }
-
 [cost.text.output]
 price = 1.2
-
-[[cost.text.output.overrides]]
-when = { utc_days = { in = ["sat", "sun"] } }
-price = 0.6
-
-[[cost.text.output.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, utc_hours = { lt = "01:00" } }
-price = 0.6
-
-[[cost.text.output.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, all = [{ utc_hours = { gte = "01:00" } }, { utc_hours = { lt = "04:00" } }] }
-price = 1.2
-
-[[cost.text.output.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, all = [{ utc_hours = { gte = "04:00" } }, { utc_hours = { lt = "06:00" } }] }
-price = 0.6
-
-[[cost.text.output.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, all = [{ utc_hours = { gte = "06:00" } }, { utc_hours = { lt = "10:00" } }] }
-price = 1.2
-
-[[cost.text.output.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, utc_hours = { gte = "10:00" } }
-price = 0.6

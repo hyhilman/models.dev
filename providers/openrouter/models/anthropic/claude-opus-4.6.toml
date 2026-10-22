@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices.
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = false: hoisted into the system prompt for this Claude model (live: cache prefix lost)
 # effort_updates = false: configuration_update is rejected with a 400 for this model (https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#mid-conversation-effort)
 # tools.updates = false: Chat Completions rejects tool_addition/tool_removal for non-Claude-4.8+ models (live 400)
@@ -15,16 +18,7 @@ cache = { supported = true, implicit = false, explicit = { ttl = ["5m", "1h"], m
 
 [cost.text.input]
 price = 5
-cache = { read = 0.5, write = { "5m" = 6.25, "1h" = 10 } }
-
-[[cost.text.input.overrides]]
-when = { context = { gt = 200_000 } }
-price = 10
-cache = { read = 1, write = { "5m" = 12.5, "1h" = 20 } }
+cache = { read = 0.5, write = 6.25 }
 
 [cost.text.output]
 price = 25
-
-[[cost.text.output.overrides]]
-when = { context = { gt = 200_000 } }
-price = 37.5

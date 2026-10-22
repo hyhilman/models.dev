@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices.
 # Sources (accessed 2026-08-16):
 # https://openrouter.ai/qwen/qwen3.8-2.4t-a95b
 # https://openrouter.ai/api/v1/models (id qwen/qwen3.8-2.4t-a95b)

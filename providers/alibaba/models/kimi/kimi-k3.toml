@@ -1,0 +1,17 @@
+# Added by the price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-10-22.
+# Added by the price feed: upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.
+# Added by the price feed: USD list prices of the international (Singapore) region.
+# reasoning_options copied from providers/opencode-go/models/kimi-k3.toml
+base_model = "moonshotai/kimi-k3"
+
+[[reasoning_options]]
+type = "effort"
+values = ["max"]
+
+[cost]
+input = 3
+output = 15
+cache_read = 0.3
+
+[limit]
+context = 1_000_000

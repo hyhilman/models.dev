@@ -1,3 +1,6 @@
+# Price feed: Alibaba Token Plan model list (https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/models), checked 2026-10-22.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: price of alibaba (its own list) x 1: the plan bills in Credits, and Alibaba publishes no Credit rate per model.
 # Alibaba Token Plan (Singapore) lists model ID glm-5.3 (Zhipu AI).
 # Subscription plan: no per-token USD price (Credits billing).
 # Always-on thinking; effort via reasoning_effort = low|high|max (default max).
@@ -19,8 +22,8 @@ structured_output = true
 compatibility = { reasoning_field = "reasoning_content" }
 
 [cost.text.input]
-price = 0
-cache = { read = 0, write = 0 }
+price = 1.4
+cache = { read = 0.28 }
 
 [cost.text.output]
-price = 0
+price = 4.4

@@ -1,0 +1,21 @@
+# Added by the price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-10-22.
+# Added by the price feed: upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.
+# Added by the price feed: USD list prices of the international (Singapore) region.
+# base_model alibaba/qwen-flash is the nearest lab model: the lab has no file named qwen-flash-2025-07-28
+# reasoning_options copied from providers/llmtr/models/qwen/qwen-flash.toml
+base_model = "alibaba/qwen-flash"
+
+[[reasoning_options]]
+type = "toggle"
+
+[[reasoning_options]]
+type = "budget_tokens"
+
+[cost]
+input = 0.05
+output = 0.4
+
+[[cost.tiers]]
+tier = { type = "context", size = 256_000 }
+input = 0.25
+output = 2

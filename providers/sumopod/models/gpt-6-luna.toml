@@ -1,0 +1,13 @@
+# Static price feed: Sumopod console price list, exported by the owner, checked 2026-10-19.
+# Written by local/script/apply-static.ts from sumopod.json. Edit the feed, not this file.
+# reasoning_options copied from providers/opencode-go/models/gpt-6-luna.toml
+base_model = "openai/gpt-6-luna"
+
+[[reasoning_options]]
+type = "effort"
+values = ["none", "low", "medium", "high", "xhigh", "max"]
+
+[cost]
+input = 0.1
+output = 0.5
+cache_read = 0.01

@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices.
 # Toggle: reasoning.enabled = true|false
 # https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
 # Modalities (OpenRouter's documented formats, narrowed to the lab's list where it has one): image: https://openrouter.ai/docs/guides/overview/multimodal/image-understanding
@@ -31,12 +34,12 @@ output = 128_000
 
 [cost.text.input]
 price = 0.1
-cache = { read = 0.01, write = { "5m" = 0.125, "1h" = 0.2 } }
+cache = { read = 0.01, write = 0.125 }
 
 [[cost.text.input.overrides]]
 when = { context = { gt = 100_000 } }
 price = 0.5
-cache = { read = 0.05, write = { "5m" = 0.625, "1h" = 1 } }
+cache = { read = 0.05, write = 0.625 }
 
 [cost.text.output]
 price = 0.5

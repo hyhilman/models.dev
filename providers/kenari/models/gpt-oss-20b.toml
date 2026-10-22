@@ -1,3 +1,6 @@
+# Price feed: Kenari GET /v1/models (public price list), checked 2026-10-22.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
 # Lab: openai/gpt-oss-20b (catalog owned_by openai, id gpt-oss-20b).
 # Source: https://kenari.id/v1/models and https://kenari.id/api/public/pricing (accessed 2026-10-21).
 # Price: PAYG per token, micro-IDR per 1M / 1e6 / 17,500 IDR per USD (usd_idr_rate in /api/public/pricing), rounded to 8 decimals.
@@ -11,8 +14,8 @@ base_model = "openai/gpt-oss-20b"
 reasoning = { supported = true, toggle = true, effort = ["low", "medium", "high"] }
 
 [cost.text.input]
-price = 0.036
-cache = { read = 0.00371429 }
+price = 0.0351053
+cache = { read = 0.00362198 }
 
 [cost.text.output]
-price = 0.15428571
+price = 0.150451

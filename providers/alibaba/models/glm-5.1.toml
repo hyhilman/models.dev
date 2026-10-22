@@ -1,3 +1,6 @@
+# Price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-10-22.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices of the international (Singapore) region.
 # Added as v2-only (served and listed on https://www.alibabacloud.com/help/en/model-studio/model-pricing, Singapore, accessed 2026-10-19).
 # Capabilities: Chat API https://www.alibabacloud.com/help/en/model-studio/qwen-api-via-openai-chat-completions; structured output https://www.alibabacloud.com/help/en/model-studio/json-mode; context cache https://www.alibabacloud.com/help/en/model-studio/context-cache (tool definitions count as part of the system message, so changing tools changes the prefix).
 # Toggle: enable_thinking true|false (default on); Budget: thinking_budget. The Chat API reference lists reasoning_effort high|max for glm-5.1, but live the international endpoint rejects "max" and accepts none|minimal|low|medium|high|xhigh, so no effort list is authored.
@@ -21,6 +24,7 @@ compatibility = { reasoning_field = "reasoning_content" }
 
 [cost.text.input]
 price = 1.4
+cache = { read = 0.26 }
 
 [cost.text.output]
 price = 4.4

@@ -1,3 +1,6 @@
+# Price feed: Alibaba Token Plan model list (https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/models), checked 2026-10-22.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: price of alibaba (its own list) x 1: the plan bills in Credits, and Alibaba publishes no Credit rate per model.
 # Sources (accessed 2026-08-27):
 # https://docs.qwencloud.com/token-plan/personal/token-plan-personal-overview
 # https://www.qwencloud.com/models/qwen3.8-flash
@@ -22,8 +25,8 @@ structured_output = true
 compatibility = { reasoning_field = "reasoning_content" }
 
 [cost.text.input]
-price = 0
-cache = { read = 0, write = 0 }
+price = 0.15
+cache = { read = 0.016, write = 0.2 }
 
 [cost.text.output]
-price = 0
+price = 0.47

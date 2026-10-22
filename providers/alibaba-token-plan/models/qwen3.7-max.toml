@@ -1,3 +1,6 @@
+# Price feed: Alibaba Token Plan model list (https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/models), checked 2026-10-22.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: price of alibaba (its own list) x 1: the plan bills in Credits, and Alibaba publishes no Credit rate per model.
 # Reasoning HTTP format (accessed 2026-06-25):
 # Hybrid, thinking on by default. Chat/DashScope `enable_thinking`: true|false;
 # integer `thinking_budget` maximum 262144; no minimum or disable sentinel is
@@ -27,8 +30,8 @@ output = 131_072
 compatibility = { reasoning_field = "reasoning_content" }
 
 [cost.text.input]
-price = 0
-cache = { read = 0, write = 0 }
+price = 2.5
+cache = { read = 0.25, write = 3.125 }
 
 [cost.text.output]
-price = 0
+price = 7.5

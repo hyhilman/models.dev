@@ -1,0 +1,14 @@
+# Added by the price feed: Kenari GET /v1/models (public price list), checked 2026-10-22.
+# Added by the price feed: upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.
+# Added by the price feed: Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
+# base_model deepseek/deepseek-v4.1-flash is the nearest lab model: the lab has no file named deepseek-v4-1-flash:free
+# reasoning_options copied from providers/opencode-go/models/deepseek-v4.1-flash.toml
+base_model = "deepseek/deepseek-v4.1-flash"
+
+[[reasoning_options]]
+type = "effort"
+values = ["low", "high", "max"]
+
+[cost]
+input = 0
+output = 0

@@ -1,0 +1,15 @@
+# Added by the price feed: Kenari GET /v1/models (public price list), checked 2026-10-22.
+# Added by the price feed: upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.
+# Added by the price feed: Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
+# reasoning_options copied from providers/opencode-go/models/gpt-6-luna.toml
+base_model = "openai/gpt-6-luna"
+
+[[reasoning_options]]
+type = "effort"
+values = ["none", "low", "medium", "high", "xhigh", "max"]
+
+[cost]
+input = 0.0975148
+output = 0.473643
+cache_read = 0.00975148
+cache_write = 0.111445

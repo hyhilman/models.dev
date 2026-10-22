@@ -1,0 +1,7 @@
+# Static price feed: Sumopod console price list, exported by the owner, checked 2026-10-19.
+# Written by local/script/apply-static.ts from sumopod.json. Edit the feed, not this file.
+name = "SumoPod"
+env = ["SUMOPOD_API_KEY"]
+npm = "@ai-sdk/openai-compatible"
+api = "https://ai.sumopod.com/v1"
+doc = "https://ai.sumopod.com"

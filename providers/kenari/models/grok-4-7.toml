@@ -1,0 +1,15 @@
+# Added by the price feed: Kenari GET /v1/models (public price list), checked 2026-10-22.
+# Added by the price feed: upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.
+# Added by the price feed: Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
+# base_model xai/grok-4.7 is the nearest lab model: the lab has no file named grok-4-7
+# reasoning_options copied from providers/opencode-go/models/grok-4.7.toml
+base_model = "xai/grok-4.7"
+
+[[reasoning_options]]
+type = "effort"
+values = ["low", "medium", "high", "xhigh"]
+
+[cost]
+input = 2.22891
+output = 6.68673
+cache_read = 0.334336

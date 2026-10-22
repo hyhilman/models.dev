@@ -1,3 +1,6 @@
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-10-22.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/services/www/src/docs/content/console/models.mdx.
 # GET https://opencode.ai/inference/v1/models lists muse-wonder-1.0 (verified 2026-10-20).
 # Zen does not list Muse Wonder pricing yet; Zen sells at cost and matches Meta's Muse Spark
 # pricing, so cost follows Meta's Model API (https://dev.meta.ai/docs/pricing-rate-limits).

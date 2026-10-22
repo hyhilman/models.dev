@@ -1,0 +1,16 @@
+# Added by the price feed: Kenari GET /v1/models (public price list), checked 2026-10-22.
+# Added by the price feed: upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.
+# Added by the price feed: Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
+# base_model openai/gpt-6.1-sol is the nearest lab model: the lab has no file named gpt-6-1-sol
+# reasoning_options copied from providers/302ai/models/gpt-6.1-sol.toml
+base_model = "openai/gpt-6.1-sol"
+
+[[reasoning_options]]
+type = "effort"
+values = ["low", "medium", "high", "xhigh", "max"]
+
+[cost]
+input = 2.22891
+output = 11.1445
+cache_read = 0.222891
+cache_write = 2.78614

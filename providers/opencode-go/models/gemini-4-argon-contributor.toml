@@ -1,3 +1,6 @@
+# Price feed: OpenCode Go model list (https://opencode.ai/zen/go/v1/models), checked 2026-10-22.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/services/www/src/docs/content/console/go.mdx.
 # Sources: https://opencode.ai/docs/go/#endpoints and https://opencode.ai/docs/go/#usage-limits
 # Contributor tier: prompts and completions may be used to train future Google models,
 # so Go requires the workspace's consent to paid endpoints that train on request data.
@@ -22,6 +25,3 @@ cache = { read = 0.2 }
 
 [cost.text.output]
 price = 20
-
-[cost.audio.input]
-price = 4

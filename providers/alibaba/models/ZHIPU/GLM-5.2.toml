@@ -1,0 +1,14 @@
+# Added by the price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-10-22.
+# Added by the price feed: upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.
+# Added by the price feed: USD list prices of the international (Singapore) region.
+# reasoning_options copied from providers/opencode-go/models/glm-5.2.toml
+base_model = "zhipuai/glm-5.2"
+
+[[reasoning_options]]
+type = "effort"
+values = ["high", "max"]
+
+[cost]
+input = 1.4
+output = 4.4
+cache_read = 0.26

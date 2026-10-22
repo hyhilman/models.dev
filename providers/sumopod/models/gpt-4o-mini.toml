@@ -1,0 +1,8 @@
+# Static price feed: Sumopod console price list, exported by the owner, checked 2026-10-19.
+# Written by local/script/apply-static.ts from sumopod.json. Edit the feed, not this file.
+base_model = "openai/gpt-4o-mini"
+
+[cost]
+input = 0.15
+output = 0.6
+cache_read = 0.075

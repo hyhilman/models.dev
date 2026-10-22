@@ -1,3 +1,6 @@
+# Price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-10-22.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices of the international (Singapore) region.
 # Sources (accessed 2026-08-04):
 # https://www.qwencloud.com/models/qwen3.8-max
 # https://docs.qwencloud.com/developer-guides/text-generation/thinking
@@ -29,7 +32,7 @@ compatibility = { reasoning_field = "reasoning_content" }
 
 [cost.text.input]
 price = 2
-cache = { read = 0.25, write = 2.5 }
+cache = { read = 0.17, write = 2.5 }
 
 [cost.text.output]
 price = 6

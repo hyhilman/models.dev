@@ -1,0 +1,24 @@
+# Added by the price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-10-22.
+# Added by the price feed: upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.
+# Added by the price feed: USD list prices of the international (Singapore) region.
+# base_model alibaba/qwen3-coder-flash is the nearest lab model: the lab has no file named qwen3-coder-flash-2025-07-28
+base_model = "alibaba/qwen3-coder-flash"
+
+[cost]
+input = 0.3
+output = 1.5
+
+[[cost.tiers]]
+tier = { type = "context", size = 32_000 }
+input = 0.5
+output = 2.5
+
+[[cost.tiers]]
+tier = { type = "context", size = 128_000 }
+input = 0.8
+output = 4
+
+[[cost.tiers]]
+tier = { type = "context", size = 256_000 }
+input = 1.6
+output = 9.6

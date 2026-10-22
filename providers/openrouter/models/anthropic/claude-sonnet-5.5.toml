@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices.
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = true: forwarded to Claude in place (live: cache prefix kept)
 # effort_updates: configuration_update accepted, cache kept (https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#mid-conversation-effort)
 # tools.updates = false: tool_addition/tool_removal system blocks are accepted but have no effect on Chat Completions (live)
@@ -16,7 +19,7 @@ cache = { supported = true, implicit = false, explicit = { ttl = ["5m", "1h"], m
 
 [cost.text.input]
 price = 2
-cache = { read = 0.1, write = { "5m" = 2.5, "1h" = 4 } }
+cache = { read = 0.1, write = 2.5 }
 
 [cost.text.output]
 price = 10

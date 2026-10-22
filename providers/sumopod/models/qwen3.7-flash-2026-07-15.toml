@@ -1,0 +1,17 @@
+# Static price feed: Sumopod console price list, exported by the owner, checked 2026-10-19.
+# Written by local/script/apply-static.ts from sumopod.json. Edit the feed, not this file.
+# base_model alibaba/qwen3.7-flash is the nearest lab model: the lab has no file named qwen3.7-flash-2026-07-15
+# reasoning_options copied from providers/aihubmix/models/qwen3.7-flash.toml
+base_model = "alibaba/qwen3.7-flash"
+
+[[reasoning_options]]
+type = "toggle"
+
+[[reasoning_options]]
+type = "budget_tokens"
+max = 262_144
+
+[cost]
+input = 0.03
+output = 0.13
+cache_read = 0.006
