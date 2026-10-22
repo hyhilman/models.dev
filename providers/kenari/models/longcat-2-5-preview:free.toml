@@ -2,7 +2,7 @@
 # Added by the price feed: upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.
 # Added by the price feed: Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
 # base_model meituan/longcat-2.5-preview is the nearest lab model: the lab has no file named longcat-2-5-preview:free
-# reasoning_options copied from providers/opencode-go/models/longcat-2.5-preview-free.toml
+# reasoning_options copied from providers/longcat/models/LongCat-2.5-Preview.toml
 base_model = "meituan/longcat-2.5-preview"
 
 [[reasoning_options]]
