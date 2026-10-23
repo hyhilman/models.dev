@@ -24,8 +24,8 @@ effort_updates = false
 output = 235_929
 
 [cost.text.input]
-price = 0.708116
+price = 0.709487
 cache = { read = 0.15825 }
 
 [cost.text.output]
-price = 3.53425
+price = 3.2705
