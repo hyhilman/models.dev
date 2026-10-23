@@ -1,4 +1,4 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
 # Price feed: USD list prices.
 # Toggle: reasoning.enabled = true|false
@@ -31,7 +31,7 @@ output = 943_718
 
 [cost.text.input]
 price = 0.0475
-cache = { read = 0.0275 }
+cache = { read = 0.028 }
 
 [cost.text.output]
 price = 0.1602
