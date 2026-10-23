@@ -1,6 +1,6 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
-# Price feed: USD list prices.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = true: OpenAI keeps mid-conversation system/developer messages in place (live: cache prefix kept on gpt-4.1, gpt-5.4, gpt-6-sol)
 # effort_updates = false: configuration_update is rejected with a 400 for this model (https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#mid-conversation-effort)
 # tools.updates = false: Chat Completions rejects tool_addition/tool_removal for non-Claude-4.8+ models (live 400)
@@ -19,17 +19,17 @@ effort_updates = false
 cache = { supported = true, implicit = { min_tokens = 1_024 }, explicit = { ttl = ["30m"], min_tokens = 1_024 } }
 
 [cost.text.input]
-price = 0.2
-cache = { read = 0.02, write = 0.25 }
+price = 0.211
+cache = { read = 0.0211, write = 0.26375 }
 
 [[cost.text.input.overrides]]
 when = { context = { gt = 272_000 } }
-price = 0.4
-cache = { read = 0.04, write = 0.5 }
+price = 0.422
+cache = { read = 0.0422, write = 0.5275 }
 
 [cost.text.output]
-price = 1.2
+price = 1.266
 
 [[cost.text.output.overrides]]
 when = { context = { gt = 272_000 } }
-price = 1.8
+price = 1.899

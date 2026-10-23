@@ -1,6 +1,6 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
-# Price feed: USD list prices.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Toggle: reasoning.enabled = true|false
 # https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = false: Gemini has one systemInstruction, so it is hoisted (live: cache prefix lost; https://openrouter.ai/docs/guides/best-practices/prompt-caching#google-gemini)
@@ -24,9 +24,9 @@ cache = { supported = true, implicit = { min_tokens = 1_024 }, explicit = { ttl 
 output = 65_535
 
 [cost.text.input]
-price = 0.3
-cache = { read = 0.03, write = 0.083333 }
+price = 0.3165
+cache = { read = 0.03165, write = 0.0879163 }
 
 [cost.text.output]
-price = 2.5
-reasoning = 2.5
+price = 2.6375
+reasoning = 2.6375

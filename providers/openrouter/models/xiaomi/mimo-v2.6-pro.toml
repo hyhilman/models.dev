@@ -1,6 +1,6 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
-# Price feed: USD list prices.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Toggle: reasoning.enabled = true|false
 # https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = true: forwarded in place (live: cache prefix kept on Xiaomi)
@@ -21,8 +21,8 @@ effort_updates = false
 context = 1_050_000
 
 [cost.text.input]
-price = 0.435
-cache = { read = 0.0036 }
+price = 0.458925
+cache = { read = 0.003798 }
 
 [cost.text.output]
-price = 0.87
+price = 0.91785

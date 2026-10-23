@@ -1,6 +1,6 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
-# Price feed: USD list prices.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = true: forwarded to Grok in place (live: cache prefix kept)
 # effort_updates = false: configuration_update is rejected with a 400 for this model (https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#mid-conversation-effort)
 # tools.updates = false: Chat Completions rejects tool_addition/tool_removal for non-Claude-4.8+ models (live 400)
@@ -20,17 +20,17 @@ cache = { supported = true, implicit = true }
 output = 900_000
 
 [cost.text.input]
-price = 1.25
-cache = { read = 0.2 }
+price = 1.31875
+cache = { read = 0.211 }
 
 [[cost.text.input.overrides]]
 when = { context = { gt = 200_000 } }
-price = 2.5
-cache = { read = 0.4 }
+price = 2.6375
+cache = { read = 0.422 }
 
 [cost.text.output]
-price = 2.5
+price = 2.6375
 
 [[cost.text.output.overrides]]
 when = { context = { gt = 200_000 } }
-price = 5
+price = 5.275

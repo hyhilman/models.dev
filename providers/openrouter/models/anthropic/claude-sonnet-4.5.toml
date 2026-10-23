@@ -1,6 +1,6 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
-# Price feed: USD list prices.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Toggle: reasoning.enabled = true|false
 # https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = false: hoisted into the system prompt for this Claude model (live: cache prefix lost)
@@ -22,17 +22,17 @@ cache = { supported = true, implicit = false, explicit = { ttl = ["5m", "1h"], m
 context = 1_000_000
 
 [cost.text.input]
-price = 3
-cache = { read = 0.3, write = 3.75 }
+price = 3.165
+cache = { read = 0.3165, write = 3.95625 }
 
 [[cost.text.input.overrides]]
 when = { context = { gt = 200_000 } }
-price = 6
-cache = { read = 0.6, write = 7.5 }
+price = 6.33
+cache = { read = 0.633, write = 7.9125 }
 
 [cost.text.output]
-price = 15
+price = 15.825
 
 [[cost.text.output.overrides]]
 when = { context = { gt = 200_000 } }
-price = 22.5
+price = 23.7375

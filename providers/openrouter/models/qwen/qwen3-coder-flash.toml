@@ -1,6 +1,6 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
-# Price feed: USD list prices.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = false: hoisted on Alibaba (live)
 # effort_updates = false: no per-turn effort control
 # tools.updates = false: Chat Completions rejects tool_addition/tool_removal for non-Claude-4.8+ models (live 400)
@@ -14,26 +14,26 @@ system_updates = false
 effort_updates = false
 
 [cost.text.input]
-price = 0.195
-cache = { read = 0.039, write = 0.24375 }
+price = 0.205725
+cache = { read = 0.041145, write = 0.257156 }
 
 [[cost.text.input.overrides]]
 when = { context = { gt = 32_000 } }
-price = 0.325
-cache = { read = 0.065, write = 0.40625 }
+price = 0.342875
+cache = { read = 0.068575, write = 0.428594 }
 
 [[cost.text.input.overrides]]
 when = { context = { gt = 128_000 } }
-price = 0.52
-cache = { read = 0.104, write = 0.65 }
+price = 0.5486
+cache = { read = 0.10972, write = 0.68575 }
 
 [cost.text.output]
-price = 0.975
+price = 1.02862
 
 [[cost.text.output.overrides]]
 when = { context = { gt = 32_000 } }
-price = 1.625
+price = 1.71437
 
 [[cost.text.output.overrides]]
 when = { context = { gt = 128_000 } }
-price = 2.6
+price = 2.743

@@ -1,6 +1,6 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
-# Price feed: USD list prices.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = true: forwarded to Claude in place (live: cache prefix kept)
 # effort_updates = false: configuration_update is rejected with a 400 for this model (https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#mid-conversation-effort)
 # tools.updates = false: tool_addition/tool_removal system blocks are accepted but have no effect on Chat Completions (live)
@@ -17,8 +17,8 @@ effort_updates = false
 cache = { supported = true, implicit = false, explicit = { ttl = ["5m", "1h"], max_breakpoints = 4, min_tokens = 512 } }
 
 [cost.text.input]
-price = 10
-cache = { read = 1, write = 12.5 }
+price = 10.55
+cache = { read = 1.055, write = 13.1875 }
 
 [cost.text.output]
-price = 50
+price = 52.75

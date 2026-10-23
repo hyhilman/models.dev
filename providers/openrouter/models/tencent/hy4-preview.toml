@@ -1,7 +1,7 @@
 # Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
-# Price feed: USD list prices.
-# Price feed: peak price now; off-peak (16:00-00:00 UTC) is input 0.7506, output 2.2509.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
+# Price feed: peak price now; off-peak (16:00-00:00 UTC) is input 0.791883, output 2.3747.
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = true: forwarded in place (live: cache prefix kept on Tencent, DeepInfra)
 # effort_updates = false: configuration_update is rejected with a 400 for this model (https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#mid-conversation-effort)
 # tools.updates = false: Chat Completions rejects tool_addition/tool_removal for non-Claude-4.8+ models (live 400)
@@ -20,8 +20,8 @@ effort_updates = false
 context = 1_048_576
 
 [cost.text.input]
-price = 0.834
-cache = { read = 0.042 }
+price = 0.87987
+cache = { read = 0.04431 }
 
 [cost.text.output]
-price = 2.501
+price = 2.63855

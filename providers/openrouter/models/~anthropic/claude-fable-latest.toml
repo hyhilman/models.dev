@@ -1,6 +1,6 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
-# Price feed: USD list prices.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # This route maps effort through top-level `verbosity`, not `reasoning.effort`.
 # https://openrouter.ai/docs/api/reference/parameters#verbosity (accessed 2026-06-25)
 # Modalities (OpenRouter's documented formats, narrowed to the lab's list where it has one): image: https://openrouter.ai/docs/guides/overview/multimodal/image-understanding
@@ -33,8 +33,8 @@ context = 1_000_000
 output = 128_000
 
 [cost.text.input]
-price = 10
-cache = { read = 0.25, write = 12.5 }
+price = 10.55
+cache = { read = 0.26375, write = 13.1875 }
 
 [cost.text.output]
-price = 50
+price = 52.75

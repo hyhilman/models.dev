@@ -1,6 +1,6 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
-# Price feed: USD list prices.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Toggle: reasoning.enabled = true|false
 # https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = false: hoisted on Alibaba (live)
@@ -23,8 +23,8 @@ context = 204_800
 compatibility = { reasoning_field = "reasoning_content" }
 
 [cost.text.input]
-price = 1.4
-cache = { read = 0.26 }
+price = 1.477
+cache = { read = 0.2743 }
 
 [cost.text.output]
-price = 4.4
+price = 4.642

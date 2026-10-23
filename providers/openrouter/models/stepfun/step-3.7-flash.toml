@@ -1,6 +1,6 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
-# Price feed: USD list prices.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates unset: live probes disagreed (in place on StepFun; hoisted on StepFun)
 # effort_updates = false: configuration_update is rejected with a 400 for this model (https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#mid-conversation-effort)
 # tools.updates = false: Chat Completions rejects tool_addition/tool_removal for non-Claude-4.8+ models (live 400)
@@ -18,8 +18,8 @@ context = 262_144
 output = 230_400
 
 [cost.text.input]
-price = 0.2
-cache = { read = 0.04 }
+price = 0.211
+cache = { read = 0.0422 }
 
 [cost.text.output]
-price = 1.15
+price = 1.21325

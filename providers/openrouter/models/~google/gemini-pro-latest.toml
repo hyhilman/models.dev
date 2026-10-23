@@ -1,6 +1,6 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
-# Price feed: USD list prices.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # OpenRouter alias currently redirects to Gemini 3.1 Pro Preview.
 # https://openrouter.ai/~google/gemini-pro-latest
 # Modalities (OpenRouter's documented formats, narrowed to the lab's list where it has one): audio: https://openrouter.ai/docs/guides/overview/multimodal/audio; image: https://openrouter.ai/docs/guides/overview/multimodal/image-understanding; video: https://openrouter.ai/docs/guides/overview/multimodal/videos
@@ -34,9 +34,9 @@ context = 1_048_576
 output = 943_718
 
 [cost.text.input]
-price = 2
-cache = { read = 0.1, write = 0.1875 }
+price = 2.11
+cache = { read = 0.1055, write = 0.197813 }
 
 [cost.text.output]
-price = 10
-reasoning = 10
+price = 10.55
+reasoning = 10.55

@@ -1,6 +1,6 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
-# Price feed: USD list prices.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 schema = 2
 base_model = "nace-ai/drex-v2.0"
 
@@ -8,7 +8,7 @@ base_model = "nace-ai/drex-v2.0"
 structured_output = true
 
 [cost.text.input]
-price = 0.06
+price = 0.0633
 
 [cost.text.output]
 price = 0

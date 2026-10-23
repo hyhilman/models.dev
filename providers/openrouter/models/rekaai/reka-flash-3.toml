@@ -1,6 +1,6 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
-# Price feed: USD list prices.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = true: forwarded in place (live: cache prefix kept on Reka)
 # effort_updates = false: no per-turn effort control
 schema = 2
@@ -15,7 +15,7 @@ system_updates = true
 effort_updates = false
 
 [cost.text.input]
-price = 0.1
+price = 0.1055
 
 [cost.text.output]
-price = 0.2
+price = 0.211

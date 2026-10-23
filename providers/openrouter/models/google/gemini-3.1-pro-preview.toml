@@ -1,6 +1,6 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
-# Price feed: USD list prices.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = false: Gemini has one systemInstruction, so it is hoisted (live: cache prefix lost; https://openrouter.ai/docs/guides/best-practices/prompt-caching#google-gemini)
 # effort_updates = false: configuration_update is rejected with a 400 for this model (https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#mid-conversation-effort)
 # tools.updates = false: Chat Completions rejects tool_addition/tool_removal for non-Claude-4.8+ models (live 400)
@@ -20,18 +20,18 @@ cache = { supported = true, implicit = true, explicit = { ttl = ["5m"], max_brea
 compatibility = { reasoning_field = "reasoning_details" }
 
 [cost.text.input]
-price = 2
-cache = { read = 0.2, write = 0.375 }
+price = 2.11
+cache = { read = 0.211, write = 0.395625 }
 
 [[cost.text.input.overrides]]
 when = { context = { gt = 200_000 } }
-price = 4
-cache = { read = 0.4 }
+price = 4.22
+cache = { read = 0.422 }
 
 [cost.text.output]
-price = 12
-reasoning = 12
+price = 12.66
+reasoning = 12.66
 
 [[cost.text.output.overrides]]
 when = { context = { gt = 200_000 } }
-price = 18
+price = 18.99

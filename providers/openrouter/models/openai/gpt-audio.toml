@@ -1,6 +1,6 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-22.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
-# Price feed: USD list prices.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = true: OpenAI keeps mid-conversation system/developer messages in place (live: cache prefix kept on gpt-4.1, gpt-5.4, gpt-6-sol)
 # effort_updates = false: no per-turn effort control
 # tools.updates = false: Chat Completions rejects tool_addition/tool_removal for non-Claude-4.8+ models (live 400)
@@ -15,7 +15,7 @@ system_updates = true
 effort_updates = false
 
 [cost.text.input]
-price = 2.5
+price = 2.6375
 
 [cost.text.output]
-price = 10
+price = 10.55
