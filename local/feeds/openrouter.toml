@@ -19,3 +19,6 @@ add = false
 [fetch]
 url = "https://openrouter.ai/api/v1/models?output_modalities=all"
 format = "openrouter"
+# OpenRouter charges a 5.5% fee when you buy credits, so every token costs 1.055 times the list
+# price. The router compares what a token really costs.
+price_factor = 1.055

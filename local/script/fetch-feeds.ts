@@ -519,12 +519,15 @@ async function models(feed: Feed, key: string | undefined): Promise<Got> {
 /** Another feed's rows for the listed models only, every price times `factor`. */
 export function borrowRows(rows: readonly PriceRow[], listed: readonly string[], factor: number): PriceRow[] {
   const ids = new Set(listed);
+  return scaleRows(rows.filter((r) => ids.has(r.model_name)), factor);
+}
+
+/** Every price times `factor`. */
+export function scaleRows(rows: readonly PriceRow[], factor: number): PriceRow[] {
   const x = (n: number | null | undefined) => (n == null ? n : n * factor);
   const cost = <T extends Record<string, unknown>>(c: T): T =>
     Object.fromEntries(Object.entries(c).map(([k, v]) => [k, typeof v === "number" && k !== "size" ? v * factor : v])) as T;
-  return rows
-    .filter((r) => ids.has(r.model_name))
-    .map((r) => ({
+  return rows.map((r) => ({
       ...r,
       input_cost_per_1m_tokens: r.input_cost_per_1m_tokens * factor,
       output_cost_per_1m_tokens: r.output_cost_per_1m_tokens * factor,
@@ -557,6 +560,12 @@ async function fetchFeed(provider: string, feed: Feed): Promise<void> {
     : f.format === "dashscope" ? await dashscope(feed, key!, last, now)
     : f.format === "openrouter" ? { note: "USD list prices.", ...openrouterRows(await getJson(f.url, key)) }
     : await models(feed, key);
+  // A factor on the list's own prices is a fee the host charges on top. A price_from feed applied
+  // its factor when it borrowed the prices.
+  if (f.price_factor !== 1 && !f.price_from) {
+    got.rows = scaleRows(got.rows, f.price_factor);
+    got.note += ` Times ${f.price_factor} for the host's fee.`;
+  }
   const snap: Snapshot = { checked: now.toISOString().slice(0, 10), ...got };
   // Write then rename, so apply-static never reads half a file.
   writeFileSync(`${out}.new`, JSON.stringify(snap, null, 1) + "\n");
