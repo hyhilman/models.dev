@@ -185,12 +185,14 @@ missing from it is deleted. `openrouterRows` maps prices as upstream's OpenRoute
 (`packages/core/src/sync/providers/openrouter.ts`): text and decision models only, a `-1` price
 (a router) or an empty parameter list (a dead route) is left out, `internal_reasoning` is
 `reasoning` for a reasoning model, a `min_prompt_tokens` override is a tier, the 1h cache write is
-not read. Two differences from upstream:
+not read. Three differences from upstream:
 
 - The live list wins: a tier the list no longer has is removed (upstream's sync keeps the old one).
 - Time overrides (`utc_start`, `utc_end`, `utc_days`) become the off-peak switch: dearer windows
   are peak hours (`peak`), one cheaper window is the off-peak `hours`. Any other shape keeps the
   top-level price (`fetch.peak_unread`).
+- Every price is the list price times `price_factor = 1.055`: OpenRouter's 5.5% fee on buying
+  credits. A `price_factor` on any priced list works the same way.
 
 Upstream adds new OpenRouter models through its own sync, so the feed never adds one. Some
 prices (DeepSeek routes, `~` aliases) move often, and each move is a commit and an ntfy message.
