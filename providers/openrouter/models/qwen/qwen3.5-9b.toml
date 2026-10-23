@@ -19,8 +19,7 @@ system_updates = false
 effort_updates = false
 
 [cost.text.input]
-price = 0.0844
-cache = { read = 0.0422 }
+price = 0.17935
 
 [cost.text.output]
-price = 0.13715
+price = 0.26375
