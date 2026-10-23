@@ -20,8 +20,8 @@ context = 1_048_576
 output = 943_718
 
 [cost.text.input]
-price = 0.7385
-cache = { read = 0.13715 }
+price = 0.083345
+cache = { read = 0.08229 }
 
 [cost.text.output]
-price = 2.321
+price = 1.477
