@@ -125,6 +125,8 @@ export const Feed = z
         // "models": price the listed models from OpenCode's docs source, a Markdown price table
         // (fetch-feeds.ts opencodeDocRows).
         price_doc: z.string().url().optional(),
+        // Every price times this: with price_from, the plan's rate against the borrowed prices;
+        // on a priced list, a fee the host charges on top of the list price.
         price_factor: z.number().positive().default(1),
         // "models": the prices stay in $PRICE_STATIC_DIR/<provider>.json; the live list only drops
         // the rows of models the provider no longer serves.

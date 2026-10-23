@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { borrowRows, DASHSCOPE_OFFPEAK, dashscopeRows, kenariIds, ModelList, money, opencodeDocRows, openrouterRows, kenariRows, rateDate, tierStart } from "../script/fetch-feeds.ts";
+import { borrowRows, DASHSCOPE_OFFPEAK, dashscopeRows, kenariIds, ModelList, money, opencodeDocRows, openrouterRows, kenariRows, rateDate, scaleRows, tierStart } from "../script/fetch-feeds.ts";
 import { costDiff, Feed, flatCost, inHours, patchCost, PATCH_MARK, retired, rowCost, Snapshot } from "../script/apply-static.ts";
 import { CostV2 } from "../../packages/core/src/schema-v2.ts";
 import { KEY_ENVS } from "../doppelganger/tools/prices/run.ts";
@@ -203,6 +203,24 @@ test("a plan borrows another feed's prices for its listed models only, times the
   expect(rows[0]!.offpeak).toEqual({ input: 0.075, output: 0.3, hours: DASHSCOPE_OFFPEAK });
   const tiered = { ...a!, offpeak: undefined, tiers: [{ size: 256_000, input: 1, output: 2 }] };
   expect(borrowRows([tiered], ["m"], 0.5)[0]!.tiers).toEqual([{ size: 256_000, input: 0.5, output: 1 }]);
+});
+
+test("a host's fee scales every price of every row, cache, tiers and off-peak included", () => {
+  const row = {
+    model_name: "m",
+    provider: "lab",
+    input_cost_per_1m_tokens: 1,
+    output_cost_per_1m_tokens: 2,
+    cache_read_cost_per_1m_tokens: 0.1,
+    cache_write_cost_per_1m_tokens: null,
+    tiers: [{ size: 256_000, input: 2, output: 4 }],
+    offpeak: { input: 0.5, output: 1, hours: DASHSCOPE_OFFPEAK },
+  };
+  const [r] = scaleRows([row], 2);
+  expect(r).toMatchObject({ input_cost_per_1m_tokens: 2, output_cost_per_1m_tokens: 4, cache_read_cost_per_1m_tokens: 0.2 });
+  expect(r!.cache_write_cost_per_1m_tokens).toBeNull();
+  expect(r!.tiers).toEqual([{ size: 256_000, input: 4, output: 8 }]);
+  expect(r!.offpeak).toEqual({ input: 1, output: 2, hours: DASHSCOPE_OFFPEAK });
 });
 
 const doc = `
