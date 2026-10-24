@@ -1,4 +1,4 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-24.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
 # Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = true: forwarded in place (live: cache prefix kept on InferenceNet, Wafer)
@@ -20,8 +20,8 @@ context = 1_048_576
 output = 943_718
 
 [cost.text.input]
-price = 0.083345
-cache = { read = 0.08229 }
+price = 0.095794
+cache = { read = 0.0946335 }
 
 [cost.text.output]
-price = 1.477
+price = 1.69855
