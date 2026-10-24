@@ -22,8 +22,8 @@ context = 1_048_576
 compatibility = { reasoning_field = "reasoning_content" }
 
 [cost.text.input]
-price = 0.570352
-cache = { read = 0.0475299 }
+price = 0.559521
+cache = { read = 0.0466268 }
 
 [cost.text.output]
-price = 1.1407
+price = 1.11904
