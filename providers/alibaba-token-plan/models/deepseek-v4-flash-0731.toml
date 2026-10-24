@@ -1,7 +1,7 @@
-# Price feed: Alibaba Token Plan model list (https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/models), checked 2026-10-23.
+# Price feed: Alibaba Token Plan model list (https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/models), checked 2026-10-24.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
 # Price feed: price of alibaba (its own list) x 1: the plan bills in Credits, and Alibaba publishes no Credit rate per model.
-# Price feed: off-peak price now (22:00-08:00 UTC+8); the peak price is input 0.44, output 1.32.
+# Price feed: peak price now; off-peak (22:00-08:00 UTC+8) is input 0.22, output 0.66.
 # Reasoning HTTP format (accessed 2026-06-25):
 # This model toggles with `enable_thinking`: true or false. Chat Completions
 # `reasoning_effort` accepts high (default) or max; low/medium map to high and
@@ -23,8 +23,8 @@ top_k = false
 compatibility = { reasoning_field = "reasoning_content" }
 
 [cost.text.input]
-price = 0.22
-cache = { read = 0.022 }
+price = 0.44
+cache = { read = 0.044 }
 
 [cost.text.output]
-price = 0.66
+price = 1.32
