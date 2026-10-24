@@ -1,4 +1,4 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-23.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-24.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
 # Price feed: USD list prices. Times 1.055 for the host's fee.
 # Modalities (OpenRouter's documented formats, narrowed to the lab's list where it has one): image: https://openrouter.ai/docs/guides/overview/multimodal/image-understanding
@@ -24,8 +24,8 @@ effort_updates = false
 output = 235_929
 
 [cost.text.input]
-price = 0.708116
+price = 0.709487
 cache = { read = 0.15825 }
 
 [cost.text.output]
-price = 3.53425
+price = 3.2705
