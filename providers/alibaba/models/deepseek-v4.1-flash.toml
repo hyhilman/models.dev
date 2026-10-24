@@ -1,7 +1,7 @@
 # Price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-10-24.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
 # Price feed: USD list prices of the international (Singapore) region.
-# Price feed: peak price now; off-peak (22:00-08:00 UTC+8) is input 0.15, output 0.6.
+# Price feed: off-peak price now (22:00-08:00 UTC+8); the peak price is input 0.3, output 1.2.
 # Added as v2-only (served and listed on https://www.alibabacloud.com/help/en/model-studio/model-pricing, Singapore, accessed 2026-10-19).
 # Capabilities: Chat API https://www.alibabacloud.com/help/en/model-studio/qwen-api-via-openai-chat-completions; structured output https://www.alibabacloud.com/help/en/model-studio/json-mode; context cache https://www.alibabacloud.com/help/en/model-studio/context-cache (tool definitions count as part of the system message, so changing tools changes the prefix).
 # Toggle: enable_thinking true|false (default on); Effort: reasoning_effort = low|high|max (default high) per the Chat API reference. top_k: the DeepSeek series does not support it.
@@ -25,8 +25,8 @@ cache = { supported = true, implicit = { min_tokens = 1_024 }, explicit = false 
 compatibility = { reasoning_field = "reasoning_content" }
 
 [cost.text.input]
-price = 0.3
-cache = { read = 0.03 }
+price = 0.15
+cache = { read = 0.015 }
 
 [cost.text.output]
-price = 1.2
+price = 0.6
