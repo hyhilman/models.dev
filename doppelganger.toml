@@ -47,7 +47,7 @@
 instance = "models-dev"
 
 # the engine release this repo runs: an exact version like 0.1.0-dev.3, or the channel dev, which follows the newest dev build; image mode picks the image by it, and a built engine whose own version is not the exact pin refuses to start
-version = "0.2.0"
+version = "0.5.0-rc.11"
 
 # the plugins this checkout runs, built-in and attached, as comma-separated names; unset runs every plugin, the project's own included, except those that only fit the engine's own source when ROOT is another folder; an unknown name, or such a plugin named there, refuses at boot
 plugins = ["todo", "ops", "prices"]
