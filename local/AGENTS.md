@@ -266,23 +266,31 @@ daemon starts at boot (linger is on).
 
 ## doppelganger
 
-doppelganger is installed in `local/doppelganger/`, not at the root: the root is a Bun workspace,
-and npm cannot install into it (`workspace:*` versions). Run every doppelganger command through the
-wrapper, which points it at the repo root:
+doppelganger runs from its release image: the repo installs no package. `version = "rc"` in
+`doppelganger.toml` follows the newest release candidate. The supervisor runs in a container, and
+the hourly `dg update` (on the crontab) moves it to a new rc by itself. Run every command through
+the launcher that `init` wrote (`.doppelganger/dg`, not committed):
 
 ```bash
-local/doppelganger/dg config check
-local/doppelganger/dg --list
-local/doppelganger/dg job ops-price-static
+.doppelganger/dg status
+.doppelganger/dg list
+.doppelganger/dg job ops-price-static   # one run by hand
+.doppelganger/dg logs -f
 ```
 
-The `prices` plugin's jobs are plain code: each runs `local/script/job.sh` in the tools image.
+The repo runs one plugin, `prices` (`plugins` in `doppelganger.toml`), attached in
+`doppelganger.config.ts` from `local/doppelganger/tools/prices/`. The image answers its
+`doppelganger/*` imports. Its jobs are plain code: each runs `local/script/job.sh` in the tools image.
 Settings live under `[prices]` in `doppelganger.toml`. Secrets go in `doppelganger.secret.toml`
 (gitignored).
 
-To upgrade: download the new tarball into `local/doppelganger/vendor/`, then in that folder run
-`npm install -D ./vendor/doppelganger-<version>.tgz`, delete the old `.tgz`, and set `version` in
-`doppelganger.toml`.
+On a new machine (once): `docker login ghcr.io`, then
+
+```bash
+docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:$PWD" -w "$PWD" ghcr.io/hyhilman/doppelganger-supervisor:rc init
+.doppelganger/dg up
+.doppelganger/dg cron install    # the watchdog and the hourly update
+```
 
 ## Pushing to GitHub
 
@@ -319,10 +327,6 @@ Then set `gh = "<name>"` and `push = 1` under `[prices]` in `doppelganger.toml`.
 
 ## Scheduling
 
-An attached plugin cannot schedule jobs yet, so this machine's crontab runs them. Cron has no
-nvm on its PATH, and Docker must be the rootless daemon, so the lines set both:
-
-```
-* * * * * PATH=/home/hyhilman/.nvm/versions/node/v22.23.1/bin:/usr/local/bin:/usr/bin:/bin DOCKER_HOST=unix:///run/user/1000/docker.sock /home/hyhilman/projects/me/models.dev/local/doppelganger/dg job ops-price-static >> /home/hyhilman/projects/me/models.dev/.doppelganger/logs/ops-price-static.log 2>&1
-12,27,42,57 * * * * PATH=/home/hyhilman/.nvm/versions/node/v22.23.1/bin:/usr/local/bin:/usr/bin:/bin DOCKER_HOST=unix:///run/user/1000/docker.sock /home/hyhilman/projects/me/models.dev/local/doppelganger/dg job ops-price-sync >> /home/hyhilman/projects/me/models.dev/.doppelganger/logs/ops-price-sync.log 2>&1
-```
+The supervisor runs the price jobs, on the schedule in `local/doppelganger/tools/prices/plugin.ts`:
+`ops-price-static` every minute, and `ops-price-sync` at :12, :27, :42 and :57. Each writes its log
+to `.doppelganger/logs/`. `no_static = 1` or `no_sync = 1` under `[prices]` (kill switches) stops one.
