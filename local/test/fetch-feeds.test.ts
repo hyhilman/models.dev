@@ -40,10 +40,16 @@ test("the whole month uses the rate of its first day", () => {
 });
 
 test("patchCost replaces only [cost], and a second patch replaces the first", () => {
-  const up = 'base_model = "a/b"\n\n[cost]\ninput = 0\noutput = 0\n\n[limit]\ncontext = 5\n';
-  const once = patchCost(up, { input: 1, output: 2 }, ["src, checked 2026-10-10."])!;
-  expect(once).toBe(`${PATCH_MARK} src, checked 2026-10-10.\nbase_model = "a/b"\n\n[cost]\ninput = 1\noutput = 2\n\n[limit]\ncontext = 5\n`);
+  const up = 'schema = 2\nbase_model = "a/b"\n\n[cost.text.input]\nprice = 0\n\n[cost.text.output]\nprice = 0\n\n[limit]\ncontext = 5\n';
+  const once = patchCost(up, { input: 1, output: 2 }, ["src, checked 2026-10-10."]);
+  expect(once).toBe(
+    `${PATCH_MARK} src, checked 2026-10-10.\nschema = 2\nbase_model = "a/b"\n\n[cost.text.input]\nprice = 1\n\n[cost.text.output]\nprice = 2\n\n[limit]\ncontext = 5\n`,
+  );
   expect(patchCost(once, { input: 1, output: 2 }, ["src, checked 2026-10-10."])).toBe(once);
+});
+
+test("patchCost refuses a v1 file: upstream takes only v2", () => {
+  expect(() => patchCost('base_model = "a/b"\n\n[cost]\ninput = 0\noutput = 0\n', { input: 1, output: 2 }, [])).toThrow();
 });
 
 // A cut of upstream's providers/alibaba/models/qwen3.8-max.toml, a schema 2 file.
@@ -91,13 +97,22 @@ test("flatCost reads a v2 cost in v1 names, so costDiff names the change", () =>
 });
 
 test("patchCost replaces every cost table, tiers too, and keeps the rest", () => {
-  const up = '[cost]\ninput = 0\noutput = 0\n\n[[cost.tiers]]\ntier = { size = 1 }\ninput = 9\noutput = 9\n\n[limit]\ncontext = 5\n';
+  const up =
+    "schema = 2\n\n[cost.text.input]\nprice = 0\noverrides = [{ when = { context = { gt = 1 } }, price = 9 }]\n\n[cost.text.output]\nprice = 0\n\n[limit]\ncontext = 5\n";
   const out = patchCost(up, { input: 1, output: 2, tiers: [{ tier: { type: "context", size: 256_000 }, input: 3, output: 4 }] }, []);
   expect(Bun.TOML.parse(out)).toEqual({
-    cost: { input: 1, output: 2, tiers: [{ tier: { type: "context", size: 256_000 }, input: 3, output: 4 }] },
+    schema: 2,
+    cost: {
+      text: {
+        input: { price: 1, overrides: [{ when: { context: { gt: 256_000 } }, price: 3 }] },
+        output: { price: 2, overrides: [{ when: { context: { gt: 256_000 } }, price: 4 }] },
+      },
+    },
     limit: { context: 5 },
   });
-  expect(patchCost(out, { input: 1, output: 2 }, [])).toBe("[cost]\ninput = 1\noutput = 2\n\n[limit]\ncontext = 5\n");
+  expect(patchCost(out, { input: 1, output: 2 }, [])).toBe(
+    "schema = 2\n\n[cost.text.input]\nprice = 1\n\n[cost.text.output]\nprice = 2\n\n[limit]\ncontext = 5\n",
+  );
 });
 
 test("every list's ids count as listed", () => {

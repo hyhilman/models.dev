@@ -17,9 +17,8 @@
 import path from "node:path";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { z } from "../lib/deps.ts";
-import { formatToml } from "../../packages/core/src/sync/index.ts";
 import { toCostV2 } from "../../packages/core/src/generate-v2.ts";
-import { formatModelV2 } from "../../packages/core/src/model-file-v2.ts";
+import { formatModelV2, providerModelToV2 } from "../../packages/core/src/model-file-v2.ts";
 import { isSchemaV2, readProviderModel } from "../../packages/core/src/translate.ts";
 
 const REPO = path.resolve(import.meta.dir, "../..");
@@ -175,8 +174,8 @@ export const ADDED_MARK = "# Added by the price feed:";
 
 /**
  * An upstream file with its cost tables ([cost], [cost.*] and [[cost.*]]) replaced and our header
- * on top. Everything else stays upstream's, byte for byte. `cost` is in the v1 shape; a v2 file
- * (`schema = 2`) gets it in the v2 shape ([cost.text.input] and so on), as upstream writes it.
+ * on top. Everything else stays upstream's, byte for byte. `cost` is in the v1 shape; the file gets
+ * it in the v2 shape ([cost.text.input] and so on), as upstream writes it.
  */
 export function patchCost(text: string, cost: Record<string, unknown>, header: readonly string[]): string {
   const lines = text.split("\n").filter((l) => !l.startsWith(PATCH_MARK));
@@ -197,12 +196,9 @@ export function patchCost(text: string, cost: Record<string, unknown>, header: r
     while (ls.at(-1) === "") ls.pop();
     return ls;
   };
-  const v2 = (Bun.TOML.parse(text) as { schema?: unknown }).schema === 2;
-  const block = (
-    v2
-      ? formatModelV2({ cost: toCostV2(cost as Parameters<typeof toCostV2>[0]) })
-      : formatToml({ cost } as Parameters<typeof formatToml>[0])
-  )
+  // Upstream takes only v2 files (`schema = 2`) now, so a v1 file cannot be upstream's.
+  if (!isSchemaV2(Bun.TOML.parse(text) as Record<string, unknown>)) throw new Error("patchCost needs a v2 file (schema = 2)");
+  const block = formatModelV2({ cost: toCostV2(cost as Parameters<typeof toCostV2>[0]) })
     .trim()
     .split("\n");
   const head = trim(kept.slice(0, at === -1 ? kept.length : at));
@@ -520,12 +516,15 @@ function renderModel(
       ? { context: ctxLen, ...(labLimit.output !== undefined && labLimit.output > ctxLen ? { output: ctxLen } : {}) }
       : undefined;
 
-  const body = formatToml({
-    base_model: base,
-    ...(reasoning_options ? { reasoning_options } : {}),
-    cost,
-    ...(limit ? { limit } : {}),
-  } as Parameters<typeof formatToml>[0]);
+  // Upstream takes only v2 model files (`schema = 2`), so the v1 fields go through its own converter.
+  const body = formatModelV2(
+    providerModelToV2({
+      base_model: base,
+      ...(reasoning_options ? { reasoning_options } : {}),
+      cost,
+      ...(limit ? { limit } : {}),
+    }),
+  );
   return { path: `providers/${provider}/models/${row.model_name}.toml`, text: [...header, ...notes, body.trimEnd()].join("\n") + "\n" };
 }
 
