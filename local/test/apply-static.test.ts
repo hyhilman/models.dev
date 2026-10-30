@@ -89,9 +89,11 @@ test("a name matches its lab file without the route prefix or the host suffix", 
 test("render writes only inside the provider folder, and skips what it cannot match", () => {
   const { files, skipped } = rendered();
   for (const p of files.keys()) expect(p.startsWith("providers/sumopod/")).toBe(true);
+  // Upstream takes only v2 model files.
+  for (const [p, text] of files) if (p.includes("/models/")) expect(text).toContain("\nschema = 2\n");
   expect(skipped.map((s) => s.model)).toEqual([]);
   expect(files.get("providers/sumopod/models/seed-2-0-mini.toml")).toContain('base_model = "bytedance-seed/seed-2.0-mini"');
-  expect(files.get("providers/sumopod/models/gpt-4.1-mini.toml")).toContain("input = 0.4\noutput = 1.6\ncache_read = 0.1");
+  expect(files.get("providers/sumopod/models/gpt-4.1-mini.toml")).toContain("[cost.text.input]\nprice = 0.4\ncache = { read = 0.1 }\n\n[cost.text.output]\nprice = 1.6");
   expect(files.has("providers/sumopod/models/gemini/gemini-3-flash-preview.toml")).toBe(true);
 });
 
@@ -107,7 +109,7 @@ test("a dated snapshot or a dashed version finds its lab model", () => {
 
 test("a reasoning model gets a peer's reasoning_options", () => {
   const text = rendered().files.get("providers/sumopod/models/deepseek-v4.1-flash:netra.toml")!;
-  expect(text).toContain("[[reasoning_options]]");
+  expect(text).toContain("reasoning = { supported = true");
   expect(text).toContain("# reasoning_options copied from providers/opencode-go/");
 });
 
@@ -115,7 +117,7 @@ test("a v2 lab model that reasons gets a peer's reasoning_options too", () => {
   const row = { model_name: "claude-opus-4-8", provider: "anthropic", input_cost_per_1m_tokens: 5, output_cost_per_1m_tokens: 25, cache_read_cost_per_1m_tokens: 0.5, context_length: 1000000 };
   const { files, skipped } = render("sumopod", feed(), PriceList.parse([row]), "2026-10-19");
   expect(skipped).toEqual([]);
-  expect(files.get("providers/sumopod/models/claude-opus-4-8.toml")).toContain("[[reasoning_options]]");
+  expect(files.get("providers/sumopod/models/claude-opus-4-8.toml")).toContain("reasoning = { supported = true");
 });
 
 test("a patch feed adds a whole file of ours for a priced model upstream has none for", () => {
@@ -126,7 +128,7 @@ test("a patch feed adds a whole file of ours for a priced model upstream has non
   const text = files.get(p)!;
   expect(text.startsWith(ADDED_MARK)).toBe(true);
   expect(text).toContain('base_model = "deepseek/deepseek-v4.1-flash-1017"');
-  expect(text).toContain("[[reasoning_options]]");
+  expect(text).toContain("reasoning = { supported = true");
   // Next run: the file is ours, so it is written again whole, not patched.
   const again = renderPatch("alibaba-token-plan", feed(), PriceList.parse([row]), "2026-10-20", "", new Map([[p, text]]));
   expect(again.files.get(p)!.split("\n").slice(1).join("\n")).toBe(text.split("\n").slice(1).join("\n"));
