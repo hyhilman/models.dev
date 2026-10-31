@@ -296,6 +296,9 @@ topic = "model-dev"
 # the crontab binary this tool calls; must be an absolute path, since a bare name is a PATH lookup. NO default on purpose: a real default is a real crontab binary, so a caller who forgets to set this must throw, not silently read the developer's own crontab
 cmd = "/usr/bin/crontab"
 
+# sync adds a line that starts `claude rc` (remote control) in a tmux session of this repo every minute that session is gone
+rc = 1
+
 # sync prints the crontab it would install and calls nothing; it still reads, since the read is what makes the printed diff true
 # dry_run = 0
 
@@ -626,6 +629,12 @@ push = 1
 
 # minutes between pulls of a published price list (a feed with [fetch], such as kenari); 0 = every run
 fetch_minutes = 10
+
+[api]
+
+# the port the instance API listens on; 0 picks a free port, and api-up logs the one it got
+# 7320/7321 belong to xenith, 7330/7331 to doppelganger, 7341 to squad, 7351 and 7361 to the xenith repos.
+port = 7371
 
 # --- families whose table you choose ---
 
