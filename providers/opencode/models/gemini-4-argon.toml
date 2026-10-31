@@ -1,3 +1,6 @@
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/services/www/src/docs/content/console/models.mdx.
 # Pricing and endpoint (Gemini generateContent): https://opencode.ai/v2/docs/console/models/ (accessed 2026-10-21).
 # The docs list Gemini 4 Argon at 50% off ($2/$10/$0.10, struck-through $4/$20/$0.20) through November 30, 2026; the multiplier restores list prices from 2026-12-01.
 # Effort: generationConfig.thinkingConfig.thinkingLevel = low|medium|high
@@ -24,10 +27,3 @@ cache = { read = 0.1 }
 
 [cost.text.output]
 price = 10
-
-[cost.audio.input]
-price = 2
-
-[[cost.multipliers]]
-when = { date = { gte = "2026-12-01" } }
-factor = 2

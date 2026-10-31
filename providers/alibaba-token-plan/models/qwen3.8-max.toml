@@ -1,3 +1,6 @@
+# Price feed: Alibaba Token Plan model list (https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/models), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: price of alibaba (its own list) x 1: the plan bills in Credits, and Alibaba publishes no Credit rate per model.
 # Sources (accessed 2026-08-03):
 # https://docs.qwencloud.com/token-plan/personal/token-plan-personal-overview
 # https://help.aliyun.com/en/model-studio/token-plan-personal-overview
@@ -41,8 +44,8 @@ sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/alibab
 capabilities = { tools = { choice = ["auto", "none", "required", "tool"] } }
 
 [cost.text.input]
-price = 0
-cache = { read = 0, write = 0 }
+price = 2
+cache = { read = 0.17, write = 2.5 }
 
 [cost.text.output]
-price = 0
+price = 6

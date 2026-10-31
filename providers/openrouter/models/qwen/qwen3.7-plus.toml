@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Toggle: reasoning.enabled = true|false
 # https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
 # Modalities (OpenRouter's documented formats, narrowed to the lab's list where it has one): image: https://openrouter.ai/docs/guides/overview/multimodal/image-understanding
@@ -30,17 +33,17 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai-co
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 0.32
-cache = { read = 0.064, write = 0.4 }
+price = 0.3376
+cache = { read = 0.06752, write = 0.422 }
 
 [[cost.text.input.overrides]]
 when = { context = { gt = 256_000 } }
-price = 0.96
-cache = { read = 0.192, write = 1.2 }
+price = 1.0128
+cache = { read = 0.20256, write = 1.266 }
 
 [cost.text.output]
-price = 1.28
+price = 1.3504
 
 [[cost.text.output.overrides]]
 when = { context = { gt = 256_000 } }
-price = 3.84
+price = 4.0512

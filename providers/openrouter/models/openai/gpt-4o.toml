@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation: system_updates = true: OpenAI keeps mid-conversation system/developer messages in place (live 2026-10-23 on gpt-4.1-nano pinned to OpenAI: cache kept and followed on Chat Completions, Responses and Messages)
 # effort_updates = false: no per-turn effort control
 # tools.updates = false: Chat Completions rejects tool_addition/tool_removal for non-Claude-4.8+ models (live 400)
@@ -20,8 +23,8 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai-co
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 2.5
-cache = { read = 1.25 }
+price = 2.6375
+cache = { read = 1.31875 }
 
 [cost.text.output]
-price = 10
+price = 10.55

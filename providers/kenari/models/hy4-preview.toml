@@ -1,0 +1,19 @@
+# Added by the price feed: Kenari GET /v1/models (public price list), checked 2026-10-31.
+# Added by the price feed: upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.
+# Added by the price feed: Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
+# reasoning_options copied from providers/opencode-go/models/hy4-preview.toml
+schema = 2
+base_model = "tencent/hy4-preview"
+
+[capabilities]
+reasoning = { supported = true, effort = ["none", "high"] }
+
+[limit]
+context = 1_048_576
+
+[cost.text.input]
+price = 0.668673
+cache = { read = 0.0668673 }
+
+[cost.text.output]
+price = 2.34035

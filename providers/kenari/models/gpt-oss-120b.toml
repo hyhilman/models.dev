@@ -1,3 +1,6 @@
+# Price feed: Kenari GET /v1/models (public price list), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
 # Source: https://kenari.id/v1/models and https://kenari.id/api/public/pricing (accessed 2026-10-21).
 # Price: PAYG per token, micro-IDR per 1M / 1e6 / 17,500 IDR per USD (usd_idr_rate in /api/public/pricing), rounded to 8 decimals.
 # Reasoning: catalog reasoning_options ["low","medium","high"], reasoning_toggle true (https://kenari.id/en/docs/reasoning).
@@ -11,8 +14,8 @@ reasoning = { supported = true, toggle = true, effort = ["low", "medium", "high"
 structured_output = true
 
 [cost.text.input]
-price = 0.036
-cache = { read = 0.0036 }
+price = 0.0351053
+cache = { read = 0.00351053 }
 
 [cost.text.output]
-price = 0.2
+price = 0.19503

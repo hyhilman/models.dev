@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation: system_updates = true: OpenAI keeps mid-conversation system/developer messages in place (live 2026-10-23 on gpt-4.1-nano pinned to OpenAI: cache kept and followed on Chat Completions, Responses and Messages)
 # effort_updates = false: configuration_update is rejected with a 400 for this model (https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#mid-conversation-effort)
 # Cache: automatic from 1,024 tokens (https://openrouter.ai/docs/guides/best-practices/prompt-caching#openai)
@@ -17,14 +20,8 @@ cache = { implicit = { min_tokens = 1_024 } }
 sdk = { opencodeai = "@opencode/ai/providers/openrouter/images" }
 
 [cost.text.input]
-price = 8
-cache = { read = 2 }
+price = 8.44
+cache = { read = 2.11 }
 
 [cost.text.output]
-price = 15
-
-[cost.image.output]
-price = 30
-
-[cost.web_search]
-price = 10
+price = 15.825

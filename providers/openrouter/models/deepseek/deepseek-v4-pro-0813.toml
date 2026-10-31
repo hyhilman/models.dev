@@ -1,3 +1,7 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
+# Price feed: off-peak price now; the peak price (01:00-04:00 UTC Mon-Fri, 06:00-10:00 UTC Mon-Fri) is input 1.3926, output 4.1778.
 # Toggle: reasoning.enabled = true|false
 # https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
 # Mid-conversation: system_updates unset. OpenRouter doesn't document mid-conversation system messages for this model, and it routes to about 20 upstreams; DeepSeek's own API moves them to the leading prompt on V4 Pro (providers/deepseek). The earlier true came from one live run (cache kept on Sail Research, 2026-10-19), which isn't enough on its own.
@@ -24,62 +28,8 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai-co
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 0.66
-cache = { read = 0.022 }
-
-[[cost.text.input.overrides]]
-when = { utc_days = { in = ["sat", "sun"] } }
-price = 0.66
-cache = { read = 0.022 }
-
-[[cost.text.input.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, utc_hours = { lt = "01:00" } }
-price = 0.66
-cache = { read = 0.022 }
-
-[[cost.text.input.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, all = [{ utc_hours = { gte = "01:00" } }, { utc_hours = { lt = "04:00" } }] }
-price = 1.32
-cache = { read = 0.044 }
-
-[[cost.text.input.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, all = [{ utc_hours = { gte = "04:00" } }, { utc_hours = { lt = "06:00" } }] }
-price = 0.66
-cache = { read = 0.022 }
-
-[[cost.text.input.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, all = [{ utc_hours = { gte = "06:00" } }, { utc_hours = { lt = "10:00" } }] }
-price = 1.32
-cache = { read = 0.044 }
-
-[[cost.text.input.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, utc_hours = { gte = "10:00" } }
-price = 0.66
-cache = { read = 0.022 }
+price = 0.6963
+cache = { read = 0.02321 }
 
 [cost.text.output]
-price = 1.98
-
-[[cost.text.output.overrides]]
-when = { utc_days = { in = ["sat", "sun"] } }
-price = 1.98
-
-[[cost.text.output.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, utc_hours = { lt = "01:00" } }
-price = 1.98
-
-[[cost.text.output.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, all = [{ utc_hours = { gte = "01:00" } }, { utc_hours = { lt = "04:00" } }] }
-price = 3.96
-
-[[cost.text.output.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, all = [{ utc_hours = { gte = "04:00" } }, { utc_hours = { lt = "06:00" } }] }
-price = 1.98
-
-[[cost.text.output.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, all = [{ utc_hours = { gte = "06:00" } }, { utc_hours = { lt = "10:00" } }] }
-price = 3.96
-
-[[cost.text.output.overrides]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, utc_hours = { gte = "10:00" } }
-price = 1.98
+price = 2.0889

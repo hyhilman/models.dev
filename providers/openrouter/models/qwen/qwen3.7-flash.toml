@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Toggle: reasoning.enabled = true|false
 # https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = true: forwarded in place (live: cache prefix kept on Alibaba)
@@ -26,26 +29,26 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai-co
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 0.03
-cache = { read = 0.006, write = 0.038 }
+price = 0.03165
+cache = { read = 0.00633, write = 0.04009 }
 
 [[cost.text.input.overrides]]
 when = { context = { gt = 32_000 } }
-price = 0.1
-cache = { read = 0.02, write = 0.125 }
+price = 0.1055
+cache = { read = 0.0211, write = 0.131875 }
 
 [[cost.text.input.overrides]]
 when = { context = { gt = 256_000 } }
-price = 0.2
-cache = { read = 0.04, write = 0.25 }
+price = 0.211
+cache = { read = 0.0422, write = 0.26375 }
 
 [cost.text.output]
-price = 0.13
+price = 0.13715
 
 [[cost.text.output.overrides]]
 when = { context = { gt = 32_000 } }
-price = 0.4
+price = 0.422
 
 [[cost.text.output.overrides]]
 when = { context = { gt = 256_000 } }
-price = 0.8
+price = 0.844

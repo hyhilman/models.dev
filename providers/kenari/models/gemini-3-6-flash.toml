@@ -1,3 +1,6 @@
+# Price feed: Kenari GET /v1/models (public price list), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
 # Source: https://kenari.id/v1/models and https://kenari.id/api/public/pricing (accessed 2026-10-21).
 # Retiring: sunset_at 2026-10-22 03:00 UTC, successor gemini-3-8-flash (GET /v1/models).
 # Price: PAYG per token, micro-IDR per 1M / 1e6 / 17,500 IDR per USD (usd_idr_rate in /api/public/pricing), rounded to 8 decimals.
@@ -12,8 +15,8 @@ reasoning = { supported = true, effort = ["minimal", "low", "medium", "high"] }
 structured_output = true
 
 [cost.text.input]
-price = 0.34285714
-cache = { read = 0.03428571, write = 0.01714286 }
+price = 0.334336
+cache = { read = 0.0334336, write = 0.0167168 }
 
 [cost.text.output]
-price = 1.71428571
+price = 1.67168

@@ -1,3 +1,6 @@
+# Price feed: Kenari GET /v1/models (public price list), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
 # Source: https://kenari.id/v1/models and https://kenari.id/api/public/pricing (accessed 2026-10-21).
 # Price: :free models cost Rp 0 within daily and per-minute limits (https://kenari.id/en/docs/free-models).
 # Reasoning: catalog reasoning_options ["none","low","medium"], reasoning_toggle false (https://kenari.id/en/docs/reasoning).

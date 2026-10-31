@@ -1,3 +1,6 @@
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/services/www/src/docs/content/console/models.mdx.
 # Pricing and endpoint (Chat Completions): https://opencode.ai/v2/docs/console/models/ (accessed 2026-10-21).
 # Modalities: Zen Chat Completions takes images (live: PNG read correctly) but rejects file parts (live 400), so no PDF or video; image types from the lab.
 # Reasoning on Zen Chat Completions (live): enable_thinking and thinking_budget are rejected (400 "Extra inputs are not permitted"); thinking.type = disabled and reasoning_effort = none turn reasoning off.

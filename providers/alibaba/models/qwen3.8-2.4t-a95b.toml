@@ -1,3 +1,6 @@
+# Price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices of the international (Singapore) region.
 # Added as v2-only (served and listed on https://www.alibabacloud.com/help/en/model-studio/model-pricing, Singapore, accessed 2026-10-19).
 # Capabilities: Chat API https://www.alibabacloud.com/help/en/model-studio/qwen-api-via-openai-chat-completions; structured output https://www.alibabacloud.com/help/en/model-studio/json-mode; context cache https://www.alibabacloud.com/help/en/model-studio/context-cache (tool definitions count as part of the system message, so changing tools changes the prefix).
 # Thinking only (deep-thinking doc); Effort: reasoning_effort = low|medium|xhigh (default xhigh); Budget: thinking_budget 0-262144, not combinable with reasoning_effort.
@@ -32,10 +35,7 @@ sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/alibab
 
 [cost.text.input]
 price = 2
-cache = { read = 0.25, explicit = { read = 0.17, write = 2.5 } }
+cache = { read = 0.17, write = 2.5 }
 
 [cost.text.output]
 price = 6
-
-[cost.web_search]
-price = 10

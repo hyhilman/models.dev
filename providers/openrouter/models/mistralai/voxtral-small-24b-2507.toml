@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Modalities (OpenRouter's documented formats, narrowed to the lab's list where it has one): audio: https://openrouter.ai/docs/guides/overview/multimodal/audio
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = false: hoisted on Mistral (live)
 # effort_updates = false: no per-turn effort control
@@ -26,12 +29,8 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai-co
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 0.1
-cache = { read = 0.01 }
+price = 0.1055
+cache = { read = 0.01055 }
 
 [cost.text.output]
-price = 0.3
-
-[cost.audio.input]
-unit = "minute"
-price = 0.006
+price = 0.3165

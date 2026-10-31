@@ -1,3 +1,7 @@
+# Price feed: Alibaba Token Plan model list (https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/models), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: price of alibaba (its own list) x 1: the plan bills in Credits, and Alibaba publishes no Credit rate per model.
+# Price feed: peak price now; off-peak (22:00-08:00 UTC+8) is input 0.15, output 0.6.
 # Model availability: deepseek-v4.1-flash-1017 is listed in the Global Token Plan
 # Team supported-models table and was discovered on Global Personal and Global
 # Team (2026-10-20). It replaces the retired deepseek-v3.2 and bare
@@ -36,8 +40,8 @@ base_url = "https://token-plan.ap-southeast-1.maas.aliyuncs.com/apps/anthropic/v
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/alibaba/messages" }
 
 [cost.text.input]
-price = 0
-cache = { read = 0, write = 0 }
+price = 0.3
+cache = { read = 0.03 }
 
 [cost.text.output]
-price = 0
+price = 1.2

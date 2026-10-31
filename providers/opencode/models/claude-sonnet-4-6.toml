@@ -1,3 +1,6 @@
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/services/www/src/docs/content/console/models.mdx.
 # Pricing and endpoint (Anthropic Messages): https://opencode.ai/v2/docs/console/models/ (accessed 2026-10-21).
 # Effort: output_config.effort = low|medium|high|max (not re-verified on Zen: model access is disabled for the probe key)
 # Budget: thinking.budget_tokens (min 1024) with thinking.type = enabled (not re-verified on Zen: model access is disabled for the probe key)

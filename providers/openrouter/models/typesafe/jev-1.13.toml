@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Modalities: OpenRouter says "Jev accepts only image/png and image/jpeg" (https://openrouter.ai/docs/guides/community/multimodal-decisions), matching the lab (https://docs.typesafe.ai/images.md)
 schema = 2
 base_model = "typesafe/jev-1.13.0"
@@ -13,7 +16,7 @@ sdk = { aisdk = "@ai-sdk/typesafe-ai", opencodeai = "@opencode/ai/providers/open
 compatibility = { media_input = "state" }
 
 [cost.text.input]
-price = 0.042
+price = 0.04431
 
 [cost.text.output]
 price = 0

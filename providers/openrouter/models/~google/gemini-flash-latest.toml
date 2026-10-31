@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # OpenRouter alias currently redirects to Gemini 3.5 Flash.
 # https://openrouter.ai/~google/gemini-flash-latest
 # Modalities (OpenRouter's documented formats, narrowed to the lab's list where it has one): image: https://openrouter.ai/docs/guides/overview/multimodal/image-understanding; video: https://openrouter.ai/docs/guides/overview/multimodal/videos; audio: https://openrouter.ai/docs/guides/overview/multimodal/audio
@@ -37,19 +40,9 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai-co
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 0.75
-cache = { read = 0.075, write = 0.041667 }
+price = 0.79125
+cache = { read = 0.079125, write = 0.0439587 }
 
 [cost.text.output]
-price = 3.75
-reasoning = 3.75
-
-[cost.image.input]
-price = 0.75
-
-[cost.audio.input]
-price = 0.75
-cache = { read = 0.075 }
-
-[cost.web_search]
-price = 14
+price = 3.95625
+reasoning = 3.95625

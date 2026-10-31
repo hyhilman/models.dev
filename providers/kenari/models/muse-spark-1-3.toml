@@ -1,0 +1,17 @@
+# Added by the price feed: Kenari GET /v1/models (public price list), checked 2026-10-31.
+# Added by the price feed: upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.
+# Added by the price feed: Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
+# base_model meta/muse-spark-1.3 is the nearest lab model: the lab has no file named muse-spark-1-3
+# reasoning_options copied from providers/opencode-go/models/muse-spark-1.3-contributor.toml
+schema = 2
+base_model = "meta/muse-spark-1.3"
+
+[capabilities]
+reasoning = { supported = true, effort = ["minimal", "low", "medium", "high", "xhigh"] }
+
+[cost.text.input]
+price = 1.11445
+cache = { read = 0.111445 }
+
+[cost.text.output]
+price = 4.45782

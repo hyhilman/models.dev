@@ -1,3 +1,6 @@
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/services/www/src/docs/content/console/models.mdx.
 # Pricing and endpoint (Chat Completions): https://opencode.ai/v2/docs/console/models/ (accessed 2026-10-21; cache write $3 from 2026-10-23).
 # thinking.type = disabled turns reasoning off (live: 0 reasoning tokens in 3 of 3 runs, vs 104-192 enabled).
 # reasoning_effort levels are graded on Zen (live, 3 trials each: low 94-374, high 339-520, max 817-1495 reasoning tokens; omitted behaves like max).

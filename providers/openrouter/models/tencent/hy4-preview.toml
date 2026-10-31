@@ -1,3 +1,7 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
+# Price feed: peak price now; off-peak (16:00-00:00 UTC) is input 0.791883, output 2.3747.
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = true: forwarded in place (live: cache prefix kept on Tencent, DeepInfra)
 # effort_updates = false: configuration_update is rejected with a 400 for this model (https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#mid-conversation-effort)
 # tools.updates = false: Chat Completions rejects tool_addition/tool_removal for non-Claude-4.8+ models (live 400)
@@ -24,26 +28,8 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai-co
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 0.834
-cache = { read = 0.042 }
-
-[[cost.text.input.overrides]]
-when = { utc_hours = { lt = "16:00" } }
-price = 0.834
-cache = { read = 0.042 }
-
-[[cost.text.input.overrides]]
-when = { utc_hours = { gte = "16:00" } }
-price = 0.7506
-cache = { read = 0.0378 }
+price = 0.87987
+cache = { read = 0.04431 }
 
 [cost.text.output]
-price = 2.501
-
-[[cost.text.output.overrides]]
-when = { utc_hours = { lt = "16:00" } }
-price = 2.501
-
-[[cost.text.output.overrides]]
-when = { utc_hours = { gte = "16:00" } }
-price = 2.2509
+price = 2.63855

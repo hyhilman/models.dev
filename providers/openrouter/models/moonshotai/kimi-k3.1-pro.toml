@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation (Chat Completions, live 2026-10-27; Moonshot AI is the only provider serving this model):
 #   system_updates = true: a system message after the assistant turn was obeyed and kept the cache [cached/prompt tokens, control -> test: 8192/8228 -> 8192/8247].
 #   tools.updates = false: Kimi's tool-carrying system message (no content) is rewritten to text parts and rejected (400 "text content parts must carry a string \"text\"").
@@ -24,8 +27,8 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai-co
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 2
-cache = { read = 0.2 }
+price = 2.11
+cache = { read = 0.211 }
 
 [cost.text.output]
-price = 10
+price = 10.55

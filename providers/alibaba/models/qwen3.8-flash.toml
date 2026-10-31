@@ -1,3 +1,6 @@
+# Price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices of the international (Singapore) region.
 # Sources (accessed 2026-08-28):
 # https://www.qwencloud.com/models/qwen3.8-flash
 # Pricing: $0.15 input / $0.47 output / cache read $0.016 / cache create $0.2
@@ -37,10 +40,7 @@ capabilities = { tools = { choice = ["auto", "none", "required", "tool"] } }
 
 [cost.text.input]
 price = 0.15
-cache = { read = 0.016, explicit = { write = 0.2 } }
+cache = { read = 0.016, write = 0.2 }
 
 [cost.text.output]
 price = 0.47
-
-[cost.web_search]
-price = 10

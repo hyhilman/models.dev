@@ -1,3 +1,6 @@
+# Price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices of the international (Singapore) region.
 # Sources (accessed 2026-09-15):
 # https://www.qwencloud.com/models/kimi-k3 (Singapore/international pricing, limits)
 # https://www.alibabacloud.com/help/en/model-studio/kimi-k3 (limits, capability table)
@@ -51,6 +54,3 @@ cache = { read = 0.3 }
 
 [cost.text.output]
 price = 15
-
-[cost.web_search]
-price = 10

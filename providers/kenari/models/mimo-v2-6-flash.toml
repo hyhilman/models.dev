@@ -1,0 +1,20 @@
+# Added by the price feed: Kenari GET /v1/models (public price list), checked 2026-10-31.
+# Added by the price feed: upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.
+# Added by the price feed: Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
+# base_model xiaomi/mimo-v2.6-flash is the nearest lab model: the lab has no file named mimo-v2-6-flash
+# reasoning_options copied from providers/above/models/mimo-v2.6-flash.toml
+schema = 2
+base_model = "xiaomi/mimo-v2.6-flash"
+
+[capabilities]
+reasoning = { supported = true, toggle = true }
+
+[limit]
+context = 1_050_000
+
+[cost.text.input]
+price = 0.167168
+cache = { read = 0.00390059 }
+
+[cost.text.output]
+price = 0.334336

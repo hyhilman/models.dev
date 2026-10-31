@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 schema = 2
 type = "decision"
 name = "Solar Decide Flash"
@@ -24,8 +27,8 @@ output = 0
 sdk = { aisdk = "@ai-sdk/typesafe-ai", opencodeai = "@opencode/ai/providers/openrouter/decisions" }
 
 [cost.text.input]
-price = 0.05
-cache = { read = 0.05 }
+price = 0.05275
+cache = { read = 0.05275 }
 
 [cost.text.output]
 price = 0

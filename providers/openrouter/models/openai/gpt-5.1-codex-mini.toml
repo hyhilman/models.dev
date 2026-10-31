@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation: system_updates = true: OpenAI keeps mid-conversation system/developer messages in place (live 2026-10-23 on gpt-4.1-nano pinned to OpenAI: cache kept and followed on Chat Completions, Responses and Messages)
 # effort_updates = false: configuration_update is rejected with a 400 for this model (https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#mid-conversation-effort)
 # tools.updates = true on [api.responses] only (/api/v1/responses, add only): an `additional_tools` input item keeps the cache (live 2026-10-23, routed to Azure, its only host). OpenRouter's Responses docs don't mention it (https://openrouter.ai/docs/api/reference/responses/overview); lab mechanism: https://developers.openai.com/api/docs/guides/prompt-caching. Chat Completions has no mechanism.
@@ -23,11 +26,8 @@ capabilities = { tools = { freeform = ["text", "lark", "regex"], updates = true 
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 0.25
-cache = { read = 0.03 }
+price = 0.26375
+cache = { read = 0.03165 }
 
 [cost.text.output]
-price = 2
-
-[cost.web_search]
-price = 10
+price = 2.11

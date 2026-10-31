@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation (Chat Completions, probed 2026-10-19): system_updates = true: forwarded in place (live: cache prefix kept on Sakana AI)
 # effort_updates = false: configuration_update is rejected with a 400 for this model (https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#mid-conversation-effort)
 # tools.updates = false: Chat Completions rejects tool_addition/tool_removal for non-Claude-4.8+ models (live 400)
@@ -24,20 +27,17 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai-co
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 5
-cache = { read = 0.5 }
+price = 5.275
+cache = { read = 0.5275 }
 
 [[cost.text.input.overrides]]
 when = { context = { gt = 272_000 } }
-price = 10
-cache = { read = 1 }
+price = 10.55
+cache = { read = 1.055 }
 
 [cost.text.output]
-price = 30
+price = 31.65
 
 [[cost.text.output.overrides]]
 when = { context = { gt = 272_000 } }
-price = 45
-
-[cost.web_search]
-price = 10
+price = 47.475

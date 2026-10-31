@@ -1,3 +1,6 @@
+# Price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices of the international (Singapore) region.
 # First-party API rejects max_tokens=131073 with range [1, 131072]
 # (POST https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions,
 # model qwen3.7-plus, checked 2026-09-23).
@@ -57,12 +60,12 @@ capabilities = { tools = { choice = ["auto", "none", "required", "tool"] } }
 
 [cost.text.input]
 price = 0.4
-cache = { read = 0.08, explicit = { read = 0.04, write = 0.5 } }
+cache = { read = 0.04, write = 0.5 }
 
 [[cost.text.input.overrides]]
 when = { context = { gt = 256_000 } }
 price = 1.2
-cache = { read = 0.24, explicit = { read = 0.12, write = 1.5 } }
+cache = { read = 0.12, write = 1.5 }
 
 [cost.text.output]
 price = 1.6
@@ -70,6 +73,3 @@ price = 1.6
 [[cost.text.output.overrides]]
 when = { context = { gt = 256_000 } }
 price = 4.8
-
-[cost.web_search]
-price = 10

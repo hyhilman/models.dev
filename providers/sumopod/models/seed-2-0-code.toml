@@ -1,0 +1,19 @@
+# Static price feed: Sumopod console price list, exported by the owner, checked 2026-10-30.
+# Written by local/script/apply-static.ts from sumopod.json. Edit the feed, not this file.
+# base_model bytedance-seed/seed-2.0-code is the nearest lab model: the lab has no file named seed-2-0-code
+# reasoning_options copied from providers/aihubmix/models/doubao-seed-2-0-code-preview.toml
+schema = 2
+base_model = "bytedance-seed/seed-2.0-code"
+
+[capabilities]
+reasoning = { supported = true, toggle = true, effort = ["minimal", "low", "medium", "high"] }
+
+[limit]
+context = 256_000
+
+[cost.text.input]
+price = 0.5
+cache = { read = 0.1 }
+
+[cost.text.output]
+price = 3

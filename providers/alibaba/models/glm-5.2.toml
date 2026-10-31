@@ -1,3 +1,6 @@
+# Price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices of the international (Singapore) region.
 # Sources (accessed 2026-08-08):
 # https://www.alibabacloud.com/help/en/model-studio/glm
 # https://www.alibabacloud.com/help/en/model-studio/model-pricing (Singapore list)
@@ -34,10 +37,7 @@ sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/alibab
 
 [cost.text.input]
 price = 1.4
-cache = { read = 0.28, write = 0 }
+cache = { read = 0.28 }
 
 [cost.text.output]
 price = 4.4
-
-[cost.web_search]
-price = 10

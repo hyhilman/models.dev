@@ -1,3 +1,7 @@
+# Price feed: OpenCode Go model list (https://opencode.ai/zen/go/v1/models), checked 2026-10-31.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/services/www/src/docs/content/console/go.mdx.
+# Price feed: off-peak price now; the peak price (01:00-04:00 UTC Mon-Fri, 06:00-10:00 UTC Mon-Fri) is input 0.3, output 1.2.
 # Pricing and endpoint (Chat Completions): https://opencode.ai/v2/docs/console/go/ (accessed 2026-10-21).
 # Go lists Off-Peak and Peak prices; Peak is 01:00-04:00 and 06:00-10:00 UTC, Monday through Friday, and every other hour is Off-Peak.
 # Base prices are Off-Peak; the multiplier doubles them at Peak. Go doesn't mention DeepSeek's Chinese-holiday exception, so none is applied.
@@ -23,7 +27,3 @@ cache = { read = 0.003 }
 
 [cost.text.output]
 price = 0.6
-
-[[cost.multipliers]]
-when = { utc_days = { in = ["mon", "tue", "wed", "thu", "fri"] }, any = [{ all = [{ utc_hours = { gte = "01:00" } }, { utc_hours = { lt = "04:00" } }] }, { all = [{ utc_hours = { gte = "06:00" } }, { utc_hours = { lt = "10:00" } }] }] }
-factor = 2

@@ -1,0 +1,16 @@
+# Added by the price feed: Kenari GET /v1/models (public price list), checked 2026-10-31.
+# Added by the price feed: upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.
+# Added by the price feed: Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
+# reasoning_options copied from providers/opencode-go/models/claude-haiku-5-5.toml
+schema = 2
+base_model = "anthropic/claude-haiku-5-5"
+
+[capabilities]
+reasoning = { supported = true, toggle = true, effort = ["low", "medium", "high", "xhigh", "max"] }
+
+[cost.text.input]
+price = 0.139307
+cache = { read = 0.0139307, write = 0.139307 }
+
+[cost.text.output]
+price = 0.696534
