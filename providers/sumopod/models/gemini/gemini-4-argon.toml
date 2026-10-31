@@ -1,6 +1,6 @@
 # Static price feed: Sumopod console price list, exported by the owner, checked 2026-10-30.
 # Written by local/script/apply-static.ts from sumopod.json. Edit the feed, not this file.
-# reasoning_options copied from providers/opencode-go/models/gemini-4-argon-contributor.toml
+# reasoning_options copied from providers/opencode-go/models/gemini-4-argon.toml
 schema = 2
 base_model = "google/gemini-4-argon"
 
