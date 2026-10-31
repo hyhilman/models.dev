@@ -2,12 +2,12 @@
 # Added by the price feed: upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.
 # Added by the price feed: Converted from IDR at 17946 IDR per USD (ECB rate of 2026-10-01, via frankfurter.dev).
 # base_model poolside/laguna-s-2.1 is the nearest lab model: the lab has no file named laguna-s-2-1:free
-# reasoning_options copied from providers/opencode/models/laguna-s-2.1-free.toml
+# reasoning_options copied from providers/poolside/models/poolside/laguna-s-2.1.toml
 schema = 2
 base_model = "poolside/laguna-s-2.1"
 
 [capabilities]
-reasoning = { supported = true, effort = ["low", "medium", "high"] }
+reasoning = { supported = true, toggle = true }
 
 [limit]
 context = 262_144
