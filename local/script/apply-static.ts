@@ -130,11 +130,17 @@ export const Feed = z
         // "models": the prices stay in $PRICE_STATIC_DIR/<provider>.json; the live list only drops
         // the rows of models the provider no longer serves.
         static_prices: z.boolean().default(false),
+        // "models": every listed model costs 0, for a plan paid up front (no per-token price).
+        free: z.boolean().default(false),
+        // "models": keep only the ids that match this regex (one channel of a shared list).
+        only: z.string().min(1).optional(),
       })
       .strict()
       .refine((f) => (f.price_from ?? f.price_doc) === undefined || f.format === "models", "price_from and price_doc are for a models list")
       .refine((f) => f.price_from === undefined || f.price_doc === undefined, "price_from or price_doc, not both")
       .refine((f) => !f.static_prices || (f.format === "models" && !f.price_from && !f.price_doc), "static_prices is for a plain models list")
+      .refine((f) => !f.free || (f.format === "models" && !f.price_from && !f.price_doc && !f.static_prices), "free is for a plain models list")
+      .refine((f) => f.only === undefined || f.format === "models", "only is for a models list")
       .optional(),
   })
   .strict();
