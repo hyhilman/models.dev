@@ -94,6 +94,13 @@ export const PRICES_SUMOPOD_API_KEY_ENV: EnvSpec = {
   why: "Sumopod API key for its model list (GET /v1/models); a static price whose model it no longer lists is dropped. Empty skips that feed",
 };
 
+export const PRICES_SEKAI_API_KEY_ENV: EnvSpec = {
+  key: "PRICES_SEKAI_API_KEY",
+  default: "",
+  secret: true,
+  why: "SEKAI Gateway API key for its model lists (GET /v1/models, /v2/models), shared by the sekai, sekai-coding-plan and sekai-speedrun feeds. Empty skips those feeds",
+};
+
 /** Each feed's key: the env var the feed's key_env names, and the setting that holds it. */
 export const KEY_ENVS: Readonly<Record<string, EnvSpec>> = {
   DASHSCOPE_API_KEY: PRICES_DASHSCOPE_API_KEY_ENV,
@@ -102,6 +109,7 @@ export const KEY_ENVS: Readonly<Record<string, EnvSpec>> = {
   ALIBABA_TOKEN_PLAN_CN_API_KEY: PRICES_ALIBABA_TOKEN_PLAN_CN_API_KEY_ENV,
   OPENCODE_API_KEY: PRICES_OPENCODE_API_KEY_ENV,
   SUMOPOD_API_KEY: PRICES_SUMOPOD_API_KEY_ENV,
+  SEKAI_API_KEY: PRICES_SEKAI_API_KEY_ENV,
 };
 
 export const PRICES_ENV: readonly EnvSpec[] = [
