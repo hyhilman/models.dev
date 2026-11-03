@@ -18,6 +18,7 @@ providers = [
   "openrouter",
   "sekai-coding-plan",
   "sekai-speedrun",
+  "sekai-bansos",
 ]
 
 # Upstream owns these folders. The feed rewrites only the cost tables of upstream's files, deletes

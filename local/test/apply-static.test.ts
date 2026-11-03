@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import path from "node:path";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { ADDED_MARK, baseModelOf, costDiff, Feed, PriceList, reasoningOptionsOf, render, renderPatch, tidy, walk } from "../script/apply-static.ts";
+import { ADDED_MARK, baseModelOf, costDiff, Feed, freeList, PriceList, reasoningOptionsOf, render, renderPatch, tidy, walk } from "../script/apply-static.ts";
 
 const example = () =>
   JSON.parse(readFileSync(path.join(import.meta.dir, "../example/sumopod.json"), "utf8")) as Record<string, unknown>[];
@@ -147,4 +147,15 @@ test("costDiff names only what changed, and nothing for an equal cost", () => {
   expect(costDiff({ input: 2, output: 8 }, { input: 2, output: 8 })).toBe("");
   expect(costDiff({ input: 2, output: 8, cache_read: 0.2 }, { input: 2, output: 8 })).toBe("cache_read 0.2→-");
   expect(costDiff({ input: 1, output: 2 }, { input: 1, output: 2, tiers: [{}] })).toBe("tiers or off-peak");
+});
+
+test("a free_models feed writes its hand-listed models at cost 0, and takes no [fetch]", () => {
+  const f = Feed.parse({ name: "X", api: "https://x.test/v1", env: ["X_KEY"], source: "s", free_models: ["bansos/glm-5.3-flash"] });
+  const { files, skipped } = render("x", f, freeList(f.free_models!), "2026-11-03");
+  expect(skipped).toEqual([]);
+  const text = files.get("providers/x/models/bansos/glm-5.3-flash.toml")!;
+  expect(text).toContain('base_model = "zhipuai/glm-5.3-flash"');
+  expect(text).toContain("[cost.text.input]\nprice = 0");
+  expect(text).toContain("from local/feeds/x.toml");
+  expect(Feed.safeParse({ ...f, fetch: { url: "https://x.test/v1/models", format: "models" } }).success).toBe(false);
 });

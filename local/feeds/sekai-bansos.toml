@@ -1,0 +1,11 @@
+# SEKAI Gateway Bansos: a free tier on /v1 (Discord verification and the quota on the Bansos page,
+# https://sekaigateway.xyz/en/bansos, needs a login). Its models are in no model list
+# (GET /v1/models leaves out bansos/*), so they are listed here by hand at cost 0.
+# bansos/glm-5.3-flash answered a live call on 2026-11-03 (200; Sekai adds about 2,000 hidden
+# prompt tokens per call). Check a model by hand before adding it here.
+name = "SEKAI Gateway Bansos"
+env = ["SEKAI_API_KEY"]
+api = "https://api.sekaigateway.xyz/v1"
+doc = "https://sekaigateway.xyz/en/docs"
+source = "SEKAI Gateway Bansos free tier, models checked by hand with a live call"
+free_models = ["bansos/glm-5.3-flash"]
