@@ -105,6 +105,9 @@ export const Feed = z
     add: z.boolean().default(true),
     // model_name -> "<lab>/<model>", for names that do not match a lab file name.
     map: z.record(z.string(), z.string().regex(/^[a-z0-9-]+\/[A-Za-z0-9._-]+$/)).default({}),
+    // Models the provider serves but lists nowhere, written by hand at cost 0 (a free tier).
+    // No [fetch] and no static list: the feed file itself is the list.
+    free_models: z.array(ModelName).min(1).optional(),
     // The provider publishes its list: fetch-feeds.ts pulls it with the named adapter.
     fetch: z
       .object({
@@ -143,7 +146,8 @@ export const Feed = z
       .refine((f) => f.only === undefined || f.format === "models", "only is for a models list")
       .optional(),
   })
-  .strict();
+  .strict()
+  .refine((f) => !(f.free_models && f.fetch), "free_models is a list of its own; drop [fetch]");
 export type Feed = z.infer<typeof Feed>;
 
 /** What fetch-feeds.ts writes: the rows in USD, the day it fetched them, and how it converted. */
@@ -452,7 +456,7 @@ export function render(
   const dir = `providers/${provider}`;
   const header = [
     `# Static price feed: ${feed.source}, checked ${checked}.`,
-    `# Written by local/script/apply-static.ts from ${feed.fetch && !feed.fetch.static_prices ? feed.fetch.url : `${provider}.json`}. Edit the feed, not this file.`,
+    `# Written by local/script/apply-static.ts from ${feed.free_models ? `local/feeds/${provider}.toml` : feed.fetch && !feed.fetch.static_prices ? feed.fetch.url : `${provider}.json`}. Edit the feed, not this file.`,
     ...(note ? [`# ${note}`] : []),
   ];
 
@@ -602,7 +606,9 @@ export function costDiff(before: Cost | null, after: Cost | null): string {
 }
 
 function apply(provider: string, patch: boolean): "unchanged" | "changed" | "skipped" {
-  const feed = Feed.parse(readToml(path.join(REPO, "local/feeds", `${provider}.toml`)));
+  const feedFile = path.join(REPO, "local/feeds", `${provider}.toml`);
+  const feed = Feed.parse(readToml(feedFile));
+  if (feed.free_models) return write(provider, patch, feed, freeList(feed.free_models), statSync(feedFile).mtime.toISOString().slice(0, 10), "free models, listed by hand.", undefined);
   const fromStatic = !feed.fetch || feed.fetch.static_prices;
   const src = fromStatic ? path.join(STATIC_DIR, `${provider}.json`) : snapshotPath(provider);
   if (!existsSync(src)) {
@@ -629,6 +635,23 @@ function apply(provider: string, patch: boolean): "unchanged" | "changed" | "ski
     if (gone.length > 0) log("static.delisted", { provider, models: gone.join(",") });
     list = list.filter((r) => live.has(r.model_name));
   }
+  return write(provider, patch, feed, list, checked, note, listed);
+}
+
+/** A cost-0 row per model id. */
+export function freeList(ids: readonly string[]): PriceList {
+  return PriceList.parse(ids.map((id) => ({ model_name: id, provider: id.split("/")[0], input_cost_per_1m_tokens: 0, output_cost_per_1m_tokens: 0 })));
+}
+
+function write(
+  provider: string,
+  patch: boolean,
+  feed: Feed,
+  list: PriceList,
+  checked: string,
+  note: string,
+  listed: string[] | undefined,
+): "unchanged" | "changed" {
 
   const dir = path.join(REPO, "providers", provider);
   const have = new Map<string, string>();
