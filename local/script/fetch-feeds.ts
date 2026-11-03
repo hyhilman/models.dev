@@ -524,7 +524,8 @@ async function models(feed: Feed, key: string | undefined): Promise<Got> {
 
 /** A cost-0 row per listed model, with the context the list states. */
 export function freeRows(data: z.infer<typeof ModelList>["data"]): PriceRow[] {
-  return [...new Map(data.map((m) => [m.id, m])).values()].map((m) => ({
+  // The first entry of an id wins.
+  return data.filter((m, i) => data.findIndex((o) => o.id === m.id) === i).map((m) => ({
     model_name: m.id,
     provider: m.id.includes("/") ? m.id.split("/")[0]! : "",
     input_cost_per_1m_tokens: 0,
