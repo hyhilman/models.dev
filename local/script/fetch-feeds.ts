@@ -487,7 +487,7 @@ async function dashscope(feed: Feed, key: string, last: Snapshot | null, now: Da
 /** An OpenAI-style model list with no prices. More pages than one would need paging we do not do. */
 // Coding Plan says hasMore, Token Plan says has_more.
 export const ModelList = z.object({
-  data: z.array(z.object({ id: z.string() })).min(1),
+  data: z.array(z.object({ id: z.string(), context_length: z.number().int().nonnegative().nullable().optional() })).min(1),
   hasMore: z.boolean().nullable().optional(),
   has_more: z.boolean().nullable().optional(),
 });
@@ -497,7 +497,13 @@ async function models(feed: Feed, key: string | undefined): Promise<Got> {
   const got = ModelList.parse(await getJson(f.url, key));
   // A short list would delete the models it left out.
   if (got.hasMore || got.has_more) throw new Error("the list has more pages; read them before trusting it");
-  const listed = [...new Set(got.data.map((m) => m.id))].sort();
+  const kept = f.only ? got.data.filter((m) => new RegExp(f.only!).test(m.id)) : got.data;
+  const listed = [...new Set(kept.map((m) => m.id))].sort();
+  if (f.free) {
+    // An empty list would delete every file of the provider.
+    if (kept.length === 0) throw new Error(`no listed model matches ${f.only}`);
+    return { note: "a plan paid up front, so every listed model costs 0.", rows: freeRows(kept), listed };
+  }
   if (f.price_doc) {
     const rows = opencodeDocRows(await (await get(f.price_doc)).text());
     return { note: `prices from OpenCode's docs source, ${f.price_doc}.`, rows, listed };
@@ -514,6 +520,17 @@ async function models(feed: Feed, key: string | undefined): Promise<Got> {
     rows: borrowRows(from.rows, listed, f.price_factor),
     listed,
   };
+}
+
+/** A cost-0 row per listed model, with the context the list states. */
+export function freeRows(data: z.infer<typeof ModelList>["data"]): PriceRow[] {
+  return [...new Map(data.map((m) => [m.id, m])).values()].map((m) => ({
+    model_name: m.id,
+    provider: m.id.includes("/") ? m.id.split("/")[0]! : "",
+    input_cost_per_1m_tokens: 0,
+    output_cost_per_1m_tokens: 0,
+    context_length: m.context_length ?? 0,
+  }));
 }
 
 /** Another feed's rows for the listed models only, every price times `factor`. */

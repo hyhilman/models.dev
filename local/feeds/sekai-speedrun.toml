@@ -1,0 +1,17 @@
+# SEKAI Gateway Speedrun: a token package paid up front in rupiah (50M tokens for IDR 100,000 or
+# 100M for IDR 150,000, valid 2 days, https://sekaigateway.xyz/en/speedrun), with no per-token
+# price. The owner chose cost 0, so a router picks the package before any per-token host.
+# Speedrun models sit in the PAYG list (GET /v1/models, needs a key) as speedrun/*; the feed keeps
+# only those and writes them at cost 0. A model the list drops is deleted.
+name = "SEKAI Gateway Speedrun"
+env = ["SEKAI_API_KEY"]
+api = "https://api.sekaigateway.xyz/v1"
+doc = "https://sekaigateway.xyz/en/speedrun"
+source = "SEKAI Gateway model list (https://api.sekaigateway.xyz/v1/models, speedrun/* only), a prepaid package"
+
+[fetch]
+url = "https://api.sekaigateway.xyz/v1/models"
+format = "models"
+key_env = "SEKAI_API_KEY"
+free = true
+only = "^speedrun/"
