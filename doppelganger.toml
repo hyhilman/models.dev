@@ -112,6 +112,10 @@ plugins = ["ops", "prices"]
 
 [exec]
 
+# Our own catalog (local/script/serve.ts, port 7311), so routing and ops-models-sync see our
+# providers and prices. The host's LAN address: the containers cannot reach its 127.0.0.1.
+prices_url = "http://192.168.2.4:7311/api.json"
+
 # wall-clock bound on ONE gh/git call; an unbounded stalled gh blocks the event loop so lease heartbeats stop
 # timeout_ms = 180000
 
@@ -635,6 +639,12 @@ fetch_minutes = 10
 # the port the instance API listens on; 0 picks a free port, and api-up logs the one it got
 # 7320/7321 belong to xenith, 7330/7331 to doppelganger, 7341 to squad, 7351 and 7361 to the xenith repos.
 port = 7371
+
+[squad]
+
+# The catalog squad's web Catalog page and routing read. Its default is upstream's
+# https://models.dev/api.json, which lacks our providers (sumopod, sekai-*) and prices.
+prices_url = "http://192.168.2.4:7311/api.json"
 
 # --- families whose table you choose ---
 
