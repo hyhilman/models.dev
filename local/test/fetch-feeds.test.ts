@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { borrowRows, DASHSCOPE_OFFPEAK, dashscopeRows, kenariIds, ModelList, money, opencodeDocRows, openrouterRows, kenariRows, rateDate, scaleRows, tierStart } from "../script/fetch-feeds.ts";
+import { borrowRows, DASHSCOPE_OFFPEAK, dashscopeRows, freeRows, kenariIds, ModelList, money, opencodeDocRows, openrouterRows, kenariRows, rateDate, scaleRows, tierStart } from "../script/fetch-feeds.ts";
 import { costDiff, Feed, flatCost, inHours, patchCost, PATCH_MARK, retired, rowCost, Snapshot } from "../script/apply-static.ts";
 import { CostV2 } from "../../packages/core/src/schema-v2.ts";
 import { KEY_ENVS } from "../doppelganger/tools/prices/run.ts";
@@ -353,4 +353,20 @@ test("openrouter: dearer windows are the peak price, a cheaper window the off-pe
   const cost = (iso: string) => rowCost(ds, new Date(iso)).cost;
   expect(cost("2026-10-19T02:00:00Z")).toMatchObject({ input: 0.3 }); // Monday, peak
   expect(cost("2026-10-18T02:00:00Z")).toMatchObject({ input: 0.15 }); // Sunday
+});
+
+test("a free plan lists every model at cost 0, with the context its list states", () => {
+  const data = ModelList.parse({ data: [{ id: "cx/gpt-6.1-sol", context_length: 500000 }, { id: "minimax/minimax-m3" }, { id: "cx/gpt-6.1-sol" }] }).data;
+  expect(freeRows(data)).toEqual([
+    { model_name: "cx/gpt-6.1-sol", provider: "cx", input_cost_per_1m_tokens: 0, output_cost_per_1m_tokens: 0, context_length: 500000 },
+    { model_name: "minimax/minimax-m3", provider: "minimax", input_cost_per_1m_tokens: 0, output_cost_per_1m_tokens: 0, context_length: 0 },
+  ]);
+});
+
+test("free and only belong to a plain models list", () => {
+  const base = { name: "X", api: "https://x.test/v1", env: ["X_KEY"], source: "s" };
+  const ok = (fetch: Record<string, unknown>) => Feed.safeParse({ ...base, fetch: { url: "https://x.test/v1/models", ...fetch } }).success;
+  expect(ok({ format: "models", free: true, only: "^speedrun/" })).toBe(true);
+  expect(ok({ format: "models", free: true, static_prices: true })).toBe(false);
+  expect(ok({ format: "openrouter", only: "^a/" })).toBe(false);
 });
