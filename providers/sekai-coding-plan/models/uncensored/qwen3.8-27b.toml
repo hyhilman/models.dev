@@ -1,0 +1,15 @@
+# Static price feed: SEKAI Gateway Coding Plan model list (https://api.sekaigateway.xyz/v2/models), a prepaid plan, checked 2026-11-07.
+# Written by local/script/apply-static.ts from https://api.sekaigateway.xyz/v2/models. Edit the feed, not this file.
+# a plan paid up front, so every listed model costs 0.
+# reasoning_options copied from providers/aiand/models/qwen/qwen3.8-27b.toml
+schema = 2
+base_model = "alibaba/qwen3.8-27b"
+
+[capabilities]
+reasoning = { supported = true, effort = ["none", "low", "medium", "xhigh"] }
+
+[cost.text.input]
+price = 0
+
+[cost.text.output]
+price = 0

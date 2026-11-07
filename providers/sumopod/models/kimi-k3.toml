@@ -1,0 +1,18 @@
+# Static price feed: Sumopod console price list, exported by the owner, checked 2026-10-30.
+# Written by local/script/apply-static.ts from sumopod.json. Edit the feed, not this file.
+# reasoning_options copied from providers/opencode-go/models/kimi-k3.toml
+schema = 2
+base_model = "moonshotai/kimi-k3"
+
+[capabilities]
+reasoning = { supported = true, effort = ["max"] }
+
+[limit]
+context = 1_000_000
+
+[cost.text.input]
+price = 3
+cache = { read = 0.3 }
+
+[cost.text.output]
+price = 15

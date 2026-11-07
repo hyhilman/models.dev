@@ -1,0 +1,15 @@
+# Static price feed: SEKAI Gateway model list (https://api.sekaigateway.xyz/v1/models, speedrun/* only), a prepaid package, checked 2026-11-07.
+# Written by local/script/apply-static.ts from https://api.sekaigateway.xyz/v1/models. Edit the feed, not this file.
+# a plan paid up front, so every listed model costs 0.
+# reasoning_options copied from providers/302ai/models/gpt-6-sol.toml
+schema = 2
+base_model = "openai/gpt-6-sol"
+
+[capabilities]
+reasoning = { supported = true, effort = ["none", "low", "medium", "high", "xhigh", "max"] }
+
+[cost.text.input]
+price = 0
+
+[cost.text.output]
+price = 0

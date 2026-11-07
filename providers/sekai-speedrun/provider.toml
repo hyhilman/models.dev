@@ -1,0 +1,8 @@
+# Static price feed: SEKAI Gateway model list (https://api.sekaigateway.xyz/v1/models, speedrun/* only), a prepaid package, checked 2026-11-07.
+# Written by local/script/apply-static.ts from https://api.sekaigateway.xyz/v1/models. Edit the feed, not this file.
+# a plan paid up front, so every listed model costs 0.
+name = "SEKAI Gateway Speedrun"
+env = ["SEKAI_API_KEY"]
+npm = "@ai-sdk/openai-compatible"
+api = "https://api.sekaigateway.xyz/v1"
+doc = "https://sekaigateway.xyz/en/speedrun"

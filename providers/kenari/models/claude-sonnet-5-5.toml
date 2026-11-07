@@ -1,0 +1,16 @@
+# Added by the price feed: Kenari GET /v1/models (public price list), checked 2026-11-07.
+# Added by the price feed: upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.
+# Added by the price feed: Converted from IDR at 18148 IDR per USD (ECB rate of 2026-11-01, via frankfurter.dev).
+# reasoning_options copied from providers/302ai/models/claude-sonnet-5-5.toml
+schema = 2
+base_model = "anthropic/claude-sonnet-5-5"
+
+[capabilities]
+reasoning = { supported = true, effort = ["low", "medium", "high", "xhigh", "max"] }
+
+[cost.text.input]
+price = 2.2041
+cache = { read = 0.826537, write = 2.75512 }
+
+[cost.text.output]
+price = 11.0205

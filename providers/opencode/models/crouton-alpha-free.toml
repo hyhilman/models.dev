@@ -1,3 +1,6 @@
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-11-06.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/services/www/src/docs/content/console/models.mdx.
 # Pricing and endpoint (Responses): https://opencode.ai/v2/docs/console/models/.
 # Modalities, capabilities, limits and effort levels supplied by the operator on 2026-11-03.
 # Effort: reasoning.effort = minimal|low|medium|high|xhigh|max (each accepted on Zen Responses, live 2026-11-05).

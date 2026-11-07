@@ -1,0 +1,8 @@
+# Static price feed: SEKAI Gateway Bansos free tier, models checked by hand with a live call, checked 2026-11-07.
+# Written by local/script/apply-static.ts from local/feeds/sekai-bansos.toml. Edit the feed, not this file.
+# free models, listed by hand.
+name = "SEKAI Gateway Bansos"
+env = ["SEKAI_API_KEY"]
+npm = "@ai-sdk/openai-compatible"
+api = "https://api.sekaigateway.xyz/v1"
+doc = "https://sekaigateway.xyz/en/docs"

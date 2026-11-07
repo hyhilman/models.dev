@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-11-07.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 schema = 2
 name = "Ripple 65B Preview"
 description = "Preview model for early access evaluation, prototyping, and compatibility testing"
@@ -27,8 +30,8 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai-co
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 0.2
-cache = { read = 0.05 }
+price = 0.211
+cache = { read = 0.05275 }
 
 [cost.text.output]
-price = 0.6
+price = 0.633

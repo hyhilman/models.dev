@@ -1,0 +1,8 @@
+# Static price feed: SEKAI Gateway Coding Plan model list (https://api.sekaigateway.xyz/v2/models), a prepaid plan, checked 2026-11-07.
+# Written by local/script/apply-static.ts from https://api.sekaigateway.xyz/v2/models. Edit the feed, not this file.
+# a plan paid up front, so every listed model costs 0.
+name = "SEKAI Gateway Coding Plan"
+env = ["SEKAI_API_KEY"]
+npm = "@ai-sdk/openai-compatible"
+api = "https://api.sekaigateway.xyz/v2"
+doc = "https://sekaigateway.xyz/en/docs"

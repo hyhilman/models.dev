@@ -1,0 +1,15 @@
+# Static price feed: SEKAI Gateway Bansos free tier, models checked by hand with a live call, checked 2026-11-07.
+# Written by local/script/apply-static.ts from local/feeds/sekai-bansos.toml. Edit the feed, not this file.
+# free models, listed by hand.
+# reasoning_options copied from providers/opencode-go/models/glm-5.3-flash.toml
+schema = 2
+base_model = "zhipuai/glm-5.3-flash"
+
+[capabilities]
+reasoning = { supported = true, effort = ["low", "high", "max"] }
+
+[cost.text.input]
+price = 0
+
+[cost.text.output]
+price = 0

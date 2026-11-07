@@ -1,0 +1,16 @@
+# Added by the price feed: Kenari GET /v1/models (public price list), checked 2026-11-07.
+# Added by the price feed: upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.
+# Added by the price feed: Converted from IDR at 18148 IDR per USD (ECB rate of 2026-11-01, via frankfurter.dev).
+# reasoning_options copied from providers/302ai/models/gpt-6-astra.toml
+schema = 2
+base_model = "openai/gpt-6-astra"
+
+[capabilities]
+reasoning = { supported = true, effort = ["low", "medium", "high", "xhigh", "max"] }
+
+[cost.text.input]
+price = 11.0205
+cache = { read = 1.10205, write = 11.0205 }
+
+[cost.text.output]
+price = 55.1025
