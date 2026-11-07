@@ -1,0 +1,50 @@
+[
+  {
+    "model_name": "glm-5.3-abliterated",
+    "provider": "refuseless",
+    "input_cost_per_1m_tokens": 1.0,
+    "cache_read_cost_per_1m_tokens": 0.15,
+    "output_cost_per_1m_tokens": 2.0,
+    "context_length": 1048576
+  },
+  {
+    "model_name": "glm-5.3-flash-abliterated",
+    "provider": "refuseless",
+    "input_cost_per_1m_tokens": 0.12,
+    "cache_read_cost_per_1m_tokens": 0.03,
+    "output_cost_per_1m_tokens": 0.5,
+    "context_length": 1048576
+  },
+  {
+    "model_name": "deepseek-v4.1-flash-abliterated",
+    "provider": "refuseless",
+    "input_cost_per_1m_tokens": 0.12,
+    "cache_read_cost_per_1m_tokens": 0.025,
+    "output_cost_per_1m_tokens": 0.45,
+    "context_length": 1048576
+  },
+  {
+    "model_name": "deepseek-v4.1-flash-fast",
+    "provider": "refuseless",
+    "input_cost_per_1m_tokens": 0.01,
+    "cache_read_cost_per_1m_tokens": 0.002,
+    "output_cost_per_1m_tokens": 0.08,
+    "context_length": 1048576
+  },
+  {
+    "model_name": "minimax-m3.1-flash",
+    "provider": "refuseless",
+    "input_cost_per_1m_tokens": 0.02,
+    "cache_read_cost_per_1m_tokens": 0.002,
+    "output_cost_per_1m_tokens": 0.08,
+    "context_length": 1048576
+  },
+  {
+    "model_name": "kimi-k3.1-pro",
+    "provider": "refuseless",
+    "input_cost_per_1m_tokens": 0.25,
+    "cache_read_cost_per_1m_tokens": 0.15,
+    "output_cost_per_1m_tokens": 2.5,
+    "context_length": 1048576
+  }
+]

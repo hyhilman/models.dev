@@ -19,6 +19,7 @@ providers = [
   "sekai-coding-plan",
   "sekai-speedrun",
   "sekai-bansos",
+  "refuseless",
 ]
 
 # Upstream owns these folders. The feed rewrites only the cost tables of upstream's files, deletes

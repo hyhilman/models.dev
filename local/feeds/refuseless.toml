@@ -1,0 +1,21 @@
+# Refuseless: abliterated (refusal-removed) open models and a few standard ones, USD per 1M tokens.
+# Prices are read from the console model list (https://refuseless.com/console/models) on
+# 2026-11-07 and kept in $PRICE_STATIC_DIR/refuseless.json. The list shows the price after the
+# discount (glm-5.3-flash-abliterated is 25% off). The API is OpenAI-compatible, and also takes
+# /v1/responses and /v1/messages (https://docs.refuseless.com/api/models.md).
+# GET /v1/models is public but Cloudflare blocks scripts, so there is no [fetch] and no live
+# delisting. Not priced: deepseek-v4.1-flash-abliterated-free (524,288 context), its price is
+# not in the screenshots; kimi-k3.1-pro is in the console but not yet in the docs lineup.
+name = "Refuseless"
+env = ["REFUSELESS_API_KEY"]
+api = "https://api.refuseless.com/v1"
+doc = "https://docs.refuseless.com"
+source = "Refuseless console model list, read by the owner"
+
+# The abliterated models have no lab file of their own: they use the base model's.
+[map]
+"glm-5.3-abliterated" = "zhipuai/glm-5.3"
+"glm-5.3-flash-abliterated" = "zhipuai/glm-5.3-flash"
+"deepseek-v4.1-flash-abliterated" = "deepseek/deepseek-v4.1-flash-1017"
+"deepseek-v4.1-flash-fast" = "deepseek/deepseek-v4.1-flash-1017"
+"minimax-m3.1-flash" = "minimax/MiniMax-M3.1-Flash"
