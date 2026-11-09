@@ -1,0 +1,15 @@
+# Static price feed: Refuseless console model list, read by the owner, checked 2026-11-07.
+# Written by local/script/apply-static.ts from refuseless.json. Edit the feed, not this file.
+# reasoning_options copied from providers/opencode-go/models/kimi-k3.1-pro.toml
+schema = 2
+base_model = "moonshotai/kimi-k3.1-pro"
+
+[capabilities]
+reasoning = { supported = true, effort = ["low", "high", "max"] }
+
+[cost.text.input]
+price = 0.25
+cache = { read = 0.15 }
+
+[cost.text.output]
+price = 2.5

@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-11-09.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation: system_updates unset. OpenRouter doesn't document mid-conversation system messages for this model, and it routes to about 30 upstreams that place them differently (hoisted on Decart for deepseek-v4.1-flash). DeepSeek's own API keeps them in place, but that's only one of the upstreams. The earlier true came from live runs only (cache kept on Together, InferenceNet, 2026-10-19).
 # effort_updates = false: configuration_update is rejected with a 400 for this model (https://openrouter.ai/docs/guides/best-practices/reasoning-tokens#mid-conversation-effort)
 # tools.updates = false: Chat Completions rejects tool_addition/tool_removal for non-Claude-4.8+ models (live 400)
@@ -23,8 +26,8 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai-co
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 0.006
-cache = { read = 0.005 }
+price = 0.00633
+cache = { read = 0.005275 }
 
 [cost.text.output]
-price = 0.5
+price = 0.5275

@@ -1,0 +1,18 @@
+# Static price feed: Refuseless console model list, read by the owner, checked 2026-11-07.
+# Written by local/script/apply-static.ts from refuseless.json. Edit the feed, not this file.
+# reasoning_options copied from providers/opencode-go/models/minimax-m3.1-flash.toml
+schema = 2
+base_model = "minimax/MiniMax-M3.1-Flash"
+
+[capabilities]
+reasoning = { supported = true, effort = ["low", "medium", "high", "xhigh", "max"] }
+
+[limit]
+context = 1_048_576
+
+[cost.text.input]
+price = 0.02
+cache = { read = 0.002 }
+
+[cost.text.output]
+price = 0.08

@@ -1,0 +1,18 @@
+# Static price feed: Refuseless console model list, read by the owner, checked 2026-11-07.
+# Written by local/script/apply-static.ts from refuseless.json. Edit the feed, not this file.
+# reasoning_options copied from providers/opencode-go/models/glm-5.3-flash.toml
+schema = 2
+base_model = "zhipuai/glm-5.3-flash"
+
+[capabilities]
+reasoning = { supported = true, effort = ["low", "high", "max"] }
+
+[limit]
+context = 1_048_576
+
+[cost.text.input]
+price = 0.12
+cache = { read = 0.03 }
+
+[cost.text.output]
+price = 0.5
