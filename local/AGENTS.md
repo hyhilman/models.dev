@@ -159,7 +159,7 @@ Each of upstream's Alibaba folders has its own feed in `local/feeds/`, all in `p
 
 - The model list (`opencode.ai/zen/v1/models`, `opencode.ai/zen/go/v1/models`, public, no key; a
   key shows only what one account has turned on) decides which of upstream's files stay.
-- Prices come from OpenCode's own docs source on GitHub (`packages/web/src/content/docs/zen.mdx`,
+- Prices come from OpenCode's own docs source on GitHub (`services/site/src/docs/content/console/models.mdx`,
   `go.mdx`): the Markdown price table, matched to ids by the docs' "Model | Model ID" table.
   `(≤ 256K tokens)` / `(> 256K tokens)` rows become `[[cost.tiers]]`; `(Peak)` / `(Off-Peak)` rows
   become the off-peak switch with the hours the page states (Go: peak 01:00-04:00 and 06:00-10:00

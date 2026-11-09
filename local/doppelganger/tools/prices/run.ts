@@ -289,14 +289,24 @@ function writeAlerts(root: string, a: Alerts): void {
   renameSync(`${p}.new`, p);
 }
 
+const FAIL_EVENT = /^event=[a-z_]+\.(error|[a-z_]*failed|conflict|locked|usage)\b/;
+
+/** The line that says why a job failed: the last failure event, not just the last event (a
+ * failed fetch is logged first and the apply still runs after it). No event line means the
+ * container never reached the script: a missing image, a bad mount. */
+export function failTail(events: readonly string[], out: string): string {
+  const fail = events.findLast((e) => FAIL_EVENT.test(e));
+  if (fail !== undefined) return fail;
+  return events.length > 0 ? events.at(-1)! : out.trim().split("\n").slice(-3).join(" | ");
+}
+
 export async function runPriceTask(ctx: JobContext, task: Task): Promise<void> {
   const run = priceRun(ctx, task);
   ctx.log.info("start", { task, dryRun: run.dryRun });
   const r = ctx.runIn(ctx.root, "docker", dockerArgs(run), { ...run.keys });
   const events = eventLines(r.out);
   for (const line of events) ctx.log.raw(line);
-  // No event line means the container never reached the script: a missing image, a bad mount.
-  const tail = r.ok ? null : events.length > 0 ? events.at(-1)! : r.out.trim().split("\n").slice(-3).join(" | ");
+  const tail = r.ok ? null : failTail(events, r.out);
   if (!run.dryRun) {
     const { body, open } = report(task, events, tail, readAlerts(ctx.root));
     // Saved before the send: a failed send must not repeat the same report every minute.
