@@ -28,7 +28,7 @@ sdk = { aisdk = "@ai-sdk/typesafe-ai", opencodeai = "@opencode/ai/providers/open
 compatibility = { media_input = "state" }
 
 [cost.text.input]
-price = 0.020045
+price = 0.0211
 
 [cost.text.output]
 price = 0
