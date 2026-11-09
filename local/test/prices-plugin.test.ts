@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { dockerArgs, eventLines, fetchMinutes, GH_IN_CONTAINER, keys, type PriceRun, report, SSH_IN_CONTAINER } from "../doppelganger/tools/prices/run.ts";
+import { dockerArgs, eventLines, failTail, fetchMinutes, GH_IN_CONTAINER, keys, type PriceRun, report, SSH_IN_CONTAINER } from "../doppelganger/tools/prices/run.ts";
 
 const base: PriceRun = {
   task: "static",
@@ -99,4 +99,13 @@ test("a model without a canonical id alerts once, again when the list changes, a
   const r2 = report("static", [miss("go/a")], null, r1.open);
   expect(r2.body).toBe("❌ no canonical id: go/a");
   expect(report("static", [miss("")], null, r2.open).body).toBe("✅ canonical id check works again");
+});
+
+test("failTail names the failure, not the last event", () => {
+  const err = 'event=fetch.error provider="opencode" error="HTTP 404"';
+  const last = 'event=static.unchanged provider="refuseless" models="6" skipped="0"';
+  expect(failTail([err, last], "")).toBe(err);
+  expect(failTail(['event=site.build_failed reason="x"', last], "")).toBe('event=site.build_failed reason="x"');
+  expect(failTail([last], "")).toBe(last);
+  expect(failTail([], "a\nb\nc\nd\n")).toBe("b | c | d");
 });

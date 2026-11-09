@@ -17,4 +17,4 @@ add = false
 [fetch]
 url = "https://opencode.ai/zen/go/v1/models"
 format = "models"
-price_doc = "https://raw.githubusercontent.com/anomalyco/opencode/dev/services/www/src/docs/content/console/go.mdx"
+price_doc = "https://raw.githubusercontent.com/anomalyco/opencode/dev/services/site/src/docs/content/console/go.mdx"
