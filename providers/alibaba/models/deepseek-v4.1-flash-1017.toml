@@ -1,4 +1,4 @@
-# Price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-11-10.
+# Price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-11-11.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
 # Price feed: USD list prices of the international (Singapore) region.
 # Price feed: peak price now; off-peak (22:00-08:00 UTC+8) is input 0.15, output 0.6.
@@ -37,7 +37,7 @@ sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/alibab
 
 [cost.text.input]
 price = 0.3
-cache = { read = 0.03 }
+cache = { read = 0.006 }
 
 [cost.text.output]
 price = 1.2
