@@ -28,8 +28,8 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai-co
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 0.176185
-cache = { read = 0.159305 }
+price = 0.13082
+cache = { read = 0.117105 }
 
 [cost.text.output]
-price = 0.25953
+price = 0.19201
