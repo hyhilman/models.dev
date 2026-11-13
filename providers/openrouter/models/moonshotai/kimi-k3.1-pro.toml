@@ -1,4 +1,4 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-11-12.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-11-13.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
 # Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation (Chat Completions, live 2026-10-27; Moonshot AI is the only provider serving this model):
@@ -28,8 +28,8 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai-co
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 0.250562
+price = 2.11
 cache = { read = 0.211 }
 
 [cost.text.output]
-price = 8.87403
+price = 10.55
