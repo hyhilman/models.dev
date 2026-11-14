@@ -1,4 +1,4 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-11-12.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-11-14.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
 # Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation: system_updates = true: OpenAI keeps mid-conversation system/developer messages in place (live 2026-10-23 on gpt-4.1-nano pinned to OpenAI: cache kept and followed on Chat Completions, Responses and Messages)
@@ -27,17 +27,17 @@ capabilities = { tools = { freeform = ["text", "lark", "regex"], updates = true 
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 4.642
-cache = { read = 0.4642, write = 5.8025 }
+price = 4.22
+cache = { read = 0.422, write = 5.275 }
 
 [[cost.text.input.overrides]]
 when = { context = { gt = 272_000 } }
-price = 9.284
-cache = { read = 0.9284, write = 11.605 }
+price = 8.44
+cache = { read = 0.844, write = 10.55 }
 
 [cost.text.output]
-price = 23.21
+price = 21.1
 
 [[cost.text.output.overrides]]
 when = { context = { gt = 272_000 } }
-price = 34.815
+price = 31.65
