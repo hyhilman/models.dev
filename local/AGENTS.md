@@ -228,10 +228,13 @@ upstream's `dev` plus our commits on top:
 After each run, the plugin (`tools/prices/run.ts`, `report`) sends one ntfy message (the `[ntfy]`
 settings) when something happened:
 
-- `💲 <provider>` and one line per model, `name: input 2→2.5, output 8→10` (or `new`, `removed`),
-  for every commit that changed a price, added or removed a model. A commit that changed no price
-  (a date, a rate comment) sends nothing. Off-peak switches show as price changes. `↩️` when a rebase
-  kept upstream's files. A normal upstream rebase sends nothing; a conflict or a failed check sends `❌`.
+- Price changes are not sent at once. They wait in `local/.feeds/digest.json` and go out as one
+  message 4 times a day (`DIGEST_HOURS_UTC` in `tools/prices/run.ts`: 06:00, 12:00, 18:00, 00:00 at
+  UTC+7). Per model, the first old price to the last new price is one line, and a price that came
+  back is dropped. The message is `💲 <provider>` and lines like `name: input 2→2.5, output 8→10`
+  (or `new`, `removed`). A commit that changed no price sends nothing. `↩️` (a rebase kept
+  upstream's files) is sent at once. A normal upstream rebase sends nothing; a conflict or a
+  failed check sends `❌`.
 - `❌` once for a new failure (a fetch, an apply, the rebase, the job, a model in our providers
   with no canonical id that `local/house-models.toml` does not list), and `✅ ... works again`
   once when it clears. Open failures live in `local/.feeds/alerts.json`, so a failure that lasts

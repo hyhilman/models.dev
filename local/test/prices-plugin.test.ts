@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { dockerArgs, eventLines, failTail, fetchMinutes, GH_IN_CONTAINER, keys, type PriceRun, report, SSH_IN_CONTAINER } from "../doppelganger/tools/prices/run.ts";
+import { addChanges, digestStep, dockerArgs, eventLines, failTail, fetchMinutes, GH_IN_CONTAINER, keys, lastSlot, type PriceRun, report, SSH_IN_CONTAINER } from "../doppelganger/tools/prices/run.ts";
 
 const base: PriceRun = {
   task: "static",
@@ -67,7 +67,12 @@ test("a report: changes every time, a failure once, and once more when it clears
   const change = 'event=static.change provider="kenari" model="a" kind="price" diff="input 2→2.5, output 8→10"';
   const gone = 'event=static.change provider="kenari" model="b" kind="removed"';
   const r1 = report("static", [change, gone, applied], null, {});
-  expect(r1.body).toBe("💲 kenari\na: input 2→2.5, output 8→10\nb: removed");
+  // A price change is not sent now; it waits for the digest.
+  expect(r1.body).toBeNull();
+  expect(r1.changes).toEqual([
+    { provider: "kenari", model: "a", what: "input 2→2.5, output 8→10" },
+    { provider: "kenari", model: "b", what: "removed" },
+  ]);
   // A write that changed no price says nothing.
   expect(report("static", [applied], null, {}).body).toBeNull();
   // A plain upstream merge says nothing; a conflict does.
@@ -108,4 +113,24 @@ test("failTail names the failure, not the last event", () => {
   expect(failTail(['event=site.build_failed reason="x"', last], "")).toBe('event=site.build_failed reason="x"');
   expect(failTail([last], "")).toBe(last);
   expect(failTail([], "a\nb\nc\nd\n")).toBe("b | c | d");
+});
+
+test("the digest: one line per model, first old price to last new, 4 times a day", () => {
+  const a = addChanges([], [{ provider: "o", model: "m", what: "input 1→2, output 4→5" }]);
+  const b = addChanges(a, [{ provider: "o", model: "m", what: "input 2→3" }]);
+  expect(b).toEqual([{ provider: "o", model: "m", what: "input 1→3, output 4→5" }]);
+  // A price that came back is no change.
+  expect(addChanges(b, [{ provider: "o", model: "m", what: "input 3→1, output 5→4" }])).toEqual([]);
+  expect(addChanges([{ provider: "o", model: "n", what: "new" }], [{ provider: "o", model: "n", what: "removed" }])).toEqual([]);
+  // 12:00 UTC+7 = 05:00 UTC
+  expect(lastSlot(new Date("2026-11-15T09:30:00Z")).toISOString()).toBe("2026-11-15T05:00:00.000Z");
+  expect(lastSlot(new Date("2026-11-15T01:00:00Z")).toISOString()).toBe("2026-11-14T23:00:00.000Z");
+  const c = [{ provider: "o", model: "m", what: "input 1→2" }];
+  // Before the next time: it waits. After it: one message, then the list is empty.
+  const wait = digestStep({ pending: [], last: "2026-11-15T05:00:10Z" }, c, new Date("2026-11-15T09:30:00Z"));
+  expect(wait.body).toBeNull();
+  expect(wait.digest.pending).toEqual(c);
+  const send = digestStep(wait.digest, [], new Date("2026-11-15T11:01:00Z"));
+  expect(send.body).toBe("💲 o\nm: input 1→2");
+  expect(send.digest.pending).toEqual([]);
 });

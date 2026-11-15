@@ -224,7 +224,7 @@ const short = (names: string, n = 8): string => {
  * removed model) is reported with its diff; a plain upstream merge is not reported, a failed one is; a failure only when it is new or its message
  * changed, and once more when it clears. A run with neither sends nothing.
  */
-export function report(task: Task, lines: readonly string[], failed: string | null, open: Alerts): { body: string | null; open: Alerts } {
+export function report(task: Task, lines: readonly string[], failed: string | null, open: Alerts): { body: string | null; open: Alerts; changes: Change[] } {
   const ev = lines.map(parseEvent);
   const next: Alerts = { ...open };
   const out: string[] = [];
@@ -238,11 +238,12 @@ export function report(task: Task, lines: readonly string[], failed: string | nu
     out.push(`✅ ${what} works again`);
   };
   // What changed per provider, one line per model: a price diff, a new model, a removed one.
-  const changes = new Map<string, string[]>();
+  // These do not go out now: they wait in the digest (see sendDigest).
+  const changes: Change[] = [];
   for (const e of ev) {
     if (e.name !== "static.change") continue;
-    const what = e.f.kind === "price" ? e.f.diff : e.f.kind === "new" ? "new" : "removed";
-    changes.set(e.f.provider!, [...(changes.get(e.f.provider!) ?? []), `${e.f.model}: ${what}`]);
+    const what = e.f.kind === "price" ? e.f.diff! : e.f.kind === "new" ? "new" : "removed";
+    changes.push({ provider: e.f.provider!, model: e.f.model!, what });
   }
   for (const e of ev) {
     const p = e.f.provider ?? "";
@@ -250,12 +251,8 @@ export function report(task: Task, lines: readonly string[], failed: string | nu
     else if (e.name === "fetch.done") clear(`fetch:${p}`, `${p} fetch`);
     else if (e.name === "static.error") fail(`static:${p}`, `${p} apply: ${(e.f.error ?? "").split("\n")[0]}`);
     else if (e.name === "static.unchanged") clear(`static:${p}`, `${p} apply`);
-    else if (e.name === "static.applied") {
-      clear(`static:${p}`, `${p} apply`);
-      // A write that changed no price (a date, a rate comment) says nothing.
-      const c = changes.get(p) ?? [];
-      if (c.length > 0) out.push(`💲 ${p}\n${c.slice(0, 10).join("\n")}${c.length > 10 ? `\n+${c.length - 10} more` : ""}`);
-    } else if (e.name === "sync.took_upstream") out.push(`↩️ upstream's files kept on a conflict: ${short(e.f.files ?? "")}`);
+    else if (e.name === "static.applied") clear(`static:${p}`, `${p} apply`);
+    else if (e.name === "sync.took_upstream") out.push(`↩️ upstream's files kept on a conflict: ${short(e.f.files ?? "")}`);
     else if (e.name === "sync.conflict" || e.name === "sync.check_failed") fail("sync", `upstream merge: ${e.name === "sync.conflict" ? `conflict in ${short(e.f.files ?? "")}` : `check failed at ${e.f.step}`}`);
     else if (e.name === "sync.unchanged") clear("sync", "upstream merge");
     else if (e.name === "site.canonical") {
@@ -269,7 +266,87 @@ export function report(task: Task, lines: readonly string[], failed: string | nu
   if (failed !== null && !named) fail(`job:${task}`, `price ${task} job failed: ${failed}`);
   else clear(`job:${task}`, `price ${task} job`);
   if (task === "sync" && failed === null && !ev.some((e) => e.name === "sync.conflict" || e.name === "sync.check_failed")) clear("sync", "upstream merge");
-  return { body: out.length > 0 ? out.join("\n") : null, open: next };
+  return { body: out.length > 0 ? out.join("\n") : null, open: next, changes };
+}
+
+/** One model's change, as a feed run reports it: "input 2→2.5, output 8→10", "new" or "removed". */
+export type Change = { provider: string; model: string; what: string };
+
+/** Price changes wait here and go out as one message at each digest time, so a price that moves
+ * every ten minutes (OpenRouter) is one line, first old price to last new price. */
+export type Digest = { pending: Change[]; last: string | null };
+
+/** Digest times, hours in UTC: 06:00, 12:00, 18:00 and 00:00 at UTC+7. */
+export const DIGEST_HOURS_UTC = [23, 5, 11, 17] as const;
+
+const parseWhat = (w: string): Map<string, [string, string]> | null => {
+  if (w === "new" || w === "removed") return null;
+  const m = new Map<string, [string, string]>();
+  for (const part of w.split(", ")) {
+    const x = part.match(/^(\S+) (.+)→(.+)$/);
+    if (x) m.set(x[1]!, [x[2]!, x[3]!]);
+  }
+  return m;
+};
+
+/** Two changes of one model as one: first old value to last new value; null when nothing is left. */
+export function mergeWhat(a: string, b: string): string | null {
+  const pa = parseWhat(a);
+  const pb = parseWhat(b);
+  if (pb === null) return b === "removed" && a === "new" ? null : b;
+  if (pa === null) return a === "new" ? "new" : b;
+  const f = new Map(pa);
+  for (const [k, [from, to]] of pb) f.set(k, [f.get(k)?.[0] ?? from, to]);
+  const parts = [...f].filter(([, [x, y]]) => x !== y).map(([k, [x, y]]) => `${k} ${x}→${y}`);
+  return parts.length > 0 ? parts.join(", ") : null;
+}
+
+export function addChanges(pending: readonly Change[], add: readonly Change[]): Change[] {
+  const map = new Map(pending.map((c) => [`${c.provider}/${c.model}`, c]));
+  for (const c of add) {
+    const key = `${c.provider}/${c.model}`;
+    const old = map.get(key);
+    const what = old === undefined ? c.what : mergeWhat(old.what, c.what);
+    if (what === null) map.delete(key);
+    else map.set(key, { ...c, what });
+  }
+  return [...map.values()];
+}
+
+/** The latest digest time at or before now. */
+export function lastSlot(now: Date): Date {
+  const t = now.getTime();
+  const day = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const slots = [-1, 0].flatMap((d) => DIGEST_HOURS_UTC.map((h) => day + d * 86_400_000 + h * 3_600_000));
+  return new Date(Math.max(...slots.filter((x) => x <= t)));
+}
+
+/** Add this run's changes; return the message when a digest time has passed since the last one. */
+export function digestStep(d: Digest, add: readonly Change[], now: Date): { digest: Digest; body: string | null } {
+  const pending = addChanges(d.pending, add);
+  if (d.last !== null && new Date(d.last) >= lastSlot(now)) return { digest: { pending, last: d.last }, body: null };
+  if (pending.length === 0) return { digest: { pending, last: now.toISOString() }, body: null };
+  const by = new Map<string, string[]>();
+  for (const c of pending) by.set(c.provider, [...(by.get(c.provider) ?? []), `${c.model}: ${c.what}`]);
+  const body = [...by].map(([p, c]) => `💲 ${p}\n${c.slice(0, 15).join("\n")}${c.length > 15 ? `\n+${c.length - 15} more` : ""}`).join("\n");
+  return { digest: { pending: [], last: now.toISOString() }, body };
+}
+
+const digestPath = (root: string) => path.join(root, "local/.feeds/digest.json");
+
+function readDigest(root: string): Digest {
+  try {
+    return existsSync(digestPath(root)) ? (JSON.parse(readFileSync(digestPath(root), "utf8")) as Digest) : { pending: [], last: null };
+  } catch {
+    return { pending: [], last: null };
+  }
+}
+
+function writeDigest(root: string, d: Digest): void {
+  const p = digestPath(root);
+  mkdirSync(path.dirname(p), { recursive: true });
+  writeFileSync(`${p}.new`, JSON.stringify(d, null, 1) + "\n");
+  renameSync(`${p}.new`, p);
 }
 
 const alertsPath = (root: string) => path.join(root, "local/.feeds/alerts.json");
@@ -308,12 +385,18 @@ export async function runPriceTask(ctx: JobContext, task: Task): Promise<void> {
   for (const line of events) ctx.log.raw(line);
   const tail = r.ok ? null : failTail(events, r.out);
   if (!run.dryRun) {
-    const { body, open } = report(task, events, tail, readAlerts(ctx.root));
+    const { body, open, changes } = report(task, events, tail, readAlerts(ctx.root));
     // Saved before the send: a failed send must not repeat the same report every minute.
     writeAlerts(ctx.root, open);
     if (body !== null) {
       const sent = await ctx.notify(`models.dev router\n${body}`);
       if (!sent.ok) ctx.log.warn("notify-failed", { task });
+    }
+    const step = digestStep(readDigest(ctx.root), changes, new Date());
+    writeDigest(ctx.root, step.digest);
+    if (step.body !== null) {
+      const sent = await ctx.notify(`models.dev router, price digest\n${step.body}`);
+      if (!sent.ok) ctx.log.warn("notify-failed", { task, what: "digest" });
     }
   }
   if (tail !== null) {
