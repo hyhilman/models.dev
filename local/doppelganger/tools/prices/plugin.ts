@@ -7,13 +7,13 @@ import { PRICES_ENV, runPriceTask } from "./run.ts";
 /** The repo's .doppelganger/logs, where the schedule writes each job's log. */
 const LOGS = join(import.meta.dirname, "..", "..", "..", "..", ".doppelganger", "logs");
 
-const NO_STATIC = killSwitch("prices", "static", "1 stops ops-price-static, so the feed changes nothing");
-const NO_SYNC = killSwitch("prices", "sync", "1 stops ops-price-sync, so router is not rebased on upstream");
+const NO_STATIC = killSwitch("pricefeed", "static", "1 stops ops-price-static, so the feed changes nothing");
+const NO_SYNC = killSwitch("pricefeed", "sync", "1 stops ops-price-sync, so router is not rebased on upstream");
 
 const opsPriceStatic = defineJob({
   name: "ops-price-static",
   description: "Apply the static price feed (one JSON per provider in local/static.toml) and commit the change",
-  plugin: "prices",
+  plugin: "pricefeed",
   permissionMode: "auto",
   // Every minute, so its run lease is keyed on the minute: an hourly key would refuse 59 runs.
   leaseWindow: "minute",
@@ -29,7 +29,7 @@ const opsPriceStatic = defineJob({
 const opsPriceSync = defineJob({
   name: "ops-price-sync",
   description: "Rebase the router branch on upstream models.dev and write the prices again; on a conflict or a failed check, move nothing",
-  plugin: "prices",
+  plugin: "pricefeed",
   permissionMode: "auto",
   // Every 15 minutes: the default hourly lease would allow one run an hour.
   leaseWindow: "minute",
@@ -43,7 +43,7 @@ const opsPriceSync = defineJob({
 });
 
 export default definePlugin({
-  name: "prices",
+  name: "pricefeed",
   kill: [NO_STATIC, NO_SYNC],
   sources: [],
   routes: [],

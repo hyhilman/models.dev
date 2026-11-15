@@ -51,7 +51,7 @@ version = "rc"
 
 # the plugins this checkout runs, built-in and attached, as comma-separated names; unset runs every plugin, the project's own included, except those that only fit the engine's own source when ROOT is another folder; an unknown name, or such a plugin named there, refuses at boot
 # The price jobs, and ops for the housekeeping the engine requires (lease reap and the like).
-plugins = ["ops", "prices"]
+plugins = ["ops", "pricefeed"]
 
 [engine]
 
@@ -211,7 +211,6 @@ prices_url = "http://192.168.2.4:7311/api.json"
 # model = "opencode-go/gpt-6-luna"
 # creds = "my-opencode-go"
 
-[runner.pi]
 
 # the pinned pi image one pass runs in, a tag and never `latest`; unset, an installed release uses the pi image published for its own version, and an engine checkout uses this default (build it with `bin/runner.sh build pi`)
 # image = "doppelganger-pi:1.0.2"
@@ -288,6 +287,8 @@ prices_url = "http://192.168.2.4:7311/api.json"
 # no_notify = 0
 
 [ntfy]
+# The hub page of this workspace: ntfy alerts carry Continue and Open buttons.
+hub = "https://doppelganger.hilman.dev/w/models-dev"
 
 # base URL of the ntfy server the watchdog POSTs a breach to and the log report POSTs its report to; unset in both the environment and the settings files means no send at all, because a default would be a guess about someone else's host
 url = "https://ntfy.hilman.dev/"
