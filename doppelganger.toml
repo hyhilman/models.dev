@@ -651,3 +651,9 @@ prices_url = "http://192.168.2.4:7311/api.json"
 
 # redirect one integration's database to a throwaway file for a safe run
 # [<name>] db
+
+[app]
+id = "5766789"
+installation_id = "182127428"
+key = ".doppelganger/creds/gh-app/doppelganger.pem"
+trust_also = "hyhilman"
