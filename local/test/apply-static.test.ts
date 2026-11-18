@@ -110,7 +110,14 @@ test("a dated snapshot or a dashed version finds its lab model", () => {
 test("a reasoning model gets a peer's reasoning_options", () => {
   const text = rendered().files.get("providers/sumopod/models/deepseek-v4.1-flash:netra.toml")!;
   expect(text).toContain("reasoning = { supported = true");
-  expect(text).toContain("# reasoning_options copied from providers/opencode-go/");
+  expect(text).toContain("# reasoning_options copied from providers/");
+});
+
+test("OpenCode Go is the first peer when it serves the base model", () => {
+  const row = { model_name: "deepseek-v4-pro", provider: "deepseek", input_cost_per_1m_tokens: 1, output_cost_per_1m_tokens: 2, cache_read_cost_per_1m_tokens: null, context_length: 0 };
+  const { files, skipped } = render("sumopod", feed(), PriceList.parse([row]), "2026-10-19");
+  expect(skipped).toEqual([]);
+  expect(files.get("providers/sumopod/models/deepseek-v4-pro.toml")).toContain("# reasoning_options copied from providers/opencode-go/");
 });
 
 test("a v2 lab model that reasons gets a peer's reasoning_options too", () => {
