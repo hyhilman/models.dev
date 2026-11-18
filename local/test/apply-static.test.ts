@@ -120,6 +120,17 @@ test("a v2 lab model that reasons gets a peer's reasoning_options too", () => {
   expect(files.get("providers/sumopod/models/claude-opus-4-8.toml")).toContain("reasoning = { supported = true");
 });
 
+test("a smaller context caps the lab's input limit too", () => {
+  // The lab file has context 1_050_000 and input 922_000.
+  const row = { model_name: "gpt-6.1-sol", provider: "openai", input_cost_per_1m_tokens: 1, output_cost_per_1m_tokens: 2, cache_read_cost_per_1m_tokens: null, context_length: 272000 };
+  const { files, skipped } = render("sumopod", feed(), PriceList.parse([row]), "2026-10-19");
+  expect(skipped).toEqual([]);
+  const text = files.get("providers/sumopod/models/gpt-6.1-sol.toml")!;
+  expect(text).toContain("context = 272_000");
+  expect(text).toContain("input = 272_000");
+  expect(text).not.toContain("output = 272_000");
+});
+
 test("a patch feed adds a whole file of ours for a priced model upstream has none for", () => {
   const row = { model_name: "deepseek-v4.1-flash-1017", provider: "deepseek", input_cost_per_1m_tokens: 1, output_cost_per_1m_tokens: 2, cache_read_cost_per_1m_tokens: null, context_length: 0 };
   const p = "providers/alibaba-token-plan/models/deepseek-v4.1-flash-1017.toml";

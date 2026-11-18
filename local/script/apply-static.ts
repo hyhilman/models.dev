@@ -519,11 +519,18 @@ function renderModel(
   notes.push(...priceNotes.map((n) => `# ${n}`));
 
   // Override the context only when the provider states one and it differs from the lab's.
-  const labLimit = (lab.limit ?? {}) as { context?: number; output?: number };
+  // A smaller context also caps the lab's input and output limits: `bun validate` rejects a
+  // limit larger than the context after the base_model merge.
+  const labLimit = (lab.limit ?? {}) as { context?: number; input?: number; output?: number };
   const ctxLen = row.context_length ?? 0;
+  const capped = (n: number | undefined) => n !== undefined && n > ctxLen;
   const limit =
     ctxLen > 0 && ctxLen !== labLimit.context
-      ? { context: ctxLen, ...(labLimit.output !== undefined && labLimit.output > ctxLen ? { output: ctxLen } : {}) }
+      ? {
+          context: ctxLen,
+          ...(capped(labLimit.input) ? { input: ctxLen } : {}),
+          ...(capped(labLimit.output) ? { output: ctxLen } : {}),
+        }
       : undefined;
 
   // Upstream takes only v2 model files (`schema = 2`), so the v1 fields go through its own converter.
