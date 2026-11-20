@@ -12,6 +12,7 @@ const NO_SYNC = killSwitch("pricefeed", "sync", "1 stops ops-price-sync, so rout
 
 const opsPriceStatic = defineJob({
   name: "ops-price-static",
+  stage: "ops",
   description: "Apply the static price feed (one JSON per provider in local/static.toml) and commit the change",
   plugin: "pricefeed",
   permissionMode: "auto",
@@ -28,6 +29,7 @@ const opsPriceStatic = defineJob({
 
 const opsPriceSync = defineJob({
   name: "ops-price-sync",
+  stage: "ops",
   description: "Rebase the router branch on upstream models.dev and write the prices again; on a conflict or a failed check, move nothing",
   plugin: "pricefeed",
   permissionMode: "auto",
@@ -55,6 +57,7 @@ export default definePlugin({
   schedule: [
     {
       name: "ops-price-static",
+      stage: "ops",
       job: "ops-price-static",
       cron: "* * * * *",
       log: join(LOGS, "ops-price-static.log"),
@@ -62,6 +65,7 @@ export default definePlugin({
     },
     {
       name: "ops-price-sync",
+      stage: "ops",
       job: "ops-price-sync",
       // Every 15 minutes, off the quarter hours. ops-price-static takes the gate every minute, so
       // this waits for it instead of losing its slot.
