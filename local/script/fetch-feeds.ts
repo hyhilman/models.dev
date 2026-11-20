@@ -429,6 +429,125 @@ export function opencodeDocRows(text: string): PriceRow[] {
   return PriceList.parse(rows);
 }
 
+const OcPrice = z.number().nonnegative();
+/** A cache write price: one number, or one per cache lifetime (`{"30m": 0.25, "12h": 0.5}`). */
+const OcWrite = z.union([OcPrice, z.record(z.string().regex(/^\d+[mh]$/), OcPrice)]);
+const OcCache = z.object({ read: OcPrice.optional(), write: OcWrite.optional() }).strict();
+const OcWhenContext = z.object({ context: z.object({ gt: z.number().int().positive() }).strict() }).strict();
+const OcCost = z
+  .object({
+    text: z
+      .object({
+        input: z
+          .object({
+            price: OcPrice,
+            cache: OcCache.optional(),
+            overrides: z.array(z.object({ when: OcWhenContext, price: OcPrice, cache: OcCache.optional() }).strict()).optional(),
+          })
+          .strict(),
+        output: z
+          .object({ price: OcPrice, overrides: z.array(z.object({ when: OcWhenContext, price: OcPrice }).strict()).optional() })
+          .strict(),
+      })
+      .strict(),
+    // Audio input has its own price; the catalog row prices text only.
+    audio: z.unknown().optional(),
+    multipliers: z.array(z.object({ when: z.record(z.string(), z.unknown()), factor: z.number().positive() }).strict()).optional(),
+  })
+  .strict();
+/** OpenCode's model list (`/zen/go/v1/models`): each model carries its own `cost`. */
+export const OpencodeList = z.object({ data: z.array(z.object({ id: z.string(), cost: OcCost })).min(1) });
+
+const OC_DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+const PeakWhen = z
+  .object({
+    utc_days: z.object({ in: z.array(z.enum(OC_DAYS as [string, ...string[]])).min(1) }).strict(),
+    any: z
+      .array(
+        z.object({
+          all: z.tuple([z.object({ utc_hours: z.object({ gte: z.string() }).strict() }).strict(), z.object({ utc_hours: z.object({ lt: z.string() }).strict() }).strict()]),
+        }).strict(),
+      )
+      .min(1),
+  })
+  .strict();
+const DateWhen = z.object({ date: z.object({ gte: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).strict() }).strict();
+
+/** The minutes of a cache lifetime: "30m" -> 30, "12h" -> 720. */
+const lifetime = (k: string) => Number(k.slice(0, -1)) * (k.endsWith("h") ? 60 : 1);
+/** One cache write price: the shortest lifetime's, the one a plain cache write gets. */
+const writePrice = (w: z.infer<typeof OcWrite> | undefined): number | undefined => {
+  if (w === undefined || typeof w === "number") return w;
+  const keys = Object.keys(w).sort((a, b) => lifetime(a) - lifetime(b));
+  if (keys.length === 0) throw new Error("a cache write price with no lifetime");
+  return w[keys[0]!];
+};
+const round = (x: number) => Math.round(x * 1e6) / 1e6;
+type OcC = { input: number; output: number; cache_read?: number; cache_write?: number };
+const times = (c: OcC, f: number): OcC => ({
+  input: round(c.input * f),
+  output: round(c.output * f),
+  ...(c.cache_read !== undefined ? { cache_read: round(c.cache_read * f) } : {}),
+  ...(c.cache_write !== undefined ? { cache_write: round(c.cache_write * f) } : {}),
+});
+
+/**
+ * OpenCode's model list as price rows, from each model's own `cost` (USD per 1M tokens). An input
+ * override `when context > N` is a [[cost.tiers]] tier from N. A multiplier on weekday UTC hours is
+ * the peak price: the row's price is the peak one and `offpeak` holds the listed price with those
+ * hours as `peak`, the way the docs table gave them. A multiplier from a date on is a sale that ends
+ * then: it applies once `now` is on or after that date. Anything else fails the whole list, so a
+ * changed list never half-applies.
+ */
+export function opencodeListRows(list: unknown, now: Date): PriceRow[] {
+  const today = now.toISOString().slice(0, 10);
+  const rows: PriceRow[] = [];
+  for (const m of OpencodeList.parse(list).data) {
+    const { input, output } = m.cost.text;
+    let factor = 1;
+    let peak: { factor: number; hours: Hours[] } | null = null;
+    for (const mu of m.cost.multipliers ?? []) {
+      const d = DateWhen.safeParse(mu.when);
+      if (d.success) {
+        if (today >= d.data.date.gte) factor *= mu.factor;
+        continue;
+      }
+      const p = PeakWhen.safeParse(mu.when);
+      if (!p.success) throw new Error(`${m.id}: a price multiplier it cannot read: ${JSON.stringify(mu.when)}`);
+      if (peak) throw new Error(`${m.id}: two peak multipliers`);
+      const days = p.data.utc_days.in.map((d) => OC_DAYS.indexOf(d)).sort();
+      peak = {
+        factor: mu.factor,
+        hours: p.data.any.map((s) => ({ from: s.all[0].utc_hours.gte, to: s.all[1].utc_hours.lt, utc_offset: 0, days })),
+      };
+    }
+    const cr = input.cache?.read, cw = writePrice(input.cache?.write);
+    const base = times({ input: input.price, output: output.price, ...(cr !== undefined ? { cache_read: cr } : {}), ...(cw !== undefined ? { cache_write: cw } : {}) }, factor);
+    const outs = new Map((output.overrides ?? []).map((o) => [o.when.context.gt, o.price]));
+    const tiers = (input.overrides ?? []).map((o) => {
+      const out = outs.get(o.when.context.gt);
+      if (out === undefined) throw new Error(`${m.id}: an input tier from ${o.when.context.gt} has no output tier`);
+      const tr = o.cache?.read, tw = writePrice(o.cache?.write);
+      return { ...times({ input: o.price, output: out, ...(tr !== undefined ? { cache_read: tr } : {}), ...(tw !== undefined ? { cache_write: tw } : {}) }, factor), size: o.when.context.gt };
+    });
+    if (tiers.length !== outs.size) throw new Error(`${m.id}: an output tier has no input tier`);
+    if (peak && tiers.length > 0) throw new Error(`${m.id}: a peak price and long-prompt tiers together`);
+    const row = peak ? times(base, peak.factor) : base;
+    rows.push({
+      model_name: m.id,
+      provider: "",
+      input_cost_per_1m_tokens: row.input,
+      output_cost_per_1m_tokens: row.output,
+      cache_read_cost_per_1m_tokens: row.cache_read ?? null,
+      cache_write_cost_per_1m_tokens: row.cache_write ?? null,
+      ...(tiers.length > 0 ? { tiers } : {}),
+      ...(peak ? { offpeak: { ...base, peak: peak.hours } } : {}),
+      context_length: 0,
+    });
+  }
+  return PriceList.parse(rows);
+}
+
 /** `cur` per USD on `date`. The note in the last snapshot carries the rate, so a month asks once. */
 async function perUsd(cur: string, date: string, last: Snapshot | null): Promise<number> {
   const m = last?.note.match(new RegExp(`at ([\\d.]+) ${cur} per USD \\(ECB rate of (\\d{4}-\\d{2}-\\d{2})`));
@@ -494,7 +613,8 @@ export const ModelList = z.object({
 
 async function models(feed: Feed, key: string | undefined): Promise<Got> {
   const f = feed.fetch!;
-  const got = ModelList.parse(await getJson(f.url, key));
+  const raw = await getJson(f.url, key);
+  const got = ModelList.parse(raw);
   // A short list would delete the models it left out.
   if (got.hasMore || got.has_more) throw new Error("the list has more pages; read them before trusting it");
   const kept = f.only ? got.data.filter((m) => new RegExp(f.only!).test(m.id)) : got.data;
@@ -503,6 +623,11 @@ async function models(feed: Feed, key: string | undefined): Promise<Got> {
     // An empty list would delete every file of the provider.
     if (kept.length === 0) throw new Error(`no listed model matches ${f.only}`);
     return { note: "a plan paid up front, so every listed model costs 0.", rows: freeRows(kept), listed };
+  }
+  if (f.price_list) {
+    const keep = new Set(listed);
+    const rows = PriceList.parse(opencodeListRows(raw, new Date()).filter((r) => keep.has(r.model_name)));
+    return { note: `prices from each model's own cost in the list, ${f.url}.`, rows, listed };
   }
   if (f.price_doc) {
     const rows = opencodeDocRows(await (await get(f.price_doc)).text());

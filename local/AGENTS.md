@@ -155,17 +155,22 @@ Each of upstream's Alibaba folders has its own feed in `local/feeds/`, all in `p
 
 ## OpenCode (Zen and Go)
 
-`opencode` and `opencode-go` are `patch` feeds of format `models` with a `price_doc`:
+`opencode` and `opencode-go` are `patch` feeds of format `models`:
 
 - The model list (`opencode.ai/zen/v1/models`, `opencode.ai/zen/go/v1/models`, public, no key; a
   key shows only what one account has turned on) decides which of upstream's files stay.
-- Prices come from OpenCode's own docs source on GitHub (`services/site/src/docs/content/console/models.mdx`,
-  `go.mdx`): the Markdown price table, matched to ids by the docs' "Model | Model ID" table.
-  `(≤ 256K tokens)` / `(> 256K tokens)` rows become `[[cost.tiers]]`; `(Peak)` / `(Off-Peak)` rows
-  become the off-peak switch with the hours the page states (Go: peak 01:00-04:00 and 06:00-10:00
-  UTC, Monday to Friday; off-peak the rest of the time, weekends included); `Free` is 0, and a sale
-  (`~~$1.36~~ $0.68`) is its current price. A row or sentence it cannot read fails the whole fetch,
-  so the last prices stay.
+- `opencode-go` (`price_list`) takes its prices from the same list: each model carries its own
+  `cost` in USD per 1M tokens. An input override `when context > N` becomes a `[[cost.tiers]]` tier
+  from N. A multiplier on weekday UTC hours is the peak price: the row is the peak price and the
+  listed price is off-peak, with those hours as the peak windows. A multiplier from a date on is a
+  sale that ends then, applied from that date. A cache write priced per lifetime takes the shortest
+  one. The docs page (`console/go.mdx`) dropped its price table on 2026-11-17.
+- `opencode` (`price_doc`) still reads OpenCode's docs source on GitHub
+  (`services/site/src/docs/content/console/models.mdx`): the Markdown price table, matched to ids by
+  the docs' "Model | Model ID" table. `(≤ 256K tokens)` / `(> 256K tokens)` rows become
+  `[[cost.tiers]]`; `(Peak)` / `(Off-Peak)` rows become the off-peak switch with the hours the page
+  states; `Free` is 0, and a sale (`~~$1.36~~ $0.68`) is its current price.
+- A row or field either reader cannot read fails the whole fetch, so the last prices stay.
 
 ## Engy
 

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { borrowRows, DASHSCOPE_OFFPEAK, dashscopeRows, freeRows, kenariIds, ModelList, money, opencodeDocRows, openrouterRows, kenariRows, rateDate, scaleRows, tierStart } from "../script/fetch-feeds.ts";
+import { borrowRows, DASHSCOPE_OFFPEAK, dashscopeRows, freeRows, kenariIds, ModelList, money, opencodeDocRows, opencodeListRows, openrouterRows, kenariRows, rateDate, scaleRows, tierStart } from "../script/fetch-feeds.ts";
 import { costDiff, Feed, flatCost, inHours, patchCost, PATCH_MARK, retired, rowCost, Snapshot } from "../script/apply-static.ts";
 import { CostV2 } from "../../packages/core/src/schema-v2.ts";
 import { KEY_ENVS } from "../doppelganger/tools/prices/run.ts";
@@ -369,4 +369,45 @@ test("free and only belong to a plain models list", () => {
   expect(ok({ format: "models", free: true, only: "^speedrun/" })).toBe(true);
   expect(ok({ format: "models", free: true, static_prices: true })).toBe(false);
   expect(ok({ format: "openrouter", only: "^a/" })).toBe(false);
+});
+
+// A copy of OpenCode Go's real model list (2026-11-20): each model carries its own cost.
+test("opencode list: peak hours, long-prompt tiers, cache lifetimes and a sale that ends", () => {
+  const list = JSON.parse(example("opencode-go-models.json"));
+  const before = new Date("2026-11-20T12:00:00Z");
+  const rows = new Map(opencodeListRows(list, before).map((r) => [r.model_name, r]));
+  expect(rows.size).toBe(list.data.length);
+  // The weekday hours multiplier is the peak price; the listed price is off-peak.
+  const ds = rows.get("deepseek-v4.1-flash")!;
+  expect(ds).toMatchObject({ input_cost_per_1m_tokens: 0.3, output_cost_per_1m_tokens: 1.2, cache_read_cost_per_1m_tokens: 0.006, cache_write_cost_per_1m_tokens: null });
+  expect(ds.offpeak).toMatchObject({ input: 0.15, output: 0.6, cache_read: 0.003 });
+  expect(rowCost(ds, new Date("2026-11-16T02:00:00Z")).cost.input).toBe(0.3); // Monday 02:00
+  expect(rowCost(ds, new Date("2026-11-16T05:00:00Z")).cost.input).toBe(0.15); // Monday 05:00
+  expect(rowCost(ds, new Date("2026-11-15T02:00:00Z")).cost.input).toBe(0.15); // Sunday 02:00
+  // A context override is a tier from that size.
+  expect(rows.get("qwen3.7-plus")).toMatchObject({
+    input_cost_per_1m_tokens: 0.4, cache_write_cost_per_1m_tokens: 0.5,
+    tiers: [{ size: 256_000, input: 1.2, output: 4.8, cache_read: 0.12, cache_write: 1.5 }],
+  });
+  // A cache write priced per lifetime takes the shortest one.
+  expect(rows.get("gpt-5.6-luna")).toMatchObject({ cache_write_cost_per_1m_tokens: 0.25 });
+  // A multiplier from a date on is a sale that ends then.
+  expect(rows.get("gemini-4-argon")).toMatchObject({ input_cost_per_1m_tokens: 2, output_cost_per_1m_tokens: 10 });
+  const after = new Map(opencodeListRows(list, new Date("2026-12-01T00:00:00Z")).map((r) => [r.model_name, r]));
+  expect(after.get("gemini-4-argon")).toMatchObject({ input_cost_per_1m_tokens: 4, output_cost_per_1m_tokens: 20 });
+});
+
+test("opencode list: a cost it cannot read fails the whole list", () => {
+  const list = JSON.parse(example("opencode-go-models.json"));
+  const now = new Date("2026-11-20T12:00:00Z");
+  const odd = structuredClone(list);
+  odd.data[0].cost.multipliers = [{ when: { region: { in: ["eu"] } }, factor: 2 }];
+  expect(() => opencodeListRows(odd, now)).toThrow(/multiplier it cannot read/);
+  const noPrice = structuredClone(list);
+  delete noPrice.data[0].cost.text.input.price;
+  expect(() => opencodeListRows(noPrice, now)).toThrow();
+  const halfTier = structuredClone(list);
+  const q = halfTier.data.find((m: { id: string }) => m.id === "qwen3.7-plus");
+  delete q.cost.text.output.overrides;
+  expect(() => opencodeListRows(halfTier, now)).toThrow(/no output tier/);
 });

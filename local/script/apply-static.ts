@@ -127,6 +127,9 @@ export const Feed = z
         // "models": price the listed models from OpenCode's docs source, a Markdown price table
         // (fetch-feeds.ts opencodeDocRows).
         price_doc: z.string().url().optional(),
+        // "models": price the listed models from the list's own `cost` field (OpenCode's model
+        // list, fetch-feeds.ts opencodeListRows).
+        price_list: z.boolean().default(false),
         // Every price times this: with price_from, the plan's rate against the borrowed prices;
         // on a priced list, a fee the host charges on top of the list price.
         price_factor: z.number().positive().default(1),
@@ -141,6 +144,7 @@ export const Feed = z
       .strict()
       .refine((f) => (f.price_from ?? f.price_doc) === undefined || f.format === "models", "price_from and price_doc are for a models list")
       .refine((f) => f.price_from === undefined || f.price_doc === undefined, "price_from or price_doc, not both")
+      .refine((f) => !f.price_list || (f.format === "models" && !f.price_from && !f.price_doc && !f.static_prices && !f.free), "price_list is for a models list, alone")
       .refine((f) => !f.static_prices || (f.format === "models" && !f.price_from && !f.price_doc), "static_prices is for a plain models list")
       .refine((f) => !f.free || (f.format === "models" && !f.price_from && !f.price_doc && !f.static_prices), "free is for a plain models list")
       .refine((f) => f.only === undefined || f.format === "models", "only is for a models list")

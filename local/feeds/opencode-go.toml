@@ -17,4 +17,6 @@ add = false
 [fetch]
 url = "https://opencode.ai/zen/go/v1/models"
 format = "models"
-price_doc = "https://raw.githubusercontent.com/anomalyco/opencode/dev/services/site/src/docs/content/console/go.mdx"
+# Each listed model carries its own `cost`. The docs page (console/go.mdx) dropped its price table
+# on 2026-11-17 and links to the Console instead.
+price_list = true
