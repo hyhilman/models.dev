@@ -1,0 +1,14 @@
+# Docs: https://9inference.cloud/id/dashboard/docs (login page, needs an account); pages: https://9inference.cloud/id/models,
+#   https://9inference.cloud/id/pricing. Accessed 2026-11-20. Owner confirmed (screenshot of the docs) the package endpoint.
+# This file lists the token package (Paket) endpoint: base https://9inference.cloud/v1/package, key from the Paket menu,
+#   chat at /v1/package/chat/completions, models at /v1/package/models. It draws down a fixed token quota, not the balance.
+# The PAYG endpoint (https://9inference.cloud/v1, key from API Keys, per-token IDR) is a different key and URL: a package key
+#   on PAYG gets 403 package_endpoint_required, and a PAYG key on the package URL gets 403 package_key_required.
+# Package prices are per package (e.g. Rp35.000 for 300M tokens over 7 days), not per token, so models carry no cost.
+# APIs: only OpenAI-compatible Chat Completions is documented.
+name = "9inference"
+npm = "@ai-sdk/openai-compatible"
+opencodeai = "@opencode/ai/providers/openai-compatible"
+env = ["NINEINFERENCE_API_KEY"]
+api = "https://9inference.cloud/v1/package"
+doc = "https://9inference.cloud/id/dashboard/docs"

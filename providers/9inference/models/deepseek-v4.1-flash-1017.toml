@@ -1,0 +1,18 @@
+# Cost 0: package quota is sold per package, not per token (see provider.toml).
+# Package model list: https://9inference.cloud/id/pricing (accessed 2026-11-20); some packages show "Stok habis" (out of stock).
+# Effort and tools copy the lab's own API entry (providers/deepseek); not verified on 9inference.
+schema = 2
+base_model = "deepseek/deepseek-v4.1-flash-1017"
+
+[capabilities]
+tools = { supported = true, choice = ["auto", "none", "required", "tool"] }
+reasoning = { supported = true, effort = ["low", "high", "max"] }
+
+[api.chat-completions]
+compatibility = { reasoning_field = "reasoning_content" }
+
+[cost.text.input]
+price = 0
+
+[cost.text.output]
+price = 0
