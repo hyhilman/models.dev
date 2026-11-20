@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation, tool and cache flags backfilled 2026-11-18 from hy4-preview.toml on this host (same API layout; the sync doesn't carry them).
 schema = 2
 base_model = "tencent/hy4"
@@ -18,8 +21,8 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai-co
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 0.417
-cache = { read = 0.021 }
+price = 0.439935
+cache = { read = 0.022155 }
 
 [cost.text.output]
-price = 1.2505
+price = 1.31928

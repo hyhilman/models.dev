@@ -1,3 +1,6 @@
+# Price feed: OpenCode Go model list (https://opencode.ai/zen/go/v1/models), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from each model's own cost in the list, https://opencode.ai/zen/go/v1/models.
 # Pricing and endpoint (Responses): https://opencode.ai/v2/docs/console/go/ (accessed 2026-10-21).
 # Effort: reasoning.effort = none|low|medium|high|xhigh|max (not verified on Go: no Go subscription key was available)
 # Mid-conversation flags (system_updates, effort_updates, tools.updates) follow providers/openai/models/gpt-5.6-luna.toml (Go is a passthrough: opencode.ai/inference/go/... proxies the same upstreams, https://opencode.ai/v2/docs/console/go/).
@@ -21,12 +24,12 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai/re
 
 [cost.text.input]
 price = 0.2
-cache = { read = 0.02, write = { "30m" = 0.25, "12h" = 0.5 } }
+cache = { read = 0.02, write = 0.25 }
 
 [[cost.text.input.overrides]]
 when = { context = { gt = 272_000 } }
 price = 0.4
-cache = { read = 0.04, write = { "30m" = 0.5, "12h" = 1 } }
+cache = { read = 0.04, write = 0.5 }
 
 [cost.text.output]
 price = 1.2

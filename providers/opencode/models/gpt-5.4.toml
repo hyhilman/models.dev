@@ -1,3 +1,6 @@
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/services/site/src/docs/content/console/models.mdx.
 # Pricing and endpoint (Responses): https://opencode.ai/v2/docs/console/models/ (accessed 2026-10-21).
 # Effort: reasoning.effort = none|low|medium|high|xhigh (not re-verified on Zen: model access is disabled for the probe key)
 # Mid-conversation flags (system_updates, effort_updates, tools.updates) follow providers/openai/models/gpt-5.4.toml (Zen passes requests through).
@@ -35,11 +38,3 @@ price = 15
 [[cost.text.output.overrides]]
 when = { context = { gt = 272_000 } }
 price = 22.5
-
-[[cost.multipliers]]
-when = { service_tier = { equals = "priority" } }
-factor = { text = 2 }
-
-[[cost.multipliers]]
-when = { service_tier = { equals = "flex" } }
-factor = { text = 0.5 }

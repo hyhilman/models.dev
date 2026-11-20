@@ -1,3 +1,6 @@
+# Price feed: OpenCode Go model list (https://opencode.ai/zen/go/v1/models), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from each model's own cost in the list, https://opencode.ai/zen/go/v1/models.
 # Pricing and endpoint (Chat Completions): https://opencode.ai/v2/docs/console/go/.
 # Effort: reasoning_effort = none|high, as on Tencent TokenHub (https://cloud.tencent.com/document/product/1823/131208), which this host proxies.
 # Mid-conversation flags left out: tencent has no provider file for tencent/hy4-flash to follow.

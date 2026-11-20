@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 schema = 2
 base_model = "google/gemini-4-hydrogen"
 description = "Gemini multimodal model for text, image, audio, video, and document tasks"
@@ -20,19 +23,9 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai-co
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 1.5
-cache = { read = 0.075, write = 0.083333 }
+price = 1.5825
+cache = { read = 0.079125, write = 0.0879163 }
 
 [cost.text.output]
-price = 7.5
-reasoning = 7.5
-
-[cost.audio.input]
-price = 1.5
-cache = { read = 0.075 }
-
-[cost.image.input]
-price = 1.5
-
-[cost.web_search]
-price = 14
+price = 7.9125
+reasoning = 7.9125

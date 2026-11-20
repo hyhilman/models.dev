@@ -1,3 +1,6 @@
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/services/site/src/docs/content/console/models.mdx.
 # Pricing and endpoint (Responses): https://opencode.ai/v2/docs/console/models/.
 # Over 200K-token prompts: $0.30 input, $0.012 cached input, $1.50 output (https://research.meta.ai/blog/muse-ember).
 # Modalities, capabilities, limits and effort levels supplied by the operator on 2026-11-09.
@@ -25,17 +28,17 @@ base_url = "https://opencode.ai/inference/openai/v1"
 sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai/responses" }
 
 [cost.text.input]
-price = 0.10
-cache = { read = 0.004, write = 0 }
+price = 0.1
+cache = { read = 0.004 }
 
 [[cost.text.input.overrides]]
 when = { context = { gt = 200_000 } }
-price = 0.30
-cache = { read = 0.012, write = 0 }
+price = 0.3
+cache = { read = 0.012 }
 
 [cost.text.output]
-price = 0.50
+price = 0.5
 
 [[cost.text.output.overrides]]
 when = { context = { gt = 200_000 } }
-price = 1.50
+price = 1.5

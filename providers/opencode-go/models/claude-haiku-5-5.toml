@@ -1,3 +1,6 @@
+# Price feed: OpenCode Go model list (https://opencode.ai/zen/go/v1/models), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from each model's own cost in the list, https://opencode.ai/zen/go/v1/models.
 # Sources: https://opencode.ai/docs/go/#endpoints and https://opencode.ai/docs/go/#usage-limits
 # Toggle: thinking.type = adaptive|disabled (disabled only at low, medium, or high effort)
 # Effort: output_config.effort = low|medium|high|xhigh|max

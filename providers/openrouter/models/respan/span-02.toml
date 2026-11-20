@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # https://openrouter.ai/api/v1/models?output_modalities=text,decisions
 # OpenRouter is a relay: supported_parameters = [] advertises no reasoning controls.
 # Host image formats: https://openrouter.ai/docs/guides/overview/multimodal/image-understanding
@@ -22,7 +25,7 @@ sdk = { aisdk = "@ai-sdk/typesafe-ai", opencodeai = "@opencode/ai/providers/open
 compatibility = { media_input = "state" }
 
 [cost.text.input]
-price = 0.01
+price = 0.01055
 
 [cost.text.output]
 price = 0

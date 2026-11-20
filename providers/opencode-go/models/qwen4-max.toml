@@ -1,3 +1,6 @@
+# Price feed: OpenCode Go model list (https://opencode.ai/zen/go/v1/models), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from each model's own cost in the list, https://opencode.ai/zen/go/v1/models.
 # https://opencode.ai/docs/go/#endpoints
 # https://help.aliyun.com/en/model-studio/anthropic-api-messages
 # Toggle (Messages): thinking.type = enabled|disabled
@@ -28,7 +31,7 @@ sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthro
 
 [cost.text.input]
 price = 1.5
-cache = { read = 0.075, write = { "5m" = 1.875, "1h" = 3 } }
+cache = { read = 0.075, write = 1.875 }
 
 [cost.text.output]
 price = 4.5

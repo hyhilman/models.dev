@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # https://openrouter.ai/api/v1/models?output_modalities=text,decisions
 schema = 2
 base_model = "respan/span-01"
@@ -9,7 +12,7 @@ structured_output = false
 sdk = { aisdk = "@ai-sdk/typesafe-ai", opencodeai = "@opencode/ai/providers/openrouter/decisions" }
 
 [cost.text.input]
-price = 0.02
+price = 0.0211
 
 [cost.text.output]
 price = 0

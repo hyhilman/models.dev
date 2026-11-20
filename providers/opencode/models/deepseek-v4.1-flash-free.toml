@@ -1,3 +1,6 @@
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/services/site/src/docs/content/console/models.mdx.
 # Serves DeepSeek-V4.1-Flash-1017 (Go and Free were updated to the October 17 build on 2026-10-20).
 # Pricing and endpoint (Chat Completions): https://opencode.ai/v2/docs/console/models/ (accessed 2026-10-21).
 # Toggle as on the paid deepseek-v4.1-flash route (live: thinking.type = disabled -> 0 reasoning tokens) and DeepSeek's own API; the free tier itself only serves OpenCode clients, so it wasn't probed.

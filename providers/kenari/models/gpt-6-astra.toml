@@ -1,3 +1,6 @@
+# Price feed: Kenari GET /v1/models (public price list), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: Converted from IDR at 18148 IDR per USD (ECB rate of 2026-11-01, via frankfurter.dev).
 # Synced from kenari's public API by the kenari sync module.
 # Catalog: GET https://kenari.id/docs/models
 # Pricing: GET https://kenari.id/api/public/pricing (usd_idr_rate = 17500, re-read on every sync)
@@ -11,8 +14,8 @@ base_model = "openai/gpt-6-astra"
 reasoning = { supported = true, effort = ["low", "medium", "high", "xhigh", "max"] }
 
 [cost.text.input]
-price = 11.43
-cache = { read = 1.14, write = 11.43 }
+price = 11.0205
+cache = { read = 1.10205, write = 11.0205 }
 
 [cost.text.output]
-price = 57.14
+price = 55.1025

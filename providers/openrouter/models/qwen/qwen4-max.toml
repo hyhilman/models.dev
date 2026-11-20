@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 schema = 2
 base_model = "alibaba/qwen4-max"
 description = "Qwen vision-language model for visual reasoning, documents, and agent tasks"
@@ -23,8 +26,8 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai-co
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 1.425
-cache = { read = 0.07125, write = 1.78125 }
+price = 1.50337
+cache = { read = 0.0751687, write = 1.87922 }
 
 [cost.text.output]
-price = 4.275
+price = 4.51013

@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 schema = 2
 name = "ERNIE-Light-DT-1.0"
 description = "Reasoning model for deliberate analysis, multi-step problem solving, and tool use"
@@ -28,8 +31,8 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai-co
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 1.13
-cache = { read = 0.113 }
+price = 1.19215
+cache = { read = 0.119215 }
 
 [cost.text.output]
-price = 3.94
+price = 4.1567

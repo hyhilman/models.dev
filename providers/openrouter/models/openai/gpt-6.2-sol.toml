@@ -1,3 +1,6 @@
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices. Times 1.055 for the host's fee.
 # Mid-conversation, tool and cache flags backfilled 2026-11-18 from gpt-6.2-astra.toml on this host (same API layout; the sync doesn't carry them).
 schema = 2
 base_model = "openai/gpt-6.2-sol"
@@ -21,20 +24,17 @@ capabilities = { tools = { freeform = ["text", "lark", "regex"], updates = ["add
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 2
-cache = { read = 0.1, write = 2.5 }
+price = 2.11
+cache = { read = 0.1055, write = 2.6375 }
 
 [[cost.text.input.overrides]]
 when = { context = { gt = 272_000 } }
-price = 4
-cache = { read = 0.2, write = 5 }
+price = 4.22
+cache = { read = 0.211, write = 5.275 }
 
 [cost.text.output]
-price = 10
+price = 10.55
 
 [[cost.text.output.overrides]]
 when = { context = { gt = 272_000 } }
-price = 15
-
-[cost.web_search]
-price = 10
+price = 15.825

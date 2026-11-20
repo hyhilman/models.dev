@@ -1,8 +1,7 @@
-# Logo mark: https://mintcdn.com/refuseless/ahpMJS5k1cjHp0Zo/logo-light.svg
-# API and authentication: https://docs.refuseless.com/quickstart
+# Static price feed: Refuseless console model list, read by the owner, checked 2026-11-07.
+# Written by local/script/apply-static.ts from refuseless.json. Edit the feed, not this file.
 name = "Refuseless"
-npm = "@ai-sdk/openai-compatible"
-opencodeai = "@opencode/ai/providers/openai-compatible"
 env = ["REFUSELESS_API_KEY"]
+npm = "@ai-sdk/openai-compatible"
 api = "https://api.refuseless.com/v1"
-doc = "https://docs.refuseless.com/models"
+doc = "https://docs.refuseless.com"

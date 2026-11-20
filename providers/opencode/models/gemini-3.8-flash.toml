@@ -1,3 +1,6 @@
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/services/site/src/docs/content/console/models.mdx.
 # Pricing and endpoint (Gemini generateContent): https://opencode.ai/v2/docs/console/models/ (accessed 2026-10-21).
 # Intro pricing matches Google's list price ($0.75/$3.75/$0.075) through December 31, 2026; the multiplier applies the $1.50/$7.50/$0.15 list price from 2027-01-01 (https://ai.google.dev/gemini-api/docs/pricing).
 # Effort: generationConfig.thinkingConfig.thinkingLevel = low|medium|high
@@ -30,10 +33,3 @@ cache = { read = 0.075 }
 
 [cost.text.output]
 price = 3.75
-
-[cost.audio.input]
-price = 0.75
-
-[[cost.multipliers]]
-when = { date = { gte = "2027-01-01" } }
-factor = 2

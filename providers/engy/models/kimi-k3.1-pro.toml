@@ -1,3 +1,6 @@
+# Price feed: Engy GET /v1/models (public price list), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: USD list prices.
 # Toggle: chat_template_kwargs.thinking = true|false
 # Prices and context: https://api.engy.ai/v1/models and https://engy.ai/pricing?model=kimi-k3.1-pro (2026-11-07; launch
 # price, shown as "30% off" on the pricing page). Context 1,113,088 is max_input + max_output, the same window as

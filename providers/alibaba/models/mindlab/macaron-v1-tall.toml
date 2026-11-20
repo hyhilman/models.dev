@@ -1,0 +1,16 @@
+# Added by the price feed: Alibaba Model Studio GET /api/v1/models (international), checked 2026-11-20.
+# Added by the price feed: upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.
+# Added by the price feed: USD list prices of the international (Singapore) region.
+# reasoning_options copied from providers/novita-ai/models/mindai/macaron-v1-tall.toml
+schema = 2
+base_model = "mindlab/macaron-v1-tall"
+
+[capabilities]
+reasoning = { supported = true, effort = ["none", "high"] }
+
+[cost.text.input]
+price = 0.45
+cache = { read = 0.08, write = 0.08 }
+
+[cost.text.output]
+price = 2.6

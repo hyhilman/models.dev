@@ -1,3 +1,6 @@
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/services/site/src/docs/content/console/models.mdx.
 # Pricing: https://ai.google.dev/gemini-api/docs/pricing#gemini-decision ($0.10 per 1M input tokens for text, image, video,
 #   audio and PDF; output is 0 tokens; no context caching).
 # Endpoint (System One, POST /systemone): https://opencode.ai/v2/docs/console/models/ (accessed 2026-11-12).

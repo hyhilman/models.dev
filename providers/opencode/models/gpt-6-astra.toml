@@ -1,3 +1,6 @@
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-11-20.
+# Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
+# Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/services/site/src/docs/content/console/models.mdx.
 # Pricing and endpoint (Responses): https://opencode.ai/v2/docs/console/models/ (accessed 2026-10-21).
 # Effort: reasoning.effort = low|medium|high|xhigh|max
 # Cache (live): implicit (cached tokens reported without cache markers).
@@ -26,12 +29,12 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai/re
 
 [cost.text.input]
 price = 10
-cache = { read = 1, write = { "30m" = 12.5, "12h" = 25 } }
+cache = { read = 1, write = 12.5 }
 
 [[cost.text.input.overrides]]
 when = { context = { gt = 272_000 } }
 price = 20
-cache = { read = 2, write = { "30m" = 25, "12h" = 50 } }
+cache = { read = 2, write = 25 }
 
 [cost.text.output]
 price = 50
@@ -39,15 +42,3 @@ price = 50
 [[cost.text.output.overrides]]
 when = { context = { gt = 272_000 } }
 price = 75
-
-[[cost.multipliers]]
-when = { service_tier = { equals = "priority" } }
-factor = { text = 2 }
-
-[[cost.multipliers]]
-when = { service_tier = { equals = "ultrafast" } }
-factor = { text = 6 }
-
-[[cost.multipliers]]
-when = { service_tier = { equals = "flex" } }
-factor = { text = 0.5 }

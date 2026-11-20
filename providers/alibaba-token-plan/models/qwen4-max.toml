@@ -1,0 +1,16 @@
+# Added by the price feed: Alibaba Token Plan model list (https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/models), checked 2026-11-20.
+# Added by the price feed: upstream has no file for this model, so the whole file is ours, written by local/script/apply-static.ts.
+# Added by the price feed: price of alibaba (its own list) x 1: the plan bills in Credits, and Alibaba publishes no Credit rate per model.
+# reasoning_options copied from providers/opencode-go/models/qwen4-max.toml
+schema = 2
+base_model = "alibaba/qwen4-max"
+
+[capabilities]
+reasoning = { supported = true, toggle = true, effort = ["low", "high", "xhigh"], budget = { max = 262_144 } }
+
+[cost.text.input]
+price = 1.5
+cache = { read = 0.075, write = 1.875 }
+
+[cost.text.output]
+price = 4.5
