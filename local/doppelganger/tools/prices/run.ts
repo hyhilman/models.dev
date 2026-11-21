@@ -101,6 +101,13 @@ export const PRICES_SEKAI_API_KEY_ENV: EnvSpec = {
   why: "SEKAI Gateway API key for its model lists (GET /v1/models, /v2/models), shared by the sekai, sekai-coding-plan and sekai-speedrun feeds. Empty skips those feeds",
 };
 
+export const PRICES_NINEINFERENCE_API_KEY_ENV: EnvSpec = {
+  key: "PRICES_NINEINFERENCE_API_KEY",
+  default: "",
+  secret: true,
+  why: "9inference token package API key; no feed reads its model list yet, so it is unused for now",
+};
+
 /** Each feed's key: the env var the feed's key_env names, and the setting that holds it. */
 export const KEY_ENVS: Readonly<Record<string, EnvSpec>> = {
   DASHSCOPE_API_KEY: PRICES_DASHSCOPE_API_KEY_ENV,
@@ -110,6 +117,7 @@ export const KEY_ENVS: Readonly<Record<string, EnvSpec>> = {
   OPENCODE_API_KEY: PRICES_OPENCODE_API_KEY_ENV,
   SUMOPOD_API_KEY: PRICES_SUMOPOD_API_KEY_ENV,
   SEKAI_API_KEY: PRICES_SEKAI_API_KEY_ENV,
+  NINEINFERENCE_API_KEY: PRICES_NINEINFERENCE_API_KEY_ENV,
 };
 
 export const PRICES_ENV: readonly EnvSpec[] = [
