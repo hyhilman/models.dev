@@ -1,4 +1,4 @@
-# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-11-20.
+# Price feed: OpenCode Zen model list (https://opencode.ai/zen/v1/models), checked 2026-11-21.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
 # Price feed: prices from OpenCode's docs source, https://raw.githubusercontent.com/anomalyco/opencode/dev/services/site/src/docs/content/console/models.mdx.
 # Serves DeepSeek-V4.1-Flash-1017, the October 17 build.
@@ -24,8 +24,8 @@ base_url = "https://opencode.ai/inference/openai/v1"
 compatibility = { reasoning_field = "reasoning_content" }
 
 [cost.text.input]
-price = 0.3
-cache = { read = 0.006 }
+price = 0.12
+cache = { read = 0.0024 }
 
 [cost.text.output]
-price = 1.2
+price = 0.48
