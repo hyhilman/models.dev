@@ -1,4 +1,4 @@
-# Price feed: Engy GET /v1/models (public price list), checked 2026-10-19.
+# Price feed: Engy GET /v1/models (public price list), checked 2026-11-22.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
 # Price feed: USD list prices.
 # Toggle: chat_template_kwargs.thinking = true|false
@@ -27,8 +27,8 @@ output = 65_536
 compatibility = { reasoning_field = "reasoning_content" }
 
 [cost.text.input]
-price = 0.03
+price = 0.06
 cache = { read = 0.006 }
 
 [cost.text.output]
-price = 0.12
+price = 0.24
