@@ -1,4 +1,4 @@
-# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-11-23.
+# Price feed: OpenRouter GET /api/v1/models (public price list), checked 2026-11-24.
 # Price feed: only [cost] is ours, written by local/script/apply-static.ts; the rest is upstream's.
 # Price feed: USD list prices. Times 1.055 for the host's fee.
 # Toggle: reasoning.enabled = true|false
@@ -28,8 +28,8 @@ sdk = { aisdk = "@ai-sdk/openai", opencodeai = "@opencode/ai/providers/openai-co
 sdk = { aisdk = "@ai-sdk/anthropic", opencodeai = "@opencode/ai/providers/anthropic-compatible" }
 
 [cost.text.input]
-price = 0.05275
-cache = { read = 0.026375 }
+price = 0.1055
+cache = { read = 0.036925 }
 
 [cost.text.output]
-price = 0.7385
+price = 0.93895
