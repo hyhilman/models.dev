@@ -656,3 +656,6 @@ prices_url = "http://192.168.2.4:7311/api.json"
 # redirect one integration's database to a throwaway file for a safe run
 # [<name>] db
 
+
+[db]
+workspace = "models-dev"
