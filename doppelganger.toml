@@ -659,3 +659,7 @@ prices_url = "http://192.168.2.4:7311/api.json"
 
 [db]
 workspace = "models-dev"
+
+# DBOS: the daily ops-retention run is one DBOS workflow (2026-11-27). 1 turns it off.
+[dbos]
+no_run = 0
